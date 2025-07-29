@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Download, Loader2 } from 'lucide-react';
 import FacebookLogin from './FacebookLogin';
 
@@ -29,32 +29,54 @@ const Modals: React.FC<ModalsProps> = ({
 }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [modalKey, setModalKey] = useState(0);
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
+  const maxConnectionAttempts = 3;
 
   // Reset modal state when modal opens
   useEffect(() => {
     if (showConnectModal) {
       setIsConnecting(false);
+      setConnectionAttempts(0);
       setModalKey(prev => prev + 1);
+      console.log('🔵 Modals: Modal opened, resetting state...');
     }
   }, [showConnectModal]);
 
-  const handleFacebookSuccessWithLoading = async (accessToken: string, userId: string) => {
+  const handleFacebookSuccessWithLoading = useCallback(async (accessToken: string, userId: string) => {
     console.log('🔵 Modals: Starting Facebook connection process...');
     setIsConnecting(true);
     try {
       await handleFacebookSuccess(accessToken, userId);
       console.log('🔵 Modals: Facebook connection completed successfully');
+      setConnectionAttempts(0); // Reset attempts on success
     } catch (error) {
       console.error('❌ Modals: Facebook connection failed:', error);
       setIsConnecting(false);
+      
+      // Increment connection attempts
+      setConnectionAttempts(prev => prev + 1);
+      
+      // If too many attempts, show a different error
+      if (connectionAttempts >= maxConnectionAttempts - 1) {
+        handleFacebookError('Connection failed after multiple attempts. Please refresh the page and try again.');
+      }
     }
-  };
+  }, [handleFacebookSuccess, connectionAttempts, maxConnectionAttempts, handleFacebookError]);
 
-  const handleFacebookErrorWithReset = (error: string) => {
+  const handleFacebookErrorWithReset = useCallback((error: string) => {
     console.log('🔵 Modals: Facebook connection error:', error);
     setIsConnecting(false);
-    handleFacebookError(error);
-  };
+    
+    // Increment connection attempts
+    setConnectionAttempts(prev => prev + 1);
+    
+    // If too many attempts, show a different error
+    if (connectionAttempts >= maxConnectionAttempts - 1) {
+      handleFacebookError('Connection failed after multiple attempts. Please refresh the page and try again.');
+    } else {
+      handleFacebookError(error);
+    }
+  }, [handleFacebookError, connectionAttempts, maxConnectionAttempts]);
 
   const ConnectAccountModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -76,6 +98,9 @@ const Modals: React.FC<ModalsProps> = ({
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
                 <p className="text-gray-600">Connecting to Facebook...</p>
                 <p className="text-sm text-gray-500 mt-2">Please wait while we fetch your ad accounts</p>
+                {connectionAttempts > 0 && (
+                  <p className="text-xs text-orange-600 mt-2">Attempt {connectionAttempts + 1} of {maxConnectionAttempts}</p>
+                )}
               </div>
             </div>
           ) : (
@@ -93,6 +118,11 @@ const Modals: React.FC<ModalsProps> = ({
                 <p>• Your data is encrypted and secure</p>
                 <p>• You can disconnect at any time</p>
               </div>
+              {connectionAttempts > 0 && (
+                <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
+                  Previous connection attempts: {connectionAttempts}
+                </div>
+              )}
             </>
           )}
         </div>

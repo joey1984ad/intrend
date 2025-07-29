@@ -339,6 +339,7 @@ const MetaDashboardRefactored: React.FC = () => {
   const handleFacebookSuccess = async (accessToken: string, userId: string) => {
     console.log('🟢 MetaDashboard: handleFacebookSuccess called with userId:', userId);
     console.log('🟢 MetaDashboard: Access token length:', accessToken.length);
+    console.log('🟢 MetaDashboard: Environment =', process.env.NODE_ENV);
     
     // Set the access token immediately but don't close modal yet
     setFacebookAccessToken(accessToken);
@@ -368,11 +369,12 @@ const MetaDashboardRefactored: React.FC = () => {
         // Only close modal after successful data fetch
         setShowConnectModal(false);
         
-        // Fetch initial data after successful connection
+        // Fetch initial data after successful connection with longer delay for production
+        const delay = process.env.NODE_ENV === 'production' ? 1500 : 1000;
         setTimeout(() => {
           console.log('🟢 MetaDashboard: Fetching initial Facebook ads data...');
           fetchFacebookAdsData();
-        }, 1000);
+        }, delay);
       } else {
         console.log('⚠️ MetaDashboard: No ad accounts found or API error:', data);
         setFacebookError('No ad accounts found. Please check your Facebook permissions or try connecting with a different account.');

@@ -22,7 +22,10 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
   const [sdkReady, setSdkReady] = useState(false);
   const [sdkError, setSdkError] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
   const initAttempted = useRef(false);
+  const scriptLoaded = useRef(false);
+  const maxRetries = 3;
 
   // Facebook App ID - Replace with your actual Facebook App ID
   const FB_APP_ID = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || 'your-facebook-app-id';
@@ -30,29 +33,65 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
   // Debug logging
   console.log('🔍 FacebookLogin: FB_APP_ID =', FB_APP_ID);
   console.log('🔍 FacebookLogin: Is placeholder?', FB_APP_ID === 'your-facebook-app-id');
+  console.log('🔍 FacebookLogin: Environment =', process.env.NODE_ENV);
 
   // Check if SDK is ready
   const isSdkReady = useCallback(() => {
     return window.FB && sdkReady && !isInitializing;
   }, [sdkReady, isInitializing]);
 
+  // Wait for FB to be available with timeout
+  const waitForFB = useCallback((timeout = 5000): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (window.FB) {
+        resolve(true);
+        return;
+      }
+
+      const startTime = Date.now();
+      const checkInterval = setInterval(() => {
+        if (window.FB) {
+          clearInterval(checkInterval);
+          resolve(true);
+        } else if (Date.now() - startTime > timeout) {
+          clearInterval(checkInterval);
+          resolve(false);
+        }
+      }, 100);
+    });
+  }, []);
+
   // Initialize Facebook SDK
-  const initializeFacebookSDK = useCallback(() => {
-    if (initAttempted.current) {
+  const initializeFacebookSDK = useCallback(async () => {
+    if (initAttempted.current && retryCount === 0) {
       console.log('🔵 FacebookLogin: Initialization already attempted');
       return;
     }
 
     initAttempted.current = true;
     setIsInitializing(true);
-    console.log('🔵 FacebookLogin: Starting SDK initialization...');
+    setSdkError(null);
+    console.log('🔵 FacebookLogin: Starting SDK initialization... (attempt:', retryCount + 1, ')');
 
+    // Check if FB already exists
     if (window.FB) {
       console.log('🔵 FacebookLogin: FB already exists, checking status...');
       setSdkReady(true);
       setIsInitializing(false);
       checkLoginStatus();
       return;
+    }
+
+    // Check if script is already loaded
+    if (scriptLoaded.current) {
+      console.log('🔵 FacebookLogin: Script already loaded, waiting for FB...');
+      const fbAvailable = await waitForFB();
+      if (fbAvailable) {
+        setSdkReady(true);
+        setIsInitializing(false);
+        checkLoginStatus();
+        return;
+      }
     }
 
     console.log('🔵 FacebookLogin: Loading Facebook SDK...');
@@ -66,6 +105,7 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
     
     script.onload = () => {
       console.log('🔵 FacebookLogin: Facebook SDK loaded successfully');
+      scriptLoaded.current = true;
       
       // Check if we have a valid App ID
       if (FB_APP_ID === 'your-facebook-app-id' || !FB_APP_ID) {
@@ -75,30 +115,41 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
         return;
       }
       
-      window.fbAsyncInit = () => {
-        console.log('🔵 FacebookLogin: fbAsyncInit called, initializing FB...');
-        
-        try {
-          window.FB.init({
-            appId: FB_APP_ID,
-            cookie: true,
-            xfbml: true,
-            version: 'v23.0'
-          });
-          console.log('🔵 FacebookLogin: FB initialized with appId:', FB_APP_ID);
-          setSdkReady(true);
+      // Wait for FB to be available
+      waitForFB().then((fbAvailable) => {
+        if (!fbAvailable) {
+          console.error('❌ FacebookLogin: FB not available after script load');
+          setSdkError('Facebook SDK failed to initialize. Please try again.');
           setIsInitializing(false);
-          
-          // Check login status after initialization
-          setTimeout(() => {
-            checkLoginStatus();
-          }, 100);
-        } catch (error) {
-          console.error('❌ FacebookLogin: Error initializing FB:', error);
-          setSdkError('Failed to initialize Facebook SDK');
-          setIsInitializing(false);
+          return;
         }
-      };
+
+        window.fbAsyncInit = () => {
+          console.log('🔵 FacebookLogin: fbAsyncInit called, initializing FB...');
+          
+          try {
+            window.FB.init({
+              appId: FB_APP_ID,
+              cookie: true,
+              xfbml: true,
+              version: 'v23.0'
+            });
+            console.log('🔵 FacebookLogin: FB initialized with appId:', FB_APP_ID);
+            setSdkReady(true);
+            setIsInitializing(false);
+            setRetryCount(0); // Reset retry count on success
+            
+            // Check login status after initialization with longer delay for production
+            setTimeout(() => {
+              checkLoginStatus();
+            }, process.env.NODE_ENV === 'production' ? 500 : 100);
+          } catch (error) {
+            console.error('❌ FacebookLogin: Error initializing FB:', error);
+            setSdkError('Failed to initialize Facebook SDK');
+            setIsInitializing(false);
+          }
+        };
+      });
     };
 
     script.onerror = () => {
@@ -108,7 +159,7 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
     };
 
     document.head.appendChild(script);
-  }, [FB_APP_ID]);
+  }, [FB_APP_ID, retryCount, waitForFB]);
 
   // Check login status
   const checkLoginStatus = useCallback(() => {
@@ -154,7 +205,17 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
 
     if (!isSdkReady()) {
       console.log('❌ FacebookLogin: SDK not ready, cannot login');
-      onError('Facebook SDK not ready. Please try again.');
+      
+      // Try to reinitialize if not ready
+      if (retryCount < maxRetries) {
+        console.log('🔄 FacebookLogin: Attempting to reinitialize SDK...');
+        setRetryCount(prev => prev + 1);
+        initAttempted.current = false;
+        initializeFacebookSDK();
+        onError('Facebook SDK not ready. Retrying...');
+      } else {
+        onError('Facebook SDK not ready. Please refresh the page and try again.');
+      }
       return;
     }
 
@@ -167,7 +228,9 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
     setIsLoading(true);
     setSdkError(null);
     
-    // Add a small delay to ensure SDK is fully ready
+    // Add a longer delay for production environments
+    const delay = process.env.NODE_ENV === 'production' ? 200 : 100;
+    
     setTimeout(() => {
       if (!window.FB) {
         console.log('❌ FacebookLogin: FB not available after delay');
@@ -204,8 +267,8 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
         return_scopes: true,
         auth_type: 'rerequest'
       });
-    }, 100);
-  }, [isSdkReady, onSuccess, onError, isLoading, isInitializing]);
+    }, delay);
+  }, [isSdkReady, onSuccess, onError, isLoading, isInitializing, retryCount, initializeFacebookSDK]);
 
   const handleFacebookLogout = useCallback(() => {
     if (!window.FB) return;
@@ -231,6 +294,7 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
         <button
           onClick={() => {
             initAttempted.current = false;
+            setRetryCount(0);
             initializeFacebookSDK();
           }}
           className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"
@@ -269,6 +333,7 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
         <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
         <span className="ml-2 text-sm text-gray-600">
           {isInitializing ? 'Initializing Facebook SDK...' : 'Preparing Facebook SDK...'}
+          {retryCount > 0 && ` (attempt ${retryCount + 1})`}
         </span>
       </div>
     );

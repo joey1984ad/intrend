@@ -177,6 +177,17 @@ const MetaDashboardRefactored: React.FC = () => {
     }
   }, [activeTab, facebookAccessToken, selectedAdAccount]);
 
+  // Debug InsightsGraph props
+  useEffect(() => {
+    console.log('🔍 MetaDashboard: InsightsGraph props:', {
+      hasAccessToken: !!facebookAccessToken,
+      adAccountId: selectedAdAccount,
+      dateRange: selectedDateRange,
+      isVisible: facebookAccessToken && selectedAdAccount ? true : false,
+      compareMode
+    });
+  }, [facebookAccessToken, selectedAdAccount, selectedDateRange, compareMode]);
+
   // Event handlers
   const handleSort = (field: string) => {
     if (sortField === field) {

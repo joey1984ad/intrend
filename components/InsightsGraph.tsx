@@ -11,7 +11,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { Settings, TrendingUp, TrendingDown } from 'lucide-react';
+import { Settings, TrendingUp, TrendingDown, Loader2, AlertCircle } from 'lucide-react';
 
 interface InsightsData {
   date: string;
@@ -72,7 +72,21 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
   ]);
 
   const fetchInsightsData = async () => {
-    if (!accessToken || !adAccountId || !isVisible) return;
+    if (!accessToken || !adAccountId || !isVisible) {
+      console.log('🔍 InsightsGraph: Skipping fetch - missing required props:', {
+        hasAccessToken: !!accessToken,
+        hasAdAccountId: !!adAccountId,
+        isVisible
+      });
+      return;
+    }
+
+    console.log('🔍 InsightsGraph: Starting fetch with props:', {
+      adAccountId,
+      dateRange,
+      compareMode,
+      accessTokenLength: accessToken.length
+    });
 
     setLoading(true);
     setError('');
@@ -91,7 +105,10 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
         }),
       });
 
+      console.log('🔍 InsightsGraph: API response status:', response.status);
+
       const result = await response.json();
+      console.log('🔍 InsightsGraph: API response data:', result);
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to fetch insights data');
@@ -113,10 +130,18 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
           previous: result.data.previous ? formatData(result.data.previous) : null
         };
         
+        console.log('🔍 InsightsGraph: Formatted data:', {
+          currentDays: formattedData.current.length,
+          hasPrevious: !!formattedData.previous,
+          sampleCurrent: formattedData.current.slice(0, 3),
+          samplePrevious: formattedData.previous?.slice(0, 3)
+        });
+        
         setData(formattedData);
         setSummaryStats(result.summaryStats || null);
         console.log(`📊 Insights graph: Loaded ${formattedData.current.length} days of data${compareMode ? ' with comparison' : ''}`);
       } else {
+        console.error('❌ InsightsGraph: No data received from API:', result);
         throw new Error('No data received from API');
       }
     } catch (error) {
@@ -187,7 +212,7 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
     if (!data.current.length) return [];
     
     const chartData = data.current.map((day, index) => {
-      const dataPoint: any = { day: `Day ${index + 1}` };
+      const dataPoint: any = { date: day.date };
       
       metrics.forEach(metric => {
         if (metric.enabled) {
@@ -207,167 +232,140 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
+    <div className="bg-white p-6 rounded-lg shadow-sm">
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">Performance Insights</h3>
-          <p className="text-sm text-gray-600">
-            Daily performance metrics with {compareMode ? 'period comparison' : 'revenue and ROAS tracking'}
-          </p>
-        </div>
-        
-        <div className="flex items-center space-x-4">
+        <h3 className="text-lg font-semibold text-gray-900">Performance Data</h3>
+        <div className="flex items-center space-x-2">
           {loading && (
-            <div className="flex items-center text-blue-600">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-              <span className="text-sm">Loading...</span>
+            <div className="flex items-center text-sm text-blue-600">
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              Loading data...
+            </div>
+          )}
+          {error && (
+            <div className="text-sm text-red-600">
+              Error: {error}
             </div>
           )}
         </div>
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center">
-            <span className="text-sm text-red-800">{error}</span>
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600">Loading performance data...</p>
           </div>
         </div>
-      )}
-
-      {/* Summary Statistics */}
-      {compareMode && summaryStats && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <h4 className="text-sm font-medium text-gray-700 mb-3">Period Comparison Summary</h4>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {Object.entries(summaryStats).map(([metric, stats]) => (
-              <div key={metric} className="text-center">
-                <div className="text-xs text-gray-500 uppercase tracking-wide">{metric}</div>
-                <div className="text-lg font-semibold text-gray-900">
-                  {metric === 'spend' || metric === 'revenue' 
-                    ? `$${stats.current.toFixed(2)}`
-                    : metric === 'roas'
-                    ? `${stats.current.toFixed(2)}x`
-                    : stats.current.toLocaleString()
-                  }
-                </div>
-                <div className="flex items-center justify-center text-xs">
-                  {stats.change > 0 ? (
-                    <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3 text-red-500 mr-1" />
-                  )}
-                  <span className={stats.change > 0 ? 'text-green-600' : 'text-red-600'}>
-                    {stats.change > 0 ? '+' : ''}{stats.change.toFixed(1)}%
-                  </span>
-                </div>
-              </div>
+      ) : error ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="text-red-600 mb-4">
+              <AlertCircle className="w-8 h-8 mx-auto" />
+            </div>
+            <p className="text-gray-600">Failed to load performance data</p>
+            <p className="text-sm text-red-600 mt-2">{error}</p>
+          </div>
+        </div>
+      ) : data.current.length === 0 ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-gray-600">No performance data available</p>
+            <p className="text-sm text-gray-500 mt-2">Connect your Facebook account to view data</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Metric Toggles */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            {metrics.map((metric) => (
+              <button
+                key={metric.key}
+                onClick={() => toggleMetric(metric.key)}
+                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                  metric.enabled
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {metric.label}
+              </button>
             ))}
           </div>
-        </div>
-      )}
 
-      {/* Metric Toggles */}
-      <div className="mb-6">
-        <div className="flex items-center mb-3">
-          <Settings className="w-4 h-4 mr-2 text-gray-600" />
-          <span className="text-sm font-medium text-gray-700">Toggle Metrics</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {metrics.map((metric) => (
-            <button
-              key={metric.key}
-              onClick={() => toggleMetric(metric.key)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                metric.enabled
-                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                  : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
-              }`}
-              style={{ borderLeftColor: metric.color, borderLeftWidth: '3px' }}
-            >
-              {metric.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Chart */}
-      {data.current.length > 0 && (
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={prepareChartData()} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="day" 
-                axisLine={false} 
-                tickLine={false}
-                tick={{ fontSize: 12 }}
-              />
-              <YAxis 
-                yAxisId="left"
-                axisLine={false} 
-                tickLine={false}
-                tick={{ fontSize: 12 }}
-                tickFormatter={(value) => `$${value.toFixed(0)}`}
-              />
-              <YAxis 
-                yAxisId="right" 
-                orientation="right"
-                axisLine={false} 
-                tickLine={false}
-                tick={{ fontSize: 12 }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              
-              {metrics.map((metric) => {
-                if (!metric.enabled) return null;
+          {/* Chart */}
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={prepareChartData()}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false} 
+                  tickLine={false}
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis 
+                  yAxisId="left"
+                  axisLine={false} 
+                  tickLine={false}
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => `$${value.toLocaleString()}`}
+                />
+                <YAxis 
+                  yAxisId="right"
+                  orientation="right"
+                  axisLine={false} 
+                  tickLine={false}
+                  tick={{ fontSize: 12 }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
                 
-                const lines = [];
-                
-                // Current period line
-                lines.push(
+                {metrics.filter(m => m.enabled).map((metric) => (
                   <Line
-                    key={`${metric.key}_current`}
+                    key={metric.key}
                     type="monotone"
                     dataKey={`${metric.key}_current`}
                     stroke={metric.color}
                     strokeWidth={2}
-                    dot={{ fill: metric.color, strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: metric.color, strokeWidth: 2 }}
+                    dot={false}
                     yAxisId={metric.yAxis}
-                    name={`Current ${metric.label}`}
                   />
-                );
+                ))}
                 
-                // Previous period line (if comparison mode is on)
-                if (compareMode && data.previous) {
-                  lines.push(
-                    <Line
-                      key={`${metric.key}_previous`}
-                      type="monotone"
-                      dataKey={`${metric.key}_previous`}
-                      stroke={metric.color}
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                      dot={{ fill: metric.color, strokeWidth: 2, r: 4, strokeDasharray: "5 5" }}
-                      activeDot={{ r: 6, stroke: metric.color, strokeWidth: 2 }}
-                      yAxisId={metric.yAxis}
-                      name={`Previous ${metric.label}`}
-                    />
-                  );
-                }
-                
-                return lines;
-              })}
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+                {compareMode && data.previous && metrics.filter(m => m.enabled).map((metric) => (
+                  <Line
+                    key={`${metric.key}_previous`}
+                    type="monotone"
+                    dataKey={`${metric.key}_previous`}
+                    stroke={metric.color}
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={false}
+                    yAxisId={metric.yAxis}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
 
-      {!loading && !error && data.current.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          <p>No data available for the selected date range</p>
-        </div>
+          {/* Summary Stats */}
+          {summaryStats && (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
+              {Object.entries(summaryStats).map(([key, stats]) => (
+                <div key={key} className="text-center">
+                  <p className="text-sm text-gray-600 capitalize">{key}</p>
+                  <p className="text-lg font-semibold">
+                    {formatValue(stats.current, key)}
+                  </p>
+                  <p className={`text-sm ${stats.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {stats.change >= 0 ? '+' : ''}{stats.change.toFixed(1)}%
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

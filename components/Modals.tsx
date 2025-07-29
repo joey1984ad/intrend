@@ -30,15 +30,22 @@ const Modals: React.FC<ModalsProps> = ({
   const [isConnecting, setIsConnecting] = useState(false);
   const [modalKey, setModalKey] = useState(0);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
+  const [forceReload, setForceReload] = useState(false);
   const maxConnectionAttempts = 3;
 
   // Reset modal state when modal opens
   useEffect(() => {
     if (showConnectModal) {
+      console.log('🔵 Modals: Modal opened, resetting state...');
       setIsConnecting(false);
       setConnectionAttempts(0);
-      setModalKey(prev => prev + 1);
-      console.log('🔵 Modals: Modal opened, resetting state...');
+      setForceReload(true);
+      
+      // Force a complete reload of the FacebookLogin component
+      setTimeout(() => {
+        setModalKey(prev => prev + 1);
+        setForceReload(false);
+      }, 100);
     }
   }, [showConnectModal]);
 
@@ -101,6 +108,13 @@ const Modals: React.FC<ModalsProps> = ({
                 {connectionAttempts > 0 && (
                   <p className="text-xs text-orange-600 mt-2">Attempt {connectionAttempts + 1} of {maxConnectionAttempts}</p>
                 )}
+              </div>
+            </div>
+          ) : forceReload ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="text-center">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-600 mx-auto mb-4" />
+                <p className="text-sm text-gray-600">Preparing Facebook connection...</p>
               </div>
             </div>
           ) : (

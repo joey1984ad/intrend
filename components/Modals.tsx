@@ -1,7 +1,7 @@
 'use client'
 
-import React from 'react';
-import { X, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Download, Loader2 } from 'lucide-react';
 import FacebookLogin from './FacebookLogin';
 
 interface ModalsProps {
@@ -27,6 +27,35 @@ const Modals: React.FC<ModalsProps> = ({
   handleFacebookError,
   connectedAccounts
 }) => {
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [modalKey, setModalKey] = useState(0);
+
+  // Reset modal state when modal opens
+  useEffect(() => {
+    if (showConnectModal) {
+      setIsConnecting(false);
+      setModalKey(prev => prev + 1);
+    }
+  }, [showConnectModal]);
+
+  const handleFacebookSuccessWithLoading = async (accessToken: string, userId: string) => {
+    console.log('🔵 Modals: Starting Facebook connection process...');
+    setIsConnecting(true);
+    try {
+      await handleFacebookSuccess(accessToken, userId);
+      console.log('🔵 Modals: Facebook connection completed successfully');
+    } catch (error) {
+      console.error('❌ Modals: Facebook connection failed:', error);
+      setIsConnecting(false);
+    }
+  };
+
+  const handleFacebookErrorWithReset = (error: string) => {
+    console.log('🔵 Modals: Facebook connection error:', error);
+    setIsConnecting(false);
+    handleFacebookError(error);
+  };
+
   const ConnectAccountModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
@@ -34,24 +63,38 @@ const Modals: React.FC<ModalsProps> = ({
           <h2 className="text-xl font-semibold">Connect Facebook Account</h2>
           <button 
             onClick={() => setShowConnectModal(false)}
-            className="text-gray-400 hover:text-gray-600"
+            disabled={isConnecting}
+            className="text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
         <div className="space-y-4">
-          <p className="text-gray-600">
-            Connect your Facebook Ads account to view real campaign data and insights.
-          </p>
-          <FacebookLogin 
-            onSuccess={handleFacebookSuccess}
-            onError={handleFacebookError}
-          />
-          <div className="text-sm text-gray-500">
-            <p>• We'll only access your ad account data</p>
-            <p>• Your data is encrypted and secure</p>
-            <p>• You can disconnect at any time</p>
-          </div>
+          {isConnecting ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+                <p className="text-gray-600">Connecting to Facebook...</p>
+                <p className="text-sm text-gray-500 mt-2">Please wait while we fetch your ad accounts</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="text-gray-600">
+                Connect your Facebook Ads account to view real campaign data and insights.
+              </p>
+              <FacebookLogin 
+                key={modalKey}
+                onSuccess={handleFacebookSuccessWithLoading}
+                onError={handleFacebookErrorWithReset}
+              />
+              <div className="text-sm text-gray-500">
+                <p>• We'll only access your ad account data</p>
+                <p>• Your data is encrypted and secure</p>
+                <p>• You can disconnect at any time</p>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -340,9 +340,10 @@ const MetaDashboardRefactored: React.FC = () => {
     console.log('🟢 MetaDashboard: handleFacebookSuccess called with userId:', userId);
     console.log('🟢 MetaDashboard: Access token length:', accessToken.length);
     
+    // Set the access token immediately but don't close modal yet
     setFacebookAccessToken(accessToken);
     setFacebookUserId(userId);
-    setShowConnectModal(false);
+    setFacebookError(''); // Clear any previous errors
     
     try {
       console.log('🟢 MetaDashboard: Making API call to /api/facebook/auth...');
@@ -364,15 +365,27 @@ const MetaDashboardRefactored: React.FC = () => {
         setFacebookAdAccounts(data.adAccounts);
         setSelectedAdAccount(data.adAccounts[0].id);
         setIsUsingRealData(true);
+        // Only close modal after successful data fetch
+        setShowConnectModal(false);
+        
+        // Fetch initial data after successful connection
+        setTimeout(() => {
+          console.log('🟢 MetaDashboard: Fetching initial Facebook ads data...');
+          fetchFacebookAdsData();
+        }, 1000);
       } else {
         console.log('⚠️ MetaDashboard: No ad accounts found or API error:', data);
         setFacebookError('No ad accounts found. Please check your Facebook permissions or try connecting with a different account.');
-        // Still set the access token so the user can see the connection worked
+        // Don't close modal if there's an error
         setIsUsingRealData(false);
+        throw new Error('No ad accounts found');
       }
     } catch (error) {
       console.error('❌ MetaDashboard: Error fetching ad accounts:', error);
-      setFacebookError('Failed to fetch ad accounts');
+      setFacebookError('Failed to fetch ad accounts. Please try again.');
+      // Don't close modal if there's an error
+      setIsUsingRealData(false);
+      throw error; // Re-throw to trigger error handling in modal
     }
   };
 

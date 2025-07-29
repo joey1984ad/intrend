@@ -14,16 +14,19 @@ declare global {
     fbAsyncInit: () => void;
     __facebookSDKInitialized?: boolean;
     __facebookSDKPromise?: Promise<boolean>;
+    __facebookSDKRetryCount?: number;
   }
 }
 
-// Global Facebook SDK state management
+// Global Facebook SDK state management with enhanced error handling
 class FacebookSDKManager {
   private static instance: FacebookSDKManager;
   private initializationPromise: Promise<boolean> | null = null;
   private isInitializing = false;
   private isInitialized = false;
   private appId: string | null = null;
+  private maxRetries = 5;
+  private retryDelay = 1000;
 
   static getInstance(): FacebookSDKManager {
     if (!FacebookSDKManager.instance) {
@@ -33,25 +36,30 @@ class FacebookSDKManager {
   }
 
   async initialize(appId: string): Promise<boolean> {
+    console.log('🔧 FacebookSDKManager: Starting initialization with App ID:', appId);
+    
     // If already initialized with the same app ID, return success
     if (this.isInitialized && this.appId === appId) {
+      console.log('✅ FacebookSDKManager: Already initialized with same App ID');
       return true;
     }
 
     // If already initializing, wait for the existing promise
     if (this.isInitializing && this.initializationPromise) {
+      console.log('⏳ FacebookSDKManager: Already initializing, waiting for existing promise');
       return this.initializationPromise;
     }
 
     // If we have a global promise from another instance, use it
     if (window.__facebookSDKPromise) {
+      console.log('🌐 FacebookSDKManager: Using global initialization promise');
       return window.__facebookSDKPromise;
     }
 
     this.isInitializing = true;
     this.appId = appId;
 
-    this.initializationPromise = this.performInitialization(appId);
+    this.initializationPromise = this.performInitializationWithRetry(appId);
     window.__facebookSDKPromise = this.initializationPromise;
 
     try {
@@ -66,24 +74,57 @@ class FacebookSDKManager {
     }
   }
 
+  private async performInitializationWithRetry(appId: string): Promise<boolean> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+      try {
+        console.log(`🔄 FacebookSDKManager: Initialization attempt ${attempt}/${this.maxRetries}`);
+        const result = await this.performInitialization(appId);
+        if (result) {
+          console.log(`✅ FacebookSDKManager: Initialization successful on attempt ${attempt}`);
+          return true;
+        }
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`❌ FacebookSDKManager: Attempt ${attempt} failed:`, error);
+        
+        if (attempt < this.maxRetries) {
+          console.log(`⏳ FacebookSDKManager: Waiting ${this.retryDelay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, this.retryDelay));
+          this.retryDelay *= 1.5; // Exponential backoff
+        }
+      }
+    }
+    
+    throw lastError || new Error('Facebook SDK initialization failed after all retries');
+  }
+
   private async performInitialization(appId: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       // Check if FB already exists and is properly initialized
       if (window.FB && typeof window.FB.init === 'function' && window.__facebookSDKInitialized) {
-        console.log('🔵 FacebookSDKManager: FB already initialized globally');
+        console.log('✅ FacebookSDKManager: FB already initialized globally');
         resolve(true);
         return;
+      }
+
+      // Clear any existing FB state if it's in a bad state
+      if (window.FB && !window.__facebookSDKInitialized) {
+        console.log('🔄 FacebookSDKManager: Clearing existing FB state');
+        delete window.FB;
+        window.__facebookSDKInitialized = false;
       }
 
       // Check if script is already loaded
       const existingScript = document.querySelector('script[src*="connect.facebook.net"]');
       if (existingScript) {
-        console.log('🔵 FacebookSDKManager: Script already exists, waiting for FB...');
-        this.waitForFB(8000).then(resolve).catch(reject);
+        console.log('📜 FacebookSDKManager: Script already exists, waiting for FB...');
+        this.waitForFB(10000).then(resolve).catch(reject);
         return;
       }
 
-      console.log('🔵 FacebookSDKManager: Loading Facebook SDK...');
+      console.log('📜 FacebookSDKManager: Loading Facebook SDK...');
       
       // Load Facebook SDK
       const script = document.createElement('script');
@@ -93,11 +134,11 @@ class FacebookSDKManager {
       script.crossOrigin = 'anonymous';
       
       script.onload = () => {
-        console.log('🔵 FacebookSDKManager: Facebook SDK loaded successfully');
+        console.log('✅ FacebookSDKManager: Facebook SDK loaded successfully');
         
         // Set up fbAsyncInit
         window.fbAsyncInit = () => {
-          console.log('🔵 FacebookSDKManager: fbAsyncInit called, initializing FB...');
+          console.log('🔧 FacebookSDKManager: fbAsyncInit called, initializing FB...');
           
           try {
             window.FB.init({
@@ -106,7 +147,7 @@ class FacebookSDKManager {
               xfbml: true,
               version: 'v23.0'
             });
-            console.log('🔵 FacebookSDKManager: FB initialized with appId:', appId);
+            console.log('✅ FacebookSDKManager: FB initialized with appId:', appId);
             window.__facebookSDKInitialized = true;
             resolve(true);
           } catch (error) {
@@ -116,7 +157,7 @@ class FacebookSDKManager {
         };
         
         // Wait for FB to be available
-        this.waitForFB(8000).then(resolve).catch(reject);
+        this.waitForFB(10000).then(resolve).catch(reject);
       };
 
       script.onerror = () => {
@@ -128,7 +169,7 @@ class FacebookSDKManager {
     });
   }
 
-  private async waitForFB(timeout = 8000): Promise<boolean> {
+  private async waitForFB(timeout = 10000): Promise<boolean> {
     return new Promise((resolve, reject) => {
       if (window.FB && typeof window.FB.init === 'function') {
         resolve(true);
@@ -151,6 +192,23 @@ class FacebookSDKManager {
   isReady(): boolean {
     return window.FB && typeof window.FB.init === 'function' && window.__facebookSDKInitialized === true;
   }
+
+  // Force reset the SDK state
+  reset(): void {
+    console.log('🔄 FacebookSDKManager: Resetting SDK state');
+    this.isInitialized = false;
+    this.isInitializing = false;
+    this.initializationPromise = null;
+    window.__facebookSDKInitialized = false;
+    window.__facebookSDKPromise = undefined;
+    window.__facebookSDKRetryCount = 0;
+    
+    // Remove existing script
+    const existingScript = document.querySelector('script[src*="connect.facebook.net"]');
+    if (existingScript) {
+      document.head.removeChild(existingScript);
+    }
+  }
 }
 
 const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => {
@@ -164,6 +222,7 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
   const maxRetries = 3;
   const initializationTimeout = useRef<NodeJS.Timeout | null>(null);
   const sdkManager = useRef(FacebookSDKManager.getInstance());
+  const loginAttempted = useRef(false);
 
   // Facebook App ID - Replace with your actual Facebook App ID
   const FB_APP_ID = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || 'your-facebook-app-id';
@@ -263,7 +322,7 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
           setIsInitializing(false);
         }
       }
-    }, 10000); // 10 second timeout
+    }, 15000); // 15 second timeout
     
     initializeFacebookSDK();
     
@@ -281,6 +340,12 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
     console.log('🔵 FacebookLogin: Is initializing?', isInitializing);
     console.log('🔵 FacebookLogin: FB available?', !!window.FB);
     console.log('🔵 FacebookLogin: FB.init available?', typeof window.FB?.init);
+    console.log('🔵 FacebookLogin: Login already attempted?', loginAttempted.current);
+
+    if (loginAttempted.current) {
+      console.log('⚠️ FacebookLogin: Login already attempted, preventing duplicate');
+      return;
+    }
 
     if (!isSdkReady()) {
       console.log('❌ FacebookLogin: SDK not ready, cannot login');
@@ -307,43 +372,63 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
     console.log('🔵 FacebookLogin: Starting login process...');
     setIsLoading(true);
     setSdkError(null);
+    loginAttempted.current = true;
     
     // Ensure FB is available before proceeding
     if (!window.FB || typeof window.FB.login !== 'function') {
       console.log('❌ FacebookLogin: FB not available or login method not available');
       setIsLoading(false);
+      loginAttempted.current = false;
       onError('Facebook SDK not available. Please try again.');
       return;
     }
     
-    window.FB.login((response: any) => {
-      console.log('🔵 FacebookLogin: Login response received:', response);
-      setIsLoading(false);
-      
-      if (response.status === 'connected') {
-        console.log('✅ FacebookLogin: Login successful, calling onSuccess...');
-        console.log('🔵 FacebookLogin: Access token length:', response.authResponse.accessToken.length);
-        console.log('🔵 FacebookLogin: User ID:', response.authResponse.userID);
-        setIsConnected(true);
-        setUserName(response.authResponse.userID);
-        onSuccess(response.authResponse.accessToken, response.authResponse.userID);
+    // Add a small delay to ensure everything is ready
+    setTimeout(() => {
+      // Check for popup blockers before attempting login
+      const popupTest = window.open('', '_blank', 'width=1,height=1');
+      if (popupTest) {
+        popupTest.close();
       } else {
-        console.log('❌ FacebookLogin: Login failed, calling onError...');
-        console.log('🔵 FacebookLogin: Response status:', response.status);
-        console.log('🔵 FacebookLogin: Response authResponse:', response.authResponse);
-        
-        let errorMessage = 'Facebook login failed. Please try again.';
-        if (response.status === 'not_authorized') {
-          errorMessage = 'Login was cancelled or permissions were denied.';
-        }
-        
-        onError(errorMessage);
+        console.warn('⚠️ FacebookLogin: Popup blocker detected');
+        setIsLoading(false);
+        loginAttempted.current = false;
+        onError('Popup blocker detected. Please allow popups for this site and try again.');
+        return;
       }
-    }, {
-      scope: 'ads_read,ads_management,read_insights,pages_read_engagement,business_management,pages_show_list',
-      return_scopes: true,
-      auth_type: 'rerequest'
-    });
+
+      window.FB.login((response: any) => {
+        console.log('🔵 FacebookLogin: Login response received:', response);
+        setIsLoading(false);
+        loginAttempted.current = false;
+        
+        if (response.status === 'connected') {
+          console.log('✅ FacebookLogin: Login successful, calling onSuccess...');
+          console.log('🔵 FacebookLogin: Access token length:', response.authResponse.accessToken.length);
+          console.log('🔵 FacebookLogin: User ID:', response.authResponse.userID);
+          setIsConnected(true);
+          setUserName(response.authResponse.userID);
+          onSuccess(response.authResponse.accessToken, response.authResponse.userID);
+        } else {
+          console.log('❌ FacebookLogin: Login failed, calling onError...');
+          console.log('🔵 FacebookLogin: Response status:', response.status);
+          console.log('🔵 FacebookLogin: Response authResponse:', response.authResponse);
+          
+          let errorMessage = 'Facebook login failed. Please try again.';
+          if (response.status === 'not_authorized') {
+            errorMessage = 'Login was cancelled or permissions were denied.';
+          } else if (response.status === 'unknown') {
+            errorMessage = 'Login failed. Please check your internet connection and try again.';
+          }
+          
+          onError(errorMessage);
+        }
+      }, {
+        scope: 'ads_read,ads_management,read_insights,pages_read_engagement,business_management,pages_show_list',
+        return_scopes: true,
+        auth_type: 'rerequest'
+      });
+    }, 200);
   }, [isSdkReady, onSuccess, onError, isLoading, isInitializing, retryCount, maxRetries, initializeFacebookSDK]);
 
   const handleFacebookLogout = useCallback(() => {
@@ -375,6 +460,8 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
               setIsInitializing(true);
               setRetryCount(0);
               cleanup();
+              // Reset the SDK manager state completely
+              sdkManager.current.reset();
               // Small delay to ensure state is reset
               setTimeout(() => {
                 initializeFacebookSDK();
@@ -391,6 +478,25 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
             ) : (
               'Retry Loading SDK'
             )}
+          </button>
+          <button
+            onClick={() => {
+              console.log('🔄 FacebookLogin: User clicked hard reset button');
+              // Complete hard reset
+              sdkManager.current.reset();
+              setSdkError(null);
+              setIsInitializing(true);
+              setRetryCount(0);
+              cleanup();
+              loginAttempted.current = false;
+              // Force a complete reload
+              setTimeout(() => {
+                window.location.reload();
+              }, 500);
+            }}
+            className="w-full bg-orange-100 text-orange-700 px-4 py-2 rounded-lg text-sm hover:bg-orange-200"
+          >
+            Hard Reset & Reload
           </button>
           <button
             onClick={() => {

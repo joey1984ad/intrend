@@ -369,6 +369,11 @@ const MetaDashboardRefactored: React.FC = () => {
       });
       
       console.log('🟢 MetaDashboard: API response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} - ${response.statusText}`);
+      }
+      
       const data = await response.json();
       console.log('🟢 MetaDashboard: API response data:', data);
       
@@ -388,14 +393,16 @@ const MetaDashboardRefactored: React.FC = () => {
         }, delay);
       } else {
         console.log('⚠️ MetaDashboard: No ad accounts found or API error:', data);
-        setFacebookError('No ad accounts found. Please check your Facebook permissions or try connecting with a different account.');
+        const errorMessage = data.error || 'No ad accounts found. Please check your Facebook permissions or try connecting with a different account.';
+        setFacebookError(errorMessage);
         // Don't close modal if there's an error
         setIsUsingRealData(false);
-        throw new Error('No ad accounts found');
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('❌ MetaDashboard: Error fetching ad accounts:', error);
-      setFacebookError('Failed to fetch ad accounts. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch ad accounts. Please try again.';
+      setFacebookError(errorMessage);
       // Don't close modal if there's an error
       setIsUsingRealData(false);
       throw error; // Re-throw to trigger error handling in modal
@@ -403,8 +410,10 @@ const MetaDashboardRefactored: React.FC = () => {
   };
 
   const handleFacebookError = (error: string) => {
+    console.error('❌ MetaDashboard: Facebook login error:', error);
     setFacebookError(error);
-    console.error('Facebook login error:', error);
+    // Don't close modal on error - let user retry
+    setIsUsingRealData(false);
   };
 
   const fetchFacebookAdsData = async () => {

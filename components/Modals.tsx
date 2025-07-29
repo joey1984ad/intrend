@@ -28,26 +28,32 @@ const Modals: React.FC<ModalsProps> = ({
   connectedAccounts
 }) => {
   const [isConnecting, setIsConnecting] = useState(false);
-  const [modalKey, setModalKey] = useState(0);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
-  const [forceReload, setForceReload] = useState(false);
+  const [modalReady, setModalReady] = useState(false);
   const maxConnectionAttempts = 3;
 
-  // Reset modal state when modal opens
+  // Improved modal state management - don't force remount
   useEffect(() => {
     if (showConnectModal) {
-      console.log('🔵 Modals: Modal opened, resetting state...');
+      console.log('🔵 Modals: Modal opened, preparing connection...');
       setIsConnecting(false);
-      setConnectionAttempts(0);
-      setForceReload(true);
       
-      // Force a complete reload of the FacebookLogin component
-      setTimeout(() => {
-        setModalKey(prev => prev + 1);
-        setForceReload(false);
-      }, 100);
+      // Only reset attempts if this is a fresh connection
+      if (connectionAttempts >= maxConnectionAttempts) {
+        setConnectionAttempts(0);
+      }
+      
+      // Set modal as ready after a short delay to allow for smooth transition
+      const timer = setTimeout(() => {
+        setModalReady(true);
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    } else {
+      // When modal closes, reset ready state but keep connection attempts
+      setModalReady(false);
     }
-  }, [showConnectModal]);
+  }, [showConnectModal, connectionAttempts, maxConnectionAttempts]);
 
   const handleFacebookSuccessWithLoading = useCallback(async (accessToken: string, userId: string) => {
     console.log('🔵 Modals: Starting Facebook connection process...');
@@ -110,7 +116,7 @@ const Modals: React.FC<ModalsProps> = ({
                 )}
               </div>
             </div>
-          ) : forceReload ? (
+          ) : !modalReady ? (
             <div className="flex items-center justify-center p-8">
               <div className="text-center">
                 <Loader2 className="w-6 h-6 animate-spin text-blue-600 mx-auto mb-4" />
@@ -123,7 +129,6 @@ const Modals: React.FC<ModalsProps> = ({
                 Connect your Facebook Ads account to view real campaign data and insights.
               </p>
               <FacebookLogin 
-                key={modalKey}
                 onSuccess={handleFacebookSuccessWithLoading}
                 onError={handleFacebookErrorWithReset}
               />

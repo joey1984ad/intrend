@@ -151,11 +151,23 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔍 Debug: Fetching creatives from ${since} to ${until} (${dateRange})`);
 
-    // First, get all ads to find creatives
+    // First, get all ads to find creatives - with expanded fields to capture all possible image/video sources
+    const fieldsQuery = [
+      'id',
+      'name', 
+      'creative{id,name,title,body,image_url,image_hash,video_id,thumbnail_url,object_story_spec,asset_feed_spec,call_to_action,url_tags}',
+      'adset{id,name,campaign{id,name}}',
+      'status'
+    ].join(',');
+    
+    console.log(`🔍 API COMPARISON: Requesting fields: ${fieldsQuery}`);
+    
     const adsResponse = await fetch(
-      `${baseUrl}/${adAccountId}/ads?fields=id,name,creative{id,name,title,body,image_url,video_id,object_story_spec},adset{id,name,campaign{id,name}},status&access_token=${accessToken}`
+      `${baseUrl}/${adAccountId}/ads?fields=${fieldsQuery}&access_token=${accessToken}`
     );
     const adsData = await adsResponse.json();
+    
+    console.log(`🔍 API COMPARISON: Raw ads response:`, JSON.stringify(adsData, null, 2));
 
     if (adsData.error) {
       console.error('Ads API error:', adsData.error);
@@ -251,12 +263,67 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        // 🔍 DIAGNOSIS: Log detailed creative data structure
-        console.log(`🔍 DIAGNOSIS - Processing creative ${ad.creative.id}:`);
-        console.log(`   📋 Creative Type: ${creativeType}`);
-        console.log(`   🖼️ Image URL: ${ad.creative.image_url || 'NONE'}`);
-        console.log(`   🎥 Video ID: ${ad.creative.video_id || 'NONE'}`);
-        console.log(`   📄 Object Story Spec:`, JSON.stringify(objectStorySpec, null, 2));
+        // 🔍 API COMPARISON: Detailed field-by-field analysis
+        console.log(`\n🔍 API COMPARISON - Creative ${ad.creative.id} Field Analysis:`);
+        console.log(`==========================================`);
+        
+        // Core fields that should contain media
+        const coreFields = {
+          'creative.image_url': ad.creative.image_url,
+          'creative.image_hash': ad.creative.image_hash,
+          'creative.video_id': ad.creative.video_id,
+          'creative.thumbnail_url': ad.creative.thumbnail_url,
+          'creative.asset_feed_spec': ad.creative.asset_feed_spec,
+        };
+        
+        console.log(`📊 CORE MEDIA FIELDS:`);
+        Object.entries(coreFields).forEach(([field, value]) => {
+          console.log(`   ${field}: ${value ? (typeof value === 'object' ? JSON.stringify(value) : value) : '❌ NULL/UNDEFINED'}`);
+        });
+        
+        // Object story spec deep dive
+        console.log(`\n📄 OBJECT_STORY_SPEC Analysis:`);
+        if (objectStorySpec) {
+          console.log(`   ✅ object_story_spec EXISTS`);
+          console.log(`   📸 link_data: ${objectStorySpec.link_data ? '✅ EXISTS' : '❌ MISSING'}`);
+          console.log(`   🎬 video_data: ${objectStorySpec.video_data ? '✅ EXISTS' : '❌ MISSING'}`);
+          console.log(`   🖼️ photo_data: ${objectStorySpec.photo_data ? '✅ EXISTS' : '❌ MISSING'}`);
+          
+          if (objectStorySpec.link_data) {
+            console.log(`   📸 link_data.image_url: ${objectStorySpec.link_data.image_url || '❌ MISSING'}`);
+            console.log(`   📸 link_data.picture: ${objectStorySpec.link_data.picture || '❌ MISSING'}`);
+            console.log(`   🎠 link_data.child_attachments: ${objectStorySpec.link_data.child_attachments ? `✅ ${objectStorySpec.link_data.child_attachments.length} items` : '❌ MISSING'}`);
+            
+            if (objectStorySpec.link_data.child_attachments) {
+              console.log(`   🎠 CHILD_ATTACHMENTS Details:`);
+              objectStorySpec.link_data.child_attachments.forEach((att: any, idx: number) => {
+                console.log(`     [${idx}] image_url: ${att.image_url || '❌'}`);
+                console.log(`     [${idx}] video_id: ${att.video_id || '❌'}`);
+                console.log(`     [${idx}] media.image_url: ${att.media?.image_url || '❌'}`);
+                console.log(`     [${idx}] picture: ${att.picture || '❌'}`);
+                console.log(`     [${idx}] Full object:`, JSON.stringify(att, null, 6));
+              });
+            }
+          }
+          
+          if (objectStorySpec.video_data) {
+            console.log(`   🎬 video_data.video_id: ${objectStorySpec.video_data.video_id || '❌ MISSING'}`);
+            console.log(`   🎬 video_data.image_url: ${objectStorySpec.video_data.image_url || '❌ MISSING'}`);
+            console.log(`   🎬 video_data.picture: ${objectStorySpec.video_data.picture || '❌ MISSING'}`);
+          }
+          
+          if (objectStorySpec.photo_data) {
+            console.log(`   🖼️ photo_data.url: ${objectStorySpec.photo_data.url || '❌ MISSING'}`);
+            console.log(`   🖼️ photo_data.picture: ${objectStorySpec.photo_data.picture || '❌ MISSING'}`);
+          }
+        } else {
+          console.log(`   ❌ object_story_spec is NULL/UNDEFINED`);
+        }
+        
+        // Full creative object for reference
+        console.log(`\n📋 FULL CREATIVE OBJECT:`);
+        console.log(JSON.stringify(ad.creative, null, 2));
+        console.log(`==========================================\n`);
         
         if (objectStorySpec?.link_data?.child_attachments) {
           console.log(`   🎠 Carousel Child Attachments (${objectStorySpec.link_data.child_attachments.length}):`, 

@@ -3,6 +3,7 @@
 import React from 'react';
 import { CreativeData } from './types';
 import { useCreativePreview } from './hooks/useCreativePreview';
+import CreativePreview from './CreativePreview';
 
 interface CreativeGalleryProps {
   creatives: CreativeData[];
@@ -149,45 +150,16 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
   getFatigueColor,
   accessToken
 }) => {
-  // Asset rendering logic
-  let assetContent: React.ReactNode = null;
-  if (creative.creativeType === 'video' && creative.videoUrl) {
-    assetContent = (
-      <video controls width="100%" height="100%" poster={creative.thumbnailUrl} className="w-full h-full object-cover rounded-t-lg">
-        <source src={creative.videoUrl} type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
-    );
-  } else if ((creative.creativeType === 'carousel' || creative.creativeType === 'dynamic') && creative.assets && creative.assets.length > 0) {
-    assetContent = (
-      <div className="flex overflow-x-auto space-x-2 w-full h-full p-2">
-        {creative.assets.map((asset, idx) =>
-          asset.videoUrl ? (
-            <video key={idx} controls width={120} height={120} poster={asset.thumbnailUrl || asset.imageUrl} className="rounded object-cover">
-              <source src={asset.videoUrl} type="video/mp4" />
-            </video>
-          ) : asset.imageUrl ? (
-            <img key={idx} src={asset.imageUrl} alt="Creative asset" className="w-28 h-28 object-cover rounded" />
-          ) : (
-            <div key={idx} className="w-28 h-28 bg-gray-200 flex items-center justify-center rounded">N/A</div>
-          )
-        )}
-      </div>
-    );
-  } else if (creative.imageUrl) {
-    assetContent = (
-      <img src={creative.imageUrl} alt={creative.name} className="w-full h-full object-cover rounded-t-lg" />
-    );
-  } else {
-    assetContent = (
-      <div className="w-full h-full bg-gray-200 flex flex-col items-center justify-center rounded-t-lg">
-        <svg className="w-10 h-10 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        <span className="text-xs text-gray-500">Asset not available</span>
-      </div>
-    );
-  }
+  // Enhanced asset rendering with Facebook Preview API integration
+  const assetContent = (
+    <CreativePreview
+      creative={creative}
+      accessToken={accessToken}
+      className="w-full h-full rounded-t-lg"
+      enablePreview={true}
+      fallbackToAssets={true}
+    />
+  );
 
   return (
     <div

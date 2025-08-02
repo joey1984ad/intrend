@@ -10,11 +10,15 @@ const videoSourceCache = new Map<string, string | null>();
 async function fetchVideoSource(videoId: string, accessToken: string): Promise<string | null> {
   // Check cache first
   if (videoSourceCache.has(videoId)) {
-    return videoSourceCache.get(videoId) || null;
+    const cached = videoSourceCache.get(videoId) || null;
+    console.log(`🔍 DIAGNOSIS - Video ${videoId}: Using cached result - ${cached ? 'HAS SOURCE' : 'NO SOURCE'}`);
+    return cached;
   }
 
   const baseUrl = 'https://graph.facebook.com/v23.0';
-  const url = `${baseUrl}/${videoId}?fields=source&access_token=${accessToken}`;
+  const url = `${baseUrl}/${videoId}?fields=source,permalink_url,picture,status&access_token=${accessToken}`;
+  
+  console.log(`🔍 DIAGNOSIS - Fetching video source for ${videoId}: ${url}`);
   
   try {
     // Add delay to respect rate limits
@@ -23,17 +27,26 @@ async function fetchVideoSource(videoId: string, accessToken: string): Promise<s
     const res = await fetch(url);
     const data = await res.json();
     
+    console.log(`🔍 DIAGNOSIS - Video ${videoId} API response:`, JSON.stringify(data, null, 2));
+    
     if (data.error) {
-      console.warn(`Video source fetch error for ${videoId}:`, data.error);
+      console.warn(`❌ Video source fetch error for ${videoId}:`, data.error);
       videoSourceCache.set(videoId, null);
       return null;
     }
     
     const source = data.source || null;
+    console.log(`🔍 DIAGNOSIS - Video ${videoId} final source: ${source || 'NULL'}`);
+    
+    // Also log additional useful fields
+    if (data.permalink_url) console.log(`   🔗 Permalink: ${data.permalink_url}`);
+    if (data.picture) console.log(`   🖼️ Thumbnail: ${data.picture}`);
+    if (data.status) console.log(`   📊 Status: ${data.status}`);
+    
     videoSourceCache.set(videoId, source);
     return source;
   } catch (error) {
-    console.error(`Error fetching video source for ${videoId}:`, error);
+    console.error(`❌ Error fetching video source for ${videoId}:`, error);
     videoSourceCache.set(videoId, null);
     return null;
   }
@@ -238,6 +251,22 @@ export async function POST(request: NextRequest) {
           });
         }
 
+        // 🔍 DIAGNOSIS: Log detailed creative data structure
+        console.log(`🔍 DIAGNOSIS - Processing creative ${ad.creative.id}:`);
+        console.log(`   📋 Creative Type: ${creativeType}`);
+        console.log(`   🖼️ Image URL: ${ad.creative.image_url || 'NONE'}`);
+        console.log(`   🎥 Video ID: ${ad.creative.video_id || 'NONE'}`);
+        console.log(`   📄 Object Story Spec:`, JSON.stringify(objectStorySpec, null, 2));
+        
+        if (objectStorySpec?.link_data?.child_attachments) {
+          console.log(`   🎠 Carousel Child Attachments (${objectStorySpec.link_data.child_attachments.length}):`, 
+            JSON.stringify(objectStorySpec.link_data.child_attachments, null, 2));
+        }
+        
+        if (objectStorySpec?.video_data) {
+          console.log(`   🎬 Video Data:`, JSON.stringify(objectStorySpec.video_data, null, 2));
+        }
+
         // Create basic creative data (without video sources yet)
         const creative = {
           id: ad.creative.id,
@@ -277,9 +306,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 🔍 DIAGNOSIS: Log video IDs being processed
+    console.log(`🔍 DIAGNOSIS - Video IDs collected for batch processing:`, videoIds);
+    console.log(`🔍 DIAGNOSIS - Unique video IDs: ${Array.from(new Set(videoIds)).length} out of ${videoIds.length} total`);
+    
     // Batch fetch all video sources
     console.log(`🔍 Debug: Batch fetching ${videoIds.length} video sources`);
     const videoSources = await batchFetchVideoSources(videoIds, accessToken);
+    
+    // 🔍 DIAGNOSIS: Log video source results
+    console.log(`🔍 DIAGNOSIS - Video sources fetched:`, Array.from(videoSources.entries()));
+    videoSources.forEach((source, videoId) => {
+      console.log(`   🎥 Video ${videoId}: ${source ? 'SUCCESS' : 'FAILED'} - ${source || 'No source URL'}`);
+    });
 
     // Second pass: update creatives with video sources
     for (const creative of creativesWithInsights) {
@@ -297,17 +336,28 @@ export async function POST(request: NextRequest) {
           }
         } else if (creative.creativeType === 'carousel' || creative.creativeType === 'dynamic') {
           const childAttachments = objectStorySpec?.link_data?.child_attachments || [];
-          creative.assets = await Promise.all(childAttachments.map(async (att: any) => {
+          console.log(`🔍 DIAGNOSIS - Processing ${creative.creativeType} creative ${creative.id}:`);
+          console.log(`   📦 Child attachments found: ${childAttachments.length}`);
+          
+          creative.assets = await Promise.all(childAttachments.map(async (att: any, index: number) => {
             let assetVideoUrl = null;
             if (att.video_id) {
               assetVideoUrl = videoSources.get(att.video_id) || null;
+              console.log(`   🎥 Asset ${index} video: ${att.video_id} → ${assetVideoUrl ? 'SUCCESS' : 'FAILED'}`);
             }
+            
+            const assetImageUrl = att.media?.image_url || att.image_url || null;
+            console.log(`   🖼️ Asset ${index} image: ${assetImageUrl || 'NONE'}`);
+            console.log(`   📄 Asset ${index} raw data:`, JSON.stringify(att, null, 2));
+            
             return {
-              imageUrl: att.media?.image_url || att.image_url || null,
+              imageUrl: assetImageUrl,
               videoUrl: assetVideoUrl,
               thumbnailUrl: att.media?.image_url || att.image_url || null
             };
           }));
+          
+          console.log(`   ✅ Final assets for creative ${creative.id}:`, JSON.stringify(creative.assets, null, 2));
         }
 
         // Clean up temporary data

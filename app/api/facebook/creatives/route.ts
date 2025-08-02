@@ -323,6 +323,58 @@ export async function POST(request: NextRequest) {
         // Full creative object for reference
         console.log(`\n📋 FULL CREATIVE OBJECT:`);
         console.log(JSON.stringify(ad.creative, null, 2));
+        
+        // 🔍 IMAGE URL TESTING: Test any image URLs found
+        const imageUrlsToTest = [];
+        if (ad.creative.image_url) imageUrlsToTest.push({ source: 'creative.image_url', url: ad.creative.image_url });
+        if (ad.creative.thumbnail_url) imageUrlsToTest.push({ source: 'creative.thumbnail_url', url: ad.creative.thumbnail_url });
+        if (objectStorySpec?.link_data?.image_url) imageUrlsToTest.push({ source: 'link_data.image_url', url: objectStorySpec.link_data.image_url });
+        if (objectStorySpec?.link_data?.picture) imageUrlsToTest.push({ source: 'link_data.picture', url: objectStorySpec.link_data.picture });
+        if (objectStorySpec?.video_data?.image_url) imageUrlsToTest.push({ source: 'video_data.image_url', url: objectStorySpec.video_data.image_url });
+        if (objectStorySpec?.photo_data?.url) imageUrlsToTest.push({ source: 'photo_data.url', url: objectStorySpec.photo_data.url });
+        
+        if (objectStorySpec?.link_data?.child_attachments) {
+          objectStorySpec.link_data.child_attachments.forEach((att: any, idx: number) => {
+            if (att.image_url) imageUrlsToTest.push({ source: `child_attachments[${idx}].image_url`, url: att.image_url });
+            if (att.media?.image_url) imageUrlsToTest.push({ source: `child_attachments[${idx}].media.image_url`, url: att.media.image_url });
+            if (att.picture) imageUrlsToTest.push({ source: `child_attachments[${idx}].picture`, url: att.picture });
+          });
+        }
+        
+        if (imageUrlsToTest.length > 0) {
+          console.log(`\n🔍 IMAGE URL ACCESSIBILITY TEST:`);
+          for (const { source, url } of imageUrlsToTest.slice(0, 3)) { // Test first 3 to avoid too many requests
+            console.log(`   Testing ${source}: ${url}`);
+            try {
+              // Quick HEAD request to test accessibility
+              const testResponse = await fetch(url, { 
+                method: 'HEAD',
+                signal: AbortSignal.timeout(3000) // 3 second timeout
+              });
+              console.log(`   ✅ ${source}: ${testResponse.status} ${testResponse.statusText} ${testResponse.ok ? '(ACCESSIBLE)' : '(NOT ACCESSIBLE)'}`);
+              
+              // Test with access token if direct access fails
+              if (!testResponse.ok && accessToken) {
+                const separator = url.includes('?') ? '&' : '?';
+                const urlWithToken = `${url}${separator}access_token=${accessToken}`;
+                try {
+                  const tokenTestResponse = await fetch(urlWithToken, { 
+                    method: 'HEAD',
+                    signal: AbortSignal.timeout(3000)
+                  });
+                  console.log(`   🔑 ${source} with token: ${tokenTestResponse.status} ${tokenTestResponse.statusText} ${tokenTestResponse.ok ? '(ACCESSIBLE)' : '(NOT ACCESSIBLE)'}`);
+                } catch (tokenError) {
+                  console.log(`   ❌ ${source} with token: Error - ${tokenError}`);
+                }
+              }
+            } catch (error) {
+              console.log(`   ❌ ${source}: Error - ${error}`);
+            }
+          }
+        } else {
+          console.log(`   ⚠️ No image URLs found in creative ${ad.creative.id}`);
+        }
+        
         console.log(`==========================================\n`);
         
         if (objectStorySpec?.link_data?.child_attachments) {

@@ -345,20 +345,50 @@ const MetaDashboardRefactored: React.FC = () => {
     setFacebookUserId(userId);
     setFacebookError(''); // Clear any previous errors
     
+    // Add a small delay to ensure the token is properly set
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     try {
       console.log('🟢 MetaDashboard: Making API call to /api/facebook/auth...');
-      // Fetch ad accounts using the auth endpoint
-      const response = await fetch('/api/facebook/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ accessToken })
-      });
+      // Fetch ad accounts using the auth endpoint with retry logic
+      let response;
+      let data;
+      let retryCount = 0;
+      const maxRetries = 3;
       
-      console.log('🟢 MetaDashboard: API response status:', response.status);
-      const data = await response.json();
-      console.log('🟢 MetaDashboard: API response data:', data);
+      while (retryCount < maxRetries) {
+        try {
+          response = await fetch('/api/facebook/auth', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ accessToken })
+          });
+          
+          console.log('🟢 MetaDashboard: API response status:', response.status);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          data = await response.json();
+          console.log('🟢 MetaDashboard: API response data:', data);
+          
+          // If we get here, the request was successful
+          break;
+        } catch (fetchError) {
+          retryCount++;
+          console.error(`❌ MetaDashboard: API call attempt ${retryCount} failed:`, fetchError);
+          
+          if (retryCount >= maxRetries) {
+            throw fetchError;
+          }
+          
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        }
+      }
       
       if (data.success && data.adAccounts && data.adAccounts.length > 0) {
         console.log('✅ MetaDashboard: Successfully fetched ad accounts:', data.adAccounts);
@@ -368,11 +398,11 @@ const MetaDashboardRefactored: React.FC = () => {
         // Only close modal after successful data fetch
         setShowConnectModal(false);
         
-        // Fetch initial data after successful connection
+        // Fetch initial data after successful connection with a longer delay
         setTimeout(() => {
           console.log('🟢 MetaDashboard: Fetching initial Facebook ads data...');
           fetchFacebookAdsData();
-        }, 1000);
+        }, 2000); // Increased delay for better reliability
       } else {
         console.log('⚠️ MetaDashboard: No ad accounts found or API error:', data);
         setFacebookError('No ad accounts found. Please check your Facebook permissions or try connecting with a different account.');
@@ -382,7 +412,7 @@ const MetaDashboardRefactored: React.FC = () => {
       }
     } catch (error) {
       console.error('❌ MetaDashboard: Error fetching ad accounts:', error);
-      setFacebookError('Failed to fetch ad accounts. Please try again.');
+      setFacebookError(`Failed to fetch ad accounts: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
       // Don't close modal if there's an error
       setIsUsingRealData(false);
       throw error; // Re-throw to trigger error handling in modal

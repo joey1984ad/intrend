@@ -1,9 +1,7 @@
 'use client'
 
-import React, { useState } from 'react';
-import { useCreativePreview } from './hooks/useCreativePreview';
+import React from 'react';
 import { CreativeData } from './types';
-import { Loader2, RefreshCw, ExternalLink, AlertCircle } from 'lucide-react';
 
 interface CreativePreviewProps {
   creative: CreativeData;
@@ -17,17 +15,9 @@ const CreativePreview: React.FC<CreativePreviewProps> = ({
   creative,
   accessToken,
   className = '',
-  enablePreview = true,
-  fallbackToAssets = true
+  enablePreview = true, // ignored - we always show raw assets
+  fallbackToAssets = true // ignored - we always show raw assets
 }) => {
-  const [showRawAssets, setShowRawAssets] = useState(false);
-  
-  const { preview, isLoading, error, retry } = useCreativePreview({
-    accessToken,
-    adId: creative.id.toString(),
-    creativeId: creative.id.toString(),
-    enabled: enablePreview && !!accessToken
-  });
 
   // Manual asset display (fallback)
   const renderManualAssets = () => {
@@ -112,90 +102,12 @@ const CreativePreview: React.FC<CreativePreviewProps> = ({
     }
   };
 
-  // Debug panel
-  const renderDebugPanel = () => (
-    <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-      <div className="font-medium text-gray-700 mb-1">Debug Info:</div>
-      <div className="space-y-1 text-gray-600">
-        <div>Creative Type: {creative.creativeType}</div>
-        <div>Preview Method: {preview?.method || 'none'}</div>
-        <div>Preview Success: {preview?.success ? 'Yes' : 'No'}</div>
-        {preview?.format && <div>Format: {preview.format}</div>}
-        {preview?.fallback && <div>Used Fallback: Yes</div>}
-        <div>Has Image URL: {creative.imageUrl ? 'Yes' : 'No'}</div>
-        <div>Has Video URL: {creative.videoUrl ? 'Yes' : 'No'}</div>
-        <div>Has Assets: {creative.assets?.length || 0}</div>
-        {error && <div className="text-red-600">Error: {error}</div>}
-      </div>
-    </div>
-  );
-
   return (
     <div className={`relative ${className}`}>
-      {/* Preview Controls */}
-      <div className="absolute top-2 right-2 z-10 flex space-x-1">
-        {enablePreview && (
-          <button
-            onClick={retry}
-            disabled={isLoading}
-            className="p-1 bg-white/90 rounded shadow-sm hover:bg-white transition-colors"
-            title="Retry preview generation"
-          >
-            <RefreshCw className={`w-3 h-3 text-gray-600 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
-        )}
-        
-        <button
-          onClick={() => setShowRawAssets(!showRawAssets)}
-          className="p-1 bg-white/90 rounded shadow-sm hover:bg-white transition-colors"
-          title="Toggle manual assets view"
-        >
-          <ExternalLink className="w-3 h-3 text-gray-600" />
-        </button>
-      </div>
-
-      {/* Loading State */}
-      {isLoading && (
-        <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-20 rounded">
-          <div className="flex items-center space-x-2">
-            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-            <span className="text-sm text-gray-600">Generating preview...</span>
-          </div>
-        </div>
-      )}
-
-      {/* Main Preview Content */}
+      {/* Main Preview Content - Always show raw media assets */}
       <div className="w-full h-full">
-        {!enablePreview || showRawAssets || !preview?.success ? (
-          // Show manual assets
-          renderManualAssets()
-        ) : preview.method === 'ad-preview' && preview.previewHtml ? (
-          // Show Facebook Ad Preview API result
-          <div 
-            className="w-full h-full rounded overflow-hidden"
-            dangerouslySetInnerHTML={{ __html: preview.previewHtml }}
-          />
-        ) : preview.method === 'ads-library' && preview.iframeHtml ? (
-          // Show Facebook Ads Library embed
-          <div 
-            className="w-full h-full rounded overflow-hidden"
-            dangerouslySetInnerHTML={{ __html: preview.iframeHtml }}
-          />
-        ) : (
-          // Fallback to manual assets
-          renderManualAssets()
-        )}
+        {renderManualAssets()}
       </div>
-
-      {/* Error State */}
-      {error && !isLoading && (
-        <div className="absolute bottom-2 left-2 right-2 bg-red-50 border border-red-200 rounded p-2 z-10">
-          <div className="flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-            <span className="text-xs text-red-700">Preview failed: {error}</span>
-          </div>
-        </div>
-      )}
 
       {/* Creative Type Badge */}
       <div className="absolute bottom-2 left-2 z-10">
@@ -206,16 +118,8 @@ const CreativePreview: React.FC<CreativePreviewProps> = ({
           'bg-purple-100 text-purple-800'
         }`}>
           {creative.creativeType.charAt(0).toUpperCase() + creative.creativeType.slice(1)}
-          {preview?.method && preview.success && (
-            <span className="ml-1 text-xs opacity-75">
-              ({preview.method === 'ad-preview' ? 'API' : preview.method === 'ads-library' ? 'Embed' : 'Manual'})
-            </span>
-          )}
         </span>
       </div>
-
-      {/* Debug Panel (only in development) */}
-      {process.env.NODE_ENV === 'development' && renderDebugPanel()}
     </div>
   );
 };

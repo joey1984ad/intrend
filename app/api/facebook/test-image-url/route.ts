@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { appendAccessTokenToImageUrl, isFacebookCDNUrl } from '../../../../lib/facebook-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,8 +56,7 @@ export async function POST(request: NextRequest) {
     // Test 2: URL with access_token parameter
     if (accessToken) {
       console.log(`\n🔍 Test 2: URL with access_token parameter`);
-      const separator = imageUrl.includes('?') ? '&' : '?';
-      const urlWithToken = `${imageUrl}${separator}access_token=${accessToken}`;
+      const urlWithToken = appendAccessTokenToImageUrl(imageUrl, accessToken);
       
       try {
         const tokenResponse = await fetch(urlWithToken, {
@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
     console.log(`\n🔍 Test 6: URL pattern analysis`);
     const urlAnalysis = {
       domain: new URL(imageUrl).hostname,
-      isFacebookCDN: imageUrl.includes('fbcdn.net') || imageUrl.includes('fbsbx.com'),
+      isFacebookCDN: isFacebookCDNUrl(imageUrl),
       isHTTPS: imageUrl.startsWith('https://'),
       hasParameters: imageUrl.includes('?'),
       parameters: new URL(imageUrl).searchParams.entries ? 

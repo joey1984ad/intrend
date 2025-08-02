@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
+import { appendAccessTokenToImageUrl } from '../lib/facebook-utils';
 
 interface ImageURLTestProps {
   accessToken: string;
@@ -44,8 +45,7 @@ const ImageURLTest: React.FC<ImageURLTestProps> = ({ accessToken }) => {
 
   const openWithToken = () => {
     if (testUrl && accessToken) {
-      const separator = testUrl.includes('?') ? '&' : '?';
-      const urlWithToken = `${testUrl}${separator}access_token=${accessToken}`;
+      const urlWithToken = appendAccessTokenToImageUrl(testUrl, accessToken);
       window.open(urlWithToken, '_blank');
     }
   };

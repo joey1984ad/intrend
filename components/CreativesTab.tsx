@@ -7,6 +7,7 @@ import CreativeGallery from './CreativeGallery';
 import CreativeComparisonModal from './CreativeComparisonModal';
 import CreativeFilters from './CreativeFilters';
 import CreativeDetailModal from './CreativeDetailModal';
+import FacebookImage from './FacebookImage';
 
 interface CreativesTabProps {
   searchTerm: string;
@@ -56,21 +57,13 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       render: (value, creative) => (
         <div className="flex items-center space-x-3">
           <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-            {creative.thumbnailUrl ? (
-              <img 
-                src={creative.thumbnailUrl} 
-                alt={creative.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = 'https://via.placeholder.com/64x64/6B7280/FFFFFF?text=No+Image';
-                }}
-              />
-            ) : (
-              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                <span className="text-xs text-gray-500">No Image</span>
-              </div>
-            )}
+            <FacebookImage
+              src={creative.thumbnailUrl}
+              accessToken={facebookAccessToken}
+              alt={creative.name}
+              className="w-full h-full object-cover"
+              fallbackSrc="https://via.placeholder.com/64x64/6B7280/FFFFFF?text=No+Image"
+            />
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-medium text-gray-900 truncate cursor-pointer hover:text-blue-600" 
@@ -384,6 +377,7 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
         <CreativeComparisonModal
           creatives={selectedCreativeData}
           onClose={() => setShowComparisonModal(false)}
+          facebookAccessToken={facebookAccessToken}
         />
       )}
 
@@ -396,6 +390,7 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
             setSelectedCreative(null);
           }}
           dateRange={dateRange}
+          facebookAccessToken={facebookAccessToken}
         />
       )}
     </div>

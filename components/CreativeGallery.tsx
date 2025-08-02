@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { CreativeData } from './types';
-import { useCreativePreview } from './hooks/useCreativePreview';
 import CreativePreview from './CreativePreview';
 
 interface CreativeGalleryProps {

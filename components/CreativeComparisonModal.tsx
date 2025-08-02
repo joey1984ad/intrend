@@ -2,15 +2,18 @@
 
 import React from 'react';
 import { CreativeData } from './types';
+import FacebookImage from './FacebookImage';
 
 interface CreativeComparisonModalProps {
   creatives: CreativeData[];
   onClose: () => void;
+  facebookAccessToken: string;
 }
 
 const CreativeComparisonModal: React.FC<CreativeComparisonModalProps> = ({
   creatives,
-  onClose
+  onClose,
+  facebookAccessToken
 }) => {
   if (creatives.length < 2) {
     return null;
@@ -85,23 +88,13 @@ const CreativeComparisonModal: React.FC<CreativeComparisonModalProps> = ({
                 <div key={creative.id} className="border border-gray-200 rounded-lg p-4">
                   {/* Creative Image */}
                   <div className="relative h-48 rounded-lg overflow-hidden mb-4">
-                    {creative.thumbnailUrl ? (
-                      <img
-                        src={creative.thumbnailUrl}
-                        alt={creative.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'https://via.placeholder.com/300x200/6B7280/FFFFFF?text=No+Image';
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                        <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    )}
+                    <FacebookImage
+                      src={creative.thumbnailUrl}
+                      accessToken={facebookAccessToken}
+                      alt={creative.name}
+                      className="w-full h-full object-cover"
+                      fallbackSrc="https://via.placeholder.com/300x200/6B7280/FFFFFF?text=No+Image"
+                    />
                     
                     {/* Creative Type Badge */}
                     <div className="absolute top-2 left-2">

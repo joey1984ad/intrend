@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DateTime } from 'luxon';
+import { appendAccessTokenToImageUrl } from '../../../../lib/facebook-utils';
 
 // Rate limiting helper
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -7,6 +8,12 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // Cache for video sources to avoid duplicate requests
 const videoSourceCache = new Map<string, string | null>();
 
+/**
+ * Two-step process for fetching video sources:
+ * 1. First get video_id from creative
+ * 2. Then fetch video source: GET /{video-id}?fields=source&access_token={token}
+ * 3. The 'source' field contains the actual MP4 URL
+ */
 async function fetchVideoSource(videoId: string, accessToken: string): Promise<string | null> {
   // Check cache first
   if (videoSourceCache.has(videoId)) {
@@ -35,7 +42,14 @@ async function fetchVideoSource(videoId: string, accessToken: string): Promise<s
       return null;
     }
     
-    const source = data.source || null;
+    // Primary: Use the 'source' field which contains the MP4 URL
+    let source = data.source || null;
+    
+    // Fallback: If source is not available, try permalink_url (though this is usually not direct MP4)
+    if (!source && data.permalink_url) {
+      console.log(`⚠️ Video ${videoId}: No direct source URL, but permalink available: ${data.permalink_url}`);
+    }
+    
     console.log(`🔍 DIAGNOSIS - Video ${videoId} final source: ${source || 'NULL'}`);
     
     // Also log additional useful fields
@@ -240,7 +254,7 @@ export async function POST(request: NextRequest) {
         }
 
         let creativeType = determineCreativeType(ad.creative);
-        let imageUrl = ad.creative.image_url || null;
+        let imageUrl = extractImageUrl(ad.creative, objectStorySpec);
         let videoUrl = null;
         let assets = undefined;
 
@@ -254,13 +268,37 @@ export async function POST(request: NextRequest) {
             videoIds.push(videoId);
           }
         } else if (creativeType === 'carousel' || creativeType === 'dynamic') {
-          // Collect video IDs from child attachments
-          const childAttachments = objectStorySpec?.link_data?.child_attachments || [];
-          childAttachments.forEach((att: any) => {
+          // Collect video IDs from all possible carousel paths
+          console.log(`🔍 VIDEO ID COLLECTION - Checking all carousel paths for video IDs:`);
+          
+          // Path 1: link_data.child_attachments
+          const linkDataChildAttachments = objectStorySpec?.link_data?.child_attachments || [];
+          console.log(`   📦 Path 1 - link_data.child_attachments: ${linkDataChildAttachments.length} items`);
+          linkDataChildAttachments.forEach((att: any, index: number) => {
             if (att.video_id) {
               videoIds.push(att.video_id);
+              console.log(`     [${index}] 🎥 Found video_id: ${att.video_id}`);
             }
           });
+          
+          // Path 2: video_data.child_attachments (sometimes used for carousel videos)
+          const videoDataChildAttachments = objectStorySpec?.video_data?.child_attachments || [];
+          console.log(`   📦 Path 2 - video_data.child_attachments: ${videoDataChildAttachments.length} items`);
+          videoDataChildAttachments.forEach((att: any, index: number) => {
+            if (att.video_id) {
+              videoIds.push(att.video_id);
+              console.log(`     [${index}] 🎥 Found video_id: ${att.video_id}`);
+            }
+          });
+          
+          // Path 3: multi_share_end_card (if it contains videos)
+          const multiShareEndCard = objectStorySpec?.link_data?.multi_share_end_card;
+          if (multiShareEndCard?.video_id) {
+            videoIds.push(multiShareEndCard.video_id);
+            console.log(`   📦 Path 3 - multi_share_end_card.video_id: ${multiShareEndCard.video_id}`);
+          }
+          
+          console.log(`   📊 Total video IDs collected for this carousel: ${videoIds.length}`);
         }
 
         // 🔍 API COMPARISON: Detailed field-by-field analysis
@@ -355,8 +393,7 @@ export async function POST(request: NextRequest) {
               
               // Test with access token if direct access fails
               if (!testResponse.ok && accessToken) {
-                const separator = url.includes('?') ? '&' : '?';
-                const urlWithToken = `${url}${separator}access_token=${accessToken}`;
+                const urlWithToken = appendAccessTokenToImageUrl(url, accessToken);
                 try {
                   const tokenTestResponse = await fetch(urlWithToken, { 
                     method: 'HEAD',
@@ -394,7 +431,7 @@ export async function POST(request: NextRequest) {
           campaignName: ad.adset?.campaign?.name || 'Unknown Campaign',
           adsetName: ad.adset?.name || 'Unknown Ad Set',
           creativeType,
-          thumbnailUrl: ad.creative.image_url || null,
+          thumbnailUrl: imageUrl, // Use the same priority-extracted image URL for thumbnail
           imageUrl,
           videoUrl: null as string | null,
           assets: undefined as any,
@@ -454,28 +491,10 @@ export async function POST(request: NextRequest) {
             creative.videoUrl = videoSources.get(videoId) || null;
           }
         } else if (creative.creativeType === 'carousel' || creative.creativeType === 'dynamic') {
-          const childAttachments = objectStorySpec?.link_data?.child_attachments || [];
           console.log(`🔍 DIAGNOSIS - Processing ${creative.creativeType} creative ${creative.id}:`);
-          console.log(`   📦 Child attachments found: ${childAttachments.length}`);
           
-          creative.assets = await Promise.all(childAttachments.map(async (att: any, index: number) => {
-            let assetVideoUrl = null;
-            if (att.video_id) {
-              assetVideoUrl = videoSources.get(att.video_id) || null;
-              console.log(`   🎥 Asset ${index} video: ${att.video_id} → ${assetVideoUrl ? 'SUCCESS' : 'FAILED'}`);
-            }
-            
-            const assetImageUrl = att.media?.image_url || att.image_url || null;
-            console.log(`   🖼️ Asset ${index} image: ${assetImageUrl || 'NONE'}`);
-            console.log(`   📄 Asset ${index} raw data:`, JSON.stringify(att, null, 2));
-            
-            return {
-              imageUrl: assetImageUrl,
-              videoUrl: assetVideoUrl,
-              thumbnailUrl: att.media?.image_url || att.image_url || null
-            };
-          }));
-          
+          // Use comprehensive carousel asset extraction
+          creative.assets = extractCarouselAssets(objectStorySpec, videoSources);
           console.log(`   ✅ Final assets for creative ${creative.id}:`, JSON.stringify(creative.assets, null, 2));
         }
 
@@ -513,6 +532,193 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Extract image URL from creative in priority order:
+ * 1. creative.image_url
+ * 2. creative.object_story_spec.link_data.picture  
+ * 3. creative.object_story_spec.link_data.image_url
+ * 4. creative.thumbnail_url
+ * Returns the first one that exists
+ */
+function extractImageUrl(creative: any, objectStorySpec: any): string | null {
+  console.log(`🔍 IMAGE URL EXTRACTION - Checking fields in priority order:`);
+  
+  // Priority 1: creative.image_url
+  if (creative.image_url) {
+    console.log(`   ✅ Priority 1 - creative.image_url: ${creative.image_url}`);
+    return creative.image_url;
+  }
+  console.log(`   ❌ Priority 1 - creative.image_url: MISSING`);
+  
+  // Priority 2: creative.object_story_spec.link_data.picture
+  if (objectStorySpec?.link_data?.picture) {
+    console.log(`   ✅ Priority 2 - link_data.picture: ${objectStorySpec.link_data.picture}`);
+    return objectStorySpec.link_data.picture;
+  }
+  console.log(`   ❌ Priority 2 - link_data.picture: MISSING`);
+  
+  // Priority 3: creative.object_story_spec.link_data.image_url
+  if (objectStorySpec?.link_data?.image_url) {
+    console.log(`   ✅ Priority 3 - link_data.image_url: ${objectStorySpec.link_data.image_url}`);
+    return objectStorySpec.link_data.image_url;
+  }
+  console.log(`   ❌ Priority 3 - link_data.image_url: MISSING`);
+  
+  // Priority 4: creative.thumbnail_url
+  if (creative.thumbnail_url) {
+    console.log(`   ✅ Priority 4 - creative.thumbnail_url: ${creative.thumbnail_url}`);
+    return creative.thumbnail_url;
+  }
+  console.log(`   ❌ Priority 4 - creative.thumbnail_url: MISSING`);
+  
+  console.log(`   ❌ No image URL found in any priority field`);
+  return null;
+}
+
+/**
+ * Comprehensive carousel asset extraction from all possible Facebook API paths:
+ * - creative.object_story_spec.link_data.child_attachments[].image_url
+ * - creative.object_story_spec.link_data.child_attachments[].picture
+ * - creative.object_story_spec.link_data.multi_share_end_card
+ * - Sometimes in: creative.object_story_spec.video_data.child_attachments
+ */
+function extractCarouselAssets(objectStorySpec: any, videoSources: Map<string, string | null>): any[] {
+  const assets: any[] = [];
+  
+  console.log(`🔍 CAROUSEL ASSET EXTRACTION - Checking all possible paths:`);
+  
+  // Path 1: link_data.child_attachments (primary path)
+  const linkDataChildAttachments = objectStorySpec?.link_data?.child_attachments || [];
+  console.log(`   📦 Path 1 - link_data.child_attachments: ${linkDataChildAttachments.length} items`);
+  
+  linkDataChildAttachments.forEach((att: any, index: number) => {
+    let assetImageUrl = null;
+    let assetVideoUrl = null;
+    
+    // Check all possible image URL paths for this attachment
+    if (att.image_url) {
+      assetImageUrl = att.image_url;
+      console.log(`     [${index}] ✅ image_url: ${assetImageUrl}`);
+    } else if (att.picture) {
+      assetImageUrl = att.picture;
+      console.log(`     [${index}] ✅ picture: ${assetImageUrl}`);
+    } else if (att.media?.image_url) {
+      assetImageUrl = att.media.image_url;
+      console.log(`     [${index}] ✅ media.image_url: ${assetImageUrl}`);
+    } else {
+      console.log(`     [${index}] ❌ No image URL found in attachment`);
+    }
+    
+    // Check for video
+    if (att.video_id) {
+      assetVideoUrl = videoSources.get(att.video_id) || null;
+      console.log(`     [${index}] 🎥 video_id: ${att.video_id} → ${assetVideoUrl ? 'SUCCESS' : 'FAILED'}`);
+    }
+    
+    if (assetImageUrl || assetVideoUrl) {
+      assets.push({
+        imageUrl: assetImageUrl,
+        videoUrl: assetVideoUrl,
+        thumbnailUrl: assetImageUrl // Use image URL as thumbnail
+      });
+    }
+  });
+  
+  // Path 2: link_data.multi_share_end_card
+  const multiShareEndCard = objectStorySpec?.link_data?.multi_share_end_card;
+  if (multiShareEndCard) {
+    console.log(`   📦 Path 2 - multi_share_end_card: EXISTS`);
+    let endCardImageUrl = null;
+    
+    if (multiShareEndCard.image_url) {
+      endCardImageUrl = multiShareEndCard.image_url;
+      console.log(`     ✅ multi_share_end_card.image_url: ${endCardImageUrl}`);
+    } else if (multiShareEndCard.picture) {
+      endCardImageUrl = multiShareEndCard.picture;
+      console.log(`     ✅ multi_share_end_card.picture: ${endCardImageUrl}`);
+    }
+    
+    if (endCardImageUrl) {
+      assets.push({
+        imageUrl: endCardImageUrl,
+        videoUrl: null,
+        thumbnailUrl: endCardImageUrl
+      });
+    }
+  } else {
+    console.log(`   📦 Path 2 - multi_share_end_card: ❌ MISSING`);
+  }
+  
+  // Path 3: video_data.child_attachments (sometimes used for carousel videos)
+  const videoDataChildAttachments = objectStorySpec?.video_data?.child_attachments || [];
+  console.log(`   📦 Path 3 - video_data.child_attachments: ${videoDataChildAttachments.length} items`);
+  
+  videoDataChildAttachments.forEach((att: any, index: number) => {
+    let assetImageUrl = null;
+    let assetVideoUrl = null;
+    
+    // Check all possible image URL paths for this attachment
+    if (att.image_url) {
+      assetImageUrl = att.image_url;
+      console.log(`     [${index}] ✅ image_url: ${assetImageUrl}`);
+    } else if (att.picture) {
+      assetImageUrl = att.picture;
+      console.log(`     [${index}] ✅ picture: ${assetImageUrl}`);
+    } else if (att.media?.image_url) {
+      assetImageUrl = att.media.image_url;
+      console.log(`     [${index}] ✅ media.image_url: ${assetImageUrl}`);
+    } else if (att.thumbnail_url) {
+      assetImageUrl = att.thumbnail_url;
+      console.log(`     [${index}] ✅ thumbnail_url: ${assetImageUrl}`);
+    } else {
+      console.log(`     [${index}] ❌ No image URL found in video_data attachment`);
+    }
+    
+    // Check for video
+    if (att.video_id) {
+      assetVideoUrl = videoSources.get(att.video_id) || null;
+      console.log(`     [${index}] 🎥 video_id: ${att.video_id} → ${assetVideoUrl ? 'SUCCESS' : 'FAILED'}`);
+    }
+    
+    if (assetImageUrl || assetVideoUrl) {
+      assets.push({
+        imageUrl: assetImageUrl,
+        videoUrl: assetVideoUrl,
+        thumbnailUrl: assetImageUrl
+      });
+    }
+  });
+  
+  // Path 4: Additional fallback paths in link_data
+  const linkData = objectStorySpec?.link_data;
+  if (linkData) {
+    console.log(`   📦 Path 4 - Additional link_data paths:`);
+    
+    // Check link_data.image_url
+    if (linkData.image_url) {
+      console.log(`     ✅ link_data.image_url: ${linkData.image_url}`);
+      assets.push({
+        imageUrl: linkData.image_url,
+        videoUrl: null,
+        thumbnailUrl: linkData.image_url
+      });
+    }
+    
+    // Check link_data.picture
+    if (linkData.picture) {
+      console.log(`     ✅ link_data.picture: ${linkData.picture}`);
+      assets.push({
+        imageUrl: linkData.picture,
+        videoUrl: null,
+        thumbnailUrl: linkData.picture
+      });
+    }
+  }
+  
+  console.log(`   📊 Total assets extracted: ${assets.length}`);
+  return assets;
 }
 
 function determineCreativeType(creative: any): 'image' | 'video' | 'carousel' | 'dynamic' {

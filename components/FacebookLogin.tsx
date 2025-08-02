@@ -29,9 +29,17 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
   // Facebook App ID - Replace with your actual Facebook App ID
   const FB_APP_ID = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || 'your-facebook-app-id';
   
+  // Detect if we're in production
+  const isProduction = typeof window !== 'undefined' && 
+    (window.location.hostname !== 'localhost' && 
+     window.location.hostname !== '127.0.0.1' &&
+     !window.location.hostname.includes('localhost'));
+  
   // Debug logging
   console.log('🔍 FacebookLogin: FB_APP_ID =', FB_APP_ID);
   console.log('🔍 FacebookLogin: Is placeholder?', FB_APP_ID === 'your-facebook-app-id');
+  console.log('🔍 FacebookLogin: Is production?', isProduction);
+  console.log('🔍 FacebookLogin: Current hostname:', typeof window !== 'undefined' ? window.location.hostname : 'SSR');
 
   // Check if SDK is ready with more lenient conditions
   const isSdkReady = useCallback(() => {
@@ -49,6 +57,7 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
     console.log('🔵 FacebookLogin: Starting SDK initialization...');
     console.log('🔵 FacebookLogin: Init attempted:', initAttempted.current);
     console.log('🔵 FacebookLogin: Retry count:', retryCount);
+    console.log('🔵 FacebookLogin: Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
 
     // Clear any existing timeout
     if (sdkInitTimeout.current) {
@@ -91,12 +100,17 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
     initAttempted.current = true;
     console.log('🔵 FacebookLogin: Loading Facebook SDK...');
     
-    // Load Facebook SDK
+    // Load Facebook SDK with production-specific settings
     const script = document.createElement('script');
     script.src = 'https://connect.facebook.net/en_US/sdk.js';
     script.async = true;
     script.defer = true;
     script.crossOrigin = 'anonymous';
+    
+    // Add production-specific attributes
+    if (isProduction) {
+      script.setAttribute('data-cookieconsent', 'statistics');
+    }
     
     script.onload = () => {
       console.log('🔵 FacebookLogin: Facebook SDK loaded successfully');
@@ -109,26 +123,35 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
         return;
       }
       
-      // Set up fbAsyncInit with timeout protection
+      // Set up fbAsyncInit with timeout protection and production considerations
       window.fbAsyncInit = () => {
         console.log('🔵 FacebookLogin: fbAsyncInit called, initializing FB...');
         
         try {
-          window.FB.init({
+          const initOptions = {
             appId: FB_APP_ID,
             cookie: true,
             xfbml: true,
             version: 'v23.0'
-          });
+          };
+
+          // Add production-specific options
+          if (isProduction) {
+            // In production, we might need additional settings
+            console.log('🔵 FacebookLogin: Using production settings');
+          }
+
+          window.FB.init(initOptions);
           console.log('🔵 FacebookLogin: FB initialized with appId:', FB_APP_ID);
           setSdkReady(true);
           setIsInitializing(false);
           setRetryCount(0); // Reset retry count on success
           
-          // Check login status after initialization with a longer delay
+          // Check login status after initialization with a longer delay for production
+          const checkDelay = isProduction ? 1000 : 500;
           setTimeout(() => {
             checkLoginStatus();
-          }, 500);
+          }, checkDelay);
         } catch (error) {
           console.error('❌ FacebookLogin: Error initializing FB:', error);
           setSdkError('Failed to initialize Facebook SDK');
@@ -145,6 +168,8 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
       };
 
       // Set a timeout to detect if fbAsyncInit doesn't get called
+      // Use longer timeout for production
+      const timeoutDuration = isProduction ? 15000 : 10000;
       sdkInitTimeout.current = setTimeout(() => {
         if (!window.FB || !window.FB.getLoginStatus) {
           console.error('❌ FacebookLogin: fbAsyncInit timeout - SDK not properly initialized');
@@ -159,7 +184,7 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
             }, 2000);
           }
         }
-      }, 10000); // 10 second timeout
+      }, timeoutDuration);
     };
 
     script.onerror = () => {
@@ -177,7 +202,7 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
     };
 
     document.head.appendChild(script);
-  }, [FB_APP_ID, retryCount]);
+  }, [FB_APP_ID, retryCount, isProduction]);
 
   // Check login status with improved error handling
   const checkLoginStatus = useCallback(() => {
@@ -227,6 +252,7 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
     console.log('🔵 FacebookLogin: Is loading?', isLoading);
     console.log('🔵 FacebookLogin: Is initializing?', isInitializing);
     console.log('🔵 FacebookLogin: FB available?', !!window.FB);
+    console.log('🔵 FacebookLogin: Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
 
     if (isLoading) {
       console.log('❌ FacebookLogin: Login already in progress');
@@ -254,7 +280,8 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
     setIsLoading(true);
     setSdkError(null);
     
-    // Add a longer delay to ensure SDK is fully ready
+    // Add a longer delay to ensure SDK is fully ready (longer for production)
+    const loginDelay = isProduction ? 1000 : 500;
     setTimeout(() => {
       if (!window.FB || !window.FB.login) {
         console.log('❌ FacebookLogin: FB not available after delay');
@@ -297,8 +324,8 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
         setIsLoading(false);
         onError('Facebook login error. Please try again.');
       }
-    }, 500); // Increased delay for better reliability
-  }, [isSdkReady, onSuccess, onError, isLoading, isInitializing, initializeFacebookSDK]);
+    }, loginDelay);
+  }, [isSdkReady, onSuccess, onError, isLoading, isInitializing, initializeFacebookSDK, isProduction]);
 
   const handleFacebookLogout = useCallback(() => {
     if (!window.FB) return;
@@ -323,6 +350,11 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
           <div>
             <p className="text-sm font-medium text-red-800">Facebook SDK Error</p>
             <p className="text-xs text-red-600">{sdkError}</p>
+            {isProduction && (
+              <p className="text-xs text-red-500 mt-1">
+                Production environment detected. Check domain configuration in Facebook App settings.
+              </p>
+            )}
           </div>
         </div>
         <button
@@ -351,10 +383,16 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
             <p className="text-xs text-red-600">
               Please update your .env.local file with a valid Facebook App ID
             </p>
+            {isProduction && (
+              <p className="text-xs text-red-500 mt-1">
+                Production environment detected. Make sure to configure environment variables in Vercel.
+              </p>
+            )}
           </div>
         </div>
         <div className="text-xs text-gray-500">
           <p>Current App ID: {FB_APP_ID}</p>
+          <p>Environment: {isProduction ? 'Production' : 'Development'}</p>
           <p>Follow the setup guide: FACEBOOK_APP_SETUP_QUICK.md</p>
         </div>
       </div>
@@ -368,6 +406,7 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
         <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
         <span className="ml-2 text-sm text-gray-600">
           {isInitializing ? 'Initializing Facebook SDK...' : 'Preparing Facebook SDK...'}
+          {isProduction && ' (Production mode)'}
         </span>
       </div>
     );

@@ -10,8 +10,8 @@ interface FacebookLoginProps {
 
 declare global {
   interface Window {
-    FB: any;
-    fbAsyncInit: () => void;
+    FB?: any;
+    fbAsyncInit?: () => void;
   }
 }
 

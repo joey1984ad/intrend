@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { CreativeData } from './types';
 import FacebookImage from './FacebookImage';
+import { appendAccessTokenToImageUrl } from '../lib/facebook-utils';
 
 interface CreativeDetailModalProps {
   creative: CreativeData | null;
@@ -10,6 +11,15 @@ interface CreativeDetailModalProps {
   dateRange: string;
   facebookAccessToken: string;
 }
+
+// Helper for hi-res poster images
+const getHighResUrl = (url: string | null | undefined, token: string) => {
+  if (!url) return url || undefined;
+  if (!(url.includes('fbcdn.net') || url.includes('fbsbx.com'))) return url;
+  if (/([?&](width|height)=\d+)/i.test(url)) return appendAccessTokenToImageUrl(url, token);
+  const sep = url.includes('?') ? '&' : '?';
+  return appendAccessTokenToImageUrl(`${url}${sep}width=720&height=720`, token);
+};
 
 const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
   creative,
@@ -214,7 +224,7 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                         <video
                           src={creative.videoUrl}
                           controls
-                          poster={creative.thumbnailUrl}
+                          poster={getHighResUrl(creative.thumbnailUrl, facebookAccessToken)}
                           className="w-full h-64 object-cover"
                         />
                       ) : creative.imageUrl ? (

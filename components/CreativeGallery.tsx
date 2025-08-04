@@ -1,6 +1,8 @@
 'use client'
 
 import React from 'react';
+import FacebookImage from './FacebookImage';
+import { createOptimizedThumbnailUrl } from '../lib/facebook-utils';
 import { CreativeData } from './types';
 
 
@@ -139,6 +141,11 @@ interface CreativeCardProps {
   accessToken: string;
 }
 
+// Helper to get high-res FB CDN stills with better quality parameters
+const getHighResUrl = (url: string | null | undefined, token: string, contentType: 'video' | 'carousel' | 'dynamic' | 'image' = 'image') => {
+  return createOptimizedThumbnailUrl(url, token, contentType);
+};
+
 const CreativeCard: React.FC<CreativeCardProps> = ({
   creative,
   isSelected,
@@ -157,7 +164,7 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
         controls
         width="100%"
         height="100%"
-        poster={creative.thumbnailUrl}
+        poster={getHighResUrl(creative.thumbnailUrl, accessToken, 'video')}
         className="w-full h-full object-cover rounded-t-lg"
         onError={(e) => {
           console.warn('Video failed to load:', creative.videoUrl);
@@ -178,7 +185,7 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
               controls
               width={120}
               height={120}
-              poster={asset.thumbnailUrl || asset.imageUrl}
+              poster={getHighResUrl(asset.thumbnailUrl || asset.imageUrl, accessToken, 'video')}
               className="rounded object-cover flex-shrink-0"
               onError={(e) => {
                 console.warn(`Carousel video ${idx} failed to load:`, asset.videoUrl);
@@ -188,14 +195,15 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
               <source src={asset.videoUrl} type="video/mp4" />
             </video>
           ) : asset.imageUrl ? (
-            <img
+            <FacebookImage
               key={idx}
-              src={asset.imageUrl}
+              src={asset.imageUrl || asset.thumbnailUrl}
+              accessToken={accessToken}
               alt={`Creative asset ${idx + 1}`}
               className="w-28 h-28 object-cover rounded flex-shrink-0"
+              fallbackSrc="https://via.placeholder.com/112x112/6B7280/FFFFFF?text=Failed"
               onError={(e) => {
                 console.warn(`Carousel image ${idx} failed to load:`, asset.imageUrl);
-                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/112x112/6B7280/FFFFFF?text=Failed';
               }}
             />
           ) : (
@@ -206,13 +214,14 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
     );
   } else if (creative.imageUrl) {
     assetContent = (
-      <img
-        src={creative.imageUrl}
+      <FacebookImage
+        src={creative.imageUrl || creative.thumbnailUrl}
+        accessToken={accessToken}
         alt={creative.name}
         className="w-full h-full object-cover rounded-t-lg"
+        fallbackSrc="https://via.placeholder.com/400x200/6B7280/FFFFFF?text=Image+Failed"
         onError={(e) => {
           console.warn('Image failed to load:', creative.imageUrl);
-          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200/6B7280/FFFFFF?text=Image+Failed';
         }}
       />
     );

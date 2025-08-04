@@ -33,7 +33,10 @@ export const FacebookImage: React.FC<FacebookImageProps> = ({
   style,
   ...props
 }) => {
-  const { processedUrl, isFacebookCDN, needsAccessToken, hasAccessToken } = useFacebookImageUrl(src, accessToken);
+  const { processedUrl, optimizedUrl, isFacebookCDN, needsAccessToken, hasAccessToken } = useFacebookImageUrl(src, accessToken);
+
+  // Use the optimized URL from the hook
+  const finalUrl = optimizedUrl || processedUrl || src;
 
   const handleError = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.warn('FacebookImage error:', {
@@ -78,7 +81,7 @@ export const FacebookImage: React.FC<FacebookImageProps> = ({
 
   return (
     <img
-      src={processedUrl || src}
+      src={finalUrl || processedUrl || src}
       alt={alt}
       className={className}
       width={width}

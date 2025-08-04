@@ -1,6 +1,8 @@
 'use client'
 
 import React from 'react';
+import FacebookImage from './FacebookImage';
+import { createOptimizedThumbnailUrl } from '../lib/facebook-utils';
 import { CreativeData } from './types';
 
 interface CreativePreviewProps {
@@ -10,6 +12,11 @@ interface CreativePreviewProps {
   enablePreview?: boolean;
   fallbackToAssets?: boolean;
 }
+
+// Utility to create high-res Facebook CDN stills with better quality parameters
+const getHighResUrl = (url: string | null | undefined, token: string, contentType: 'video' | 'carousel' | 'dynamic' | 'image' = 'image') => {
+  return createOptimizedThumbnailUrl(url, token, contentType);
+};
 
 const CreativePreview: React.FC<CreativePreviewProps> = ({
   creative,
@@ -27,7 +34,7 @@ const CreativePreview: React.FC<CreativePreviewProps> = ({
           controls 
           width="100%" 
           height="100%" 
-          poster={creative.thumbnailUrl} 
+          poster={getHighResUrl(creative.thumbnailUrl, accessToken, 'video')} 
           className="w-full h-full object-cover rounded"
           onError={(e) => {
             console.log('❌ Video failed to load:', creative.videoUrl);
@@ -48,7 +55,7 @@ const CreativePreview: React.FC<CreativePreviewProps> = ({
                 controls 
                 width={120} 
                 height={120} 
-                poster={asset.thumbnailUrl || asset.imageUrl} 
+                poster={getHighResUrl(asset.thumbnailUrl || asset.imageUrl, accessToken, 'video')} 
                 className="rounded object-cover flex-shrink-0"
                 onError={(e) => {
                   console.log(`❌ Carousel video ${idx} failed to load:`, asset.videoUrl);
@@ -58,15 +65,15 @@ const CreativePreview: React.FC<CreativePreviewProps> = ({
                 <source src={asset.videoUrl} type="video/mp4" />
               </video>
             ) : asset.imageUrl ? (
-              <img 
-                key={idx} 
-                src={asset.imageUrl} 
-                alt={`Creative asset ${idx + 1}`} 
-                className="w-28 h-28 object-cover rounded flex-shrink-0" 
+              <FacebookImage
+                key={idx}
+                src={asset.imageUrl || asset.thumbnailUrl}
+                accessToken={accessToken}
+                alt={`Creative asset ${idx + 1}`}
+                className="w-28 h-28 object-cover rounded flex-shrink-0"
+                fallbackSrc="https://via.placeholder.com/112x112/6B7280/FFFFFF?text=Failed"
                 onError={(e) => {
                   console.log(`❌ Carousel image ${idx} failed to load:`, asset.imageUrl);
-                  const target = e.target as HTMLImageElement;
-                  target.src = 'https://via.placeholder.com/112x112/6B7280/FFFFFF?text=Failed';
                 }}
               />
             ) : (

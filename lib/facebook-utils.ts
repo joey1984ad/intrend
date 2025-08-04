@@ -62,4 +62,96 @@ export function processImageUrlsWithToken(
  */
 export function createTestUrlWithToken(imageUrl: string, accessToken: string): string {
   return appendAccessTokenToImageUrl(imageUrl, accessToken);
+}
+
+/**
+ * Creates a high-resolution thumbnail URL for Facebook CDN images
+ * @param imageUrl - The original image URL
+ * @param accessToken - Facebook access token
+ * @param width - Desired width (default: 1080)
+ * @param height - Desired height (default: 1080)
+ * @param quality - JPEG quality (default: 95)
+ * @returns High-resolution URL with access token
+ */
+export function createHighResThumbnailUrl(
+  imageUrl: string | null | undefined, 
+  accessToken: string,
+  width: number = 1080,
+  height: number = 1080,
+  quality: number = 95
+): string | undefined {
+  if (!imageUrl) return undefined;
+  
+  // Only process Facebook CDN URLs
+  if (!isFacebookCDNUrl(imageUrl)) {
+    return imageUrl;
+  }
+  
+  // If URL already has size parameters, just add access token
+  if (/([?&](width|height)=\d+)/i.test(imageUrl)) {
+    return appendAccessTokenToImageUrl(imageUrl, accessToken);
+  }
+  
+  const separator = imageUrl.includes('?') ? '&' : '?';
+  const highResUrl = `${imageUrl}${separator}width=${width}&height=${height}&quality=${quality}`;
+  
+  return appendAccessTokenToImageUrl(highResUrl, accessToken);
+}
+
+/**
+ * Creates optimized thumbnail URLs for different content types
+ * @param imageUrl - The original image URL
+ * @param accessToken - Facebook access token
+ * @param contentType - Type of content for optimal sizing
+ * @returns Optimized URL with access token
+ */
+export function createOptimizedThumbnailUrl(
+  imageUrl: string | null | undefined,
+  accessToken: string,
+  contentType: 'video' | 'carousel' | 'dynamic' | 'image' = 'image'
+): string | undefined {
+  if (!imageUrl) return undefined;
+  
+  // Only process Facebook CDN URLs
+  if (!isFacebookCDNUrl(imageUrl)) {
+    return imageUrl;
+  }
+  
+  // If URL already has size parameters, just add access token
+  if (/([?&](width|height)=\d+)/i.test(imageUrl)) {
+    return appendAccessTokenToImageUrl(imageUrl, accessToken);
+  }
+  
+  // Different optimizations for different content types
+  let width = 1080;
+  let height = 1080;
+  let quality = 95;
+  
+  switch (contentType) {
+    case 'video':
+      // Videos often benefit from 16:9 aspect ratio for better poster quality
+      width = 1280;
+      height = 720;
+      quality = 98; // Higher quality for video thumbnails
+      break;
+    case 'carousel':
+    case 'dynamic':
+      // Carousels and dynamic ads often use square or 4:5 aspect ratio
+      width = 1080;
+      height = 1080;
+      quality = 95;
+      break;
+    case 'image':
+    default:
+      // Standard images - use square format for consistency
+      width = 1080;
+      height = 1080;
+      quality = 95;
+      break;
+  }
+  
+  const separator = imageUrl.includes('?') ? '&' : '?';
+  const optimizedUrl = `${imageUrl}${separator}width=${width}&height=${height}&quality=${quality}`;
+  
+  return appendAccessTokenToImageUrl(optimizedUrl, accessToken);
 } 

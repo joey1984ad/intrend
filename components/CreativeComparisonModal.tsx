@@ -3,12 +3,18 @@
 import React from 'react';
 import { CreativeData } from './types';
 import FacebookImage from './FacebookImage';
+import { createOptimizedThumbnailUrl } from '../lib/facebook-utils';
 
 interface CreativeComparisonModalProps {
   creatives: CreativeData[];
   onClose: () => void;
   facebookAccessToken: string;
 }
+
+// Helper for hi-res poster images with better quality parameters
+const getHighResUrl = (url: string | null | undefined, token: string, contentType: 'video' | 'carousel' | 'dynamic' | 'image' = 'image') => {
+  return createOptimizedThumbnailUrl(url, token, contentType);
+};
 
 const CreativeComparisonModal: React.FC<CreativeComparisonModalProps> = ({
   creatives,
@@ -86,15 +92,59 @@ const CreativeComparisonModal: React.FC<CreativeComparisonModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {creatives.map((creative) => (
                 <div key={creative.id} className="border border-gray-200 rounded-lg p-4">
-                  {/* Creative Image */}
+                  {/* Creative Asset */}
                   <div className="relative h-48 rounded-lg overflow-hidden mb-4">
-                    <FacebookImage
-                      src={creative.thumbnailUrl}
-                      accessToken={facebookAccessToken}
-                      alt={creative.name}
-                      className="w-full h-full object-cover"
-                      fallbackSrc="https://via.placeholder.com/300x200/6B7280/FFFFFF?text=No+Image"
-                    />
+                    {creative.creativeType === 'video' && creative.videoUrl ? (
+                      <video
+                        controls
+                        width="100%"
+                        height="100%"
+                        poster={getHighResUrl(creative.thumbnailUrl, facebookAccessToken, 'video')}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.warn('Video failed to load:', creative.videoUrl);
+                          (e.target as HTMLVideoElement).style.display = 'none';
+                        }}
+                      >
+                        <source src={creative.videoUrl} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    ) : creative.imageUrl ? (
+                      <FacebookImage
+                        src={creative.imageUrl || creative.thumbnailUrl}
+                        accessToken={facebookAccessToken}
+                        alt={creative.name}
+                        className="w-full h-full object-cover"
+                        fallbackSrc="https://via.placeholder.com/300x200/6B7280/FFFFFF?text=No+Image"
+                      />
+                    ) : creative.assets && creative.assets.length > 0 ? (
+                      creative.assets?.[0]?.videoUrl ? (
+                        <video
+                          controls
+                          width="100%"
+                          height="100%"
+                          poster={getHighResUrl(creative.assets?.[0]?.thumbnailUrl || creative.thumbnailUrl, facebookAccessToken, 'video')}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.warn('Video failed to load:', creative.assets?.[0]?.videoUrl);
+                            (e.target as HTMLVideoElement).style.display = 'none';
+                          }}
+                        >
+                          <source src={creative.assets?.[0]?.videoUrl} type="video/mp4" />
+                        </video>
+                      ) : (
+                        <FacebookImage
+                          src={creative.assets?.[0]?.imageUrl || creative.assets?.[0]?.thumbnailUrl}
+                          accessToken={facebookAccessToken}
+                          alt={creative.name}
+                          className="w-full h-full object-cover"
+                        />
+                      )
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-xs text-gray-500">No Preview Available</span>
+                      </div>
+                    )}
                     
                     {/* Creative Type Badge */}
                     <div className="absolute top-2 left-2">

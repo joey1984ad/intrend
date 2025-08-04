@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { CreativeData } from './types';
-import CreativePreview from './CreativePreview';
+
 
 interface CreativeGalleryProps {
   creatives: CreativeData[];
@@ -149,16 +149,80 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
   getFatigueColor,
   accessToken
 }) => {
-  // Enhanced asset rendering with Facebook Preview API integration
-  const assetContent = (
-    <CreativePreview
-      creative={creative}
-      accessToken={accessToken}
-      className="w-full h-full rounded-t-lg"
-      enablePreview={false}
-      fallbackToAssets={true}
-    />
-  );
+  // Direct media rendering from URLs
+  let assetContent: React.ReactNode = null;
+  if (creative.creativeType === 'video' && creative.videoUrl) {
+    assetContent = (
+      <video
+        controls
+        width="100%"
+        height="100%"
+        poster={creative.thumbnailUrl}
+        className="w-full h-full object-cover rounded-t-lg"
+        onError={(e) => {
+          console.warn('Video failed to load:', creative.videoUrl);
+          (e.target as HTMLVideoElement).style.display = 'none';
+        }}
+      >
+        <source src={creative.videoUrl} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    );
+  } else if ((creative.creativeType === 'carousel' || creative.creativeType === 'dynamic') && creative.assets && creative.assets.length > 0) {
+    assetContent = (
+      <div className="flex overflow-x-auto space-x-2 w-full h-full p-2">
+        {creative.assets.map((asset, idx) =>
+          asset.videoUrl ? (
+            <video
+              key={idx}
+              controls
+              width={120}
+              height={120}
+              poster={asset.thumbnailUrl || asset.imageUrl}
+              className="rounded object-cover flex-shrink-0"
+              onError={(e) => {
+                console.warn(`Carousel video ${idx} failed to load:`, asset.videoUrl);
+                (e.target as HTMLVideoElement).style.display = 'none';
+              }}
+            >
+              <source src={asset.videoUrl} type="video/mp4" />
+            </video>
+          ) : asset.imageUrl ? (
+            <img
+              key={idx}
+              src={asset.imageUrl}
+              alt={`Creative asset ${idx + 1}`}
+              className="w-28 h-28 object-cover rounded flex-shrink-0"
+              onError={(e) => {
+                console.warn(`Carousel image ${idx} failed to load:`, asset.imageUrl);
+                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/112x112/6B7280/FFFFFF?text=Failed';
+              }}
+            />
+          ) : (
+            <div key={idx} className="w-28 h-28 bg-gray-200 flex items-center justify-center rounded flex-shrink-0 text-xs text-gray-500">N/A</div>
+          )
+        )}
+      </div>
+    );
+  } else if (creative.imageUrl) {
+    assetContent = (
+      <img
+        src={creative.imageUrl}
+        alt={creative.name}
+        className="w-full h-full object-cover rounded-t-lg"
+        onError={(e) => {
+          console.warn('Image failed to load:', creative.imageUrl);
+          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x200/6B7280/FFFFFF?text=Image+Failed';
+        }}
+      />
+    );
+  } else {
+    assetContent = (
+      <div className="w-full h-full bg-gray-200 flex flex-col items-center justify-center rounded-t-lg text-xs text-gray-500">
+        No preview available
+      </div>
+    );
+  }
 
   return (
     <div

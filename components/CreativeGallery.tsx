@@ -155,7 +155,7 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
       creative={creative}
       accessToken={accessToken}
       className="w-full h-full rounded-t-lg"
-      enablePreview={true}
+      enablePreview={false}
       fallbackToAssets={true}
     />
   );

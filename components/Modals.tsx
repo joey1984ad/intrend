@@ -133,7 +133,7 @@ const Modals: React.FC<ModalsProps> = ({
                 onError={handleFacebookErrorWithReset}
               />
               <div className="text-sm text-gray-500">
-                <p>• We'll only access your ad account data</p>
+                <p>• We&apos;ll only access your ad account data</p>
                 <p>• Your data is encrypted and secure</p>
                 <p>• You can disconnect at any time</p>
               </div>

@@ -58,7 +58,7 @@ const ImageURLTest: React.FC<ImageURLTestProps> = ({ accessToken }) => {
       <div className="border-b pb-4">
         <h2 className="text-2xl font-bold text-gray-900">Facebook Image URL Test</h2>
         <p className="text-gray-600 mt-2">
-          Test individual image URLs to see if they're accessible and require authentication
+          Test individual image URLs to see if they&apos;re accessible and require authentication
         </p>
       </div>
 
@@ -275,7 +275,7 @@ const ImageURLTest: React.FC<ImageURLTestProps> = ({ accessToken }) => {
           <li>Copy any image URL (from image_url, picture, media.image_url fields)</li>
           <li>Paste it above and run the test</li>
           <li>The test will try multiple access methods and tell you which works</li>
-          <li>Use the "Open in New Tab" buttons to manually verify the results</li>
+          <li>Use the &quot;Open in New Tab&quot; buttons to manually verify the results</li>
         </ol>
       </div>
     </div>

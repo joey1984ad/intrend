@@ -167,7 +167,7 @@ export function createOptimizedThumbnailUrl(
       .replace(/\/(w|h)\d+(?=\/|$)/gi, `/w${width}`);
 
     // Strip low-res query params that Facebook uses for tables
-    ['table', 'width', 'height', 'w', 'h', 'stp'].forEach(param => {
+    ['table', 'width', 'height', 'w', 'h'].forEach(param => {
       if (urlObj.searchParams.has(param)) {
         urlObj.searchParams.delete(param);
       }
@@ -191,6 +191,8 @@ export function createOptimizedThumbnailUrl(
       urlObj.searchParams.set('access_token', accessToken);
     }
 
+    // Leave 'stp' parameter intact (Facebook uses it for smart crop). We only adjust explicit width/height params above.
+ 
     const finalUrl = urlObj.toString();
     console.log(`✅ Final optimized URL:`, finalUrl);
     return finalUrl;

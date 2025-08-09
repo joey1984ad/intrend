@@ -138,6 +138,7 @@ const CreativeComparisonModal: React.FC<CreativeComparisonModalProps> = ({
                           accessToken={facebookAccessToken}
                           alt={creative.name}
                           className="w-full h-full object-cover"
+                          contentType="carousel"
                         />
                       )
                     ) : (

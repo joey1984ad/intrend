@@ -13,6 +13,7 @@ interface FacebookImageProps {
   onLoad?: () => void;
   loading?: 'lazy' | 'eager';
   style?: React.CSSProperties;
+  contentType?: 'video' | 'carousel' | 'dynamic' | 'image';
 }
 
 /**
@@ -31,9 +32,10 @@ export const FacebookImage: React.FC<FacebookImageProps> = ({
   onLoad,
   loading = 'lazy',
   style,
+  contentType = 'image',
   ...props
 }) => {
-  const { processedUrl, optimizedUrl, isFacebookCDN, needsAccessToken, hasAccessToken } = useFacebookImageUrl(src, accessToken);
+  const { processedUrl, optimizedUrl, isFacebookCDN, needsAccessToken, hasAccessToken } = useFacebookImageUrl(src, accessToken, contentType);
 
   // Use the optimized URL from the hook
   const finalUrl = optimizedUrl || processedUrl || src;

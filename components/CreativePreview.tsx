@@ -71,6 +71,7 @@ const CreativePreview: React.FC<CreativePreviewProps> = ({
                 accessToken={accessToken}
                 alt={`Creative asset ${idx + 1}`}
                 className="w-28 h-28 object-cover rounded flex-shrink-0"
+                contentType="carousel"
                 fallbackSrc="https://via.placeholder.com/112x112/6B7280/FFFFFF?text=Failed"
                 onError={(e) => {
                   console.log(`❌ Carousel image ${idx} failed to load:`, asset.imageUrl);

@@ -227,12 +227,20 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
   // Facebook App ID - Replace with your actual Facebook App ID
   const FB_APP_ID = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || 'your-facebook-app-id';
   
+  // Detect if we're in production
+  const isProduction = typeof window !== 'undefined' && 
+    (window.location.hostname !== 'localhost' && 
+     window.location.hostname !== '127.0.0.1' &&
+     !window.location.hostname.includes('localhost'));
+  
   // Debug logging
   console.log('🔍 FacebookLogin: FB_APP_ID =', FB_APP_ID);
   console.log('🔍 FacebookLogin: Is placeholder?', FB_APP_ID === 'your-facebook-app-id');
   console.log('🔍 FacebookLogin: Environment =', process.env.NODE_ENV);
+  console.log('🔍 FacebookLogin: Is production?', isProduction);
+  console.log('🔍 FacebookLogin: Current hostname:', typeof window !== 'undefined' ? window.location.hostname : 'SSR');
 
-  // Check if SDK is ready
+  // Check if SDK is ready with more lenient conditions
   const isSdkReady = useCallback(() => {
     return sdkManager.current.isReady() && sdkReady && !isInitializing;
   }, [sdkReady, isInitializing]);
@@ -248,6 +256,7 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
   // Initialize Facebook SDK using the manager
   const initializeFacebookSDK = useCallback(async () => {
     console.log('🔵 FacebookLogin: Starting SDK initialization... (attempt:', retryCount + 1, ')');
+    console.log('🔵 FacebookLogin: Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
 
     // Check if we have a valid App ID
     if (FB_APP_ID === 'your-facebook-app-id' || !FB_APP_ID) {
@@ -281,29 +290,33 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
         setIsInitializing(false);
       }
     }
-  }, [FB_APP_ID, retryCount, maxRetries]);
+  }, [FB_APP_ID, retryCount, maxRetries, isProduction]);
 
-  // Check login status
+  // Check login status with improved error handling
   const checkLoginStatus = useCallback(() => {
-    if (!window.FB) {
+    if (!window.FB || !window.FB.getLoginStatus) {
       console.log('🔵 FacebookLogin: FB not available for status check');
       return;
     }
 
     console.log('🔵 FacebookLogin: Checking login status...');
-    window.FB.getLoginStatus((response: any) => {
-      console.log('🔵 FacebookLogin: getLoginStatus response:', response);
-      if (response.status === 'connected') {
-        console.log('🔵 FacebookLogin: User already connected');
-        setIsConnected(true);
-        setUserName(response.authResponse.userID);
-        // Don't call onSuccess here to avoid duplicate calls
-      } else {
-        console.log('🔵 FacebookLogin: User not connected, status:', response.status);
-        setIsConnected(false);
-        setUserName('');
-      }
-    });
+    try {
+      window.FB.getLoginStatus((response: any) => {
+        console.log('🔵 FacebookLogin: getLoginStatus response:', response);
+        if (response.status === 'connected') {
+          console.log('🔵 FacebookLogin: User already connected');
+          setIsConnected(true);
+          setUserName(response.authResponse.userID);
+          // Don't call onSuccess here to avoid duplicate calls
+        } else {
+          console.log('🔵 FacebookLogin: User not connected, status:', response.status);
+          setIsConnected(false);
+          setUserName('');
+        }
+      });
+    } catch (error) {
+      console.error('❌ FacebookLogin: Error checking login status:', error);
+    }
   }, []);
 
   // Initialize SDK on mount
@@ -341,9 +354,15 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
     console.log('🔵 FacebookLogin: FB available?', !!window.FB);
     console.log('🔵 FacebookLogin: FB.init available?', typeof window.FB?.init);
     console.log('🔵 FacebookLogin: Login already attempted?', loginAttempted.current);
+    console.log('🔵 FacebookLogin: Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
 
     if (loginAttempted.current) {
       console.log('⚠️ FacebookLogin: Login already attempted, preventing duplicate');
+      return;
+    }
+
+    if (isLoading) {
+      console.log('❌ FacebookLogin: Login already in progress');
       return;
     }
 
@@ -364,11 +383,6 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
       return;
     }
 
-    if (isLoading) {
-      console.log('❌ FacebookLogin: Login already in progress');
-      return;
-    }
-
     console.log('🔵 FacebookLogin: Starting login process...');
     setIsLoading(true);
     setSdkError(null);
@@ -383,7 +397,8 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
       return;
     }
     
-    // Add a small delay to ensure everything is ready
+    // Add a delay to ensure everything is ready (longer for production)
+    const loginDelay = isProduction ? 1000 : 500;
     setTimeout(() => {
       // Check for popup blockers before attempting login
       const popupTest = window.open('', '_blank', 'width=1,height=1');
@@ -397,48 +412,59 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
         return;
       }
 
-      window.FB.login((response: any) => {
-        console.log('🔵 FacebookLogin: Login response received:', response);
+      try {
+        window.FB.login((response: any) => {
+          console.log('🔵 FacebookLogin: Login response received:', response);
+          setIsLoading(false);
+          loginAttempted.current = false;
+          
+          if (response.status === 'connected') {
+            console.log('✅ FacebookLogin: Login successful, calling onSuccess...');
+            console.log('🔵 FacebookLogin: Access token length:', response.authResponse.accessToken.length);
+            console.log('🔵 FacebookLogin: User ID:', response.authResponse.userID);
+            setIsConnected(true);
+            setUserName(response.authResponse.userID);
+            onSuccess(response.authResponse.accessToken, response.authResponse.userID);
+          } else {
+            console.log('❌ FacebookLogin: Login failed, calling onError...');
+            console.log('🔵 FacebookLogin: Response status:', response.status);
+            console.log('🔵 FacebookLogin: Response authResponse:', response.authResponse);
+            
+            let errorMessage = 'Facebook login failed. Please try again.';
+            if (response.status === 'not_authorized') {
+              errorMessage = 'Login was cancelled or permissions were denied.';
+            } else if (response.status === 'unknown') {
+              errorMessage = 'Login failed. Please check your internet connection and try again.';
+            }
+            
+            onError(errorMessage);
+          }
+        }, {
+          scope: 'ads_read,ads_management,read_insights,pages_read_engagement,business_management,pages_show_list',
+          return_scopes: true,
+          auth_type: 'rerequest'
+        });
+      } catch (error) {
+        console.error('❌ FacebookLogin: Error during login:', error);
         setIsLoading(false);
         loginAttempted.current = false;
-        
-        if (response.status === 'connected') {
-          console.log('✅ FacebookLogin: Login successful, calling onSuccess...');
-          console.log('🔵 FacebookLogin: Access token length:', response.authResponse.accessToken.length);
-          console.log('🔵 FacebookLogin: User ID:', response.authResponse.userID);
-          setIsConnected(true);
-          setUserName(response.authResponse.userID);
-          onSuccess(response.authResponse.accessToken, response.authResponse.userID);
-        } else {
-          console.log('❌ FacebookLogin: Login failed, calling onError...');
-          console.log('🔵 FacebookLogin: Response status:', response.status);
-          console.log('🔵 FacebookLogin: Response authResponse:', response.authResponse);
-          
-          let errorMessage = 'Facebook login failed. Please try again.';
-          if (response.status === 'not_authorized') {
-            errorMessage = 'Login was cancelled or permissions were denied.';
-          } else if (response.status === 'unknown') {
-            errorMessage = 'Login failed. Please check your internet connection and try again.';
-          }
-          
-          onError(errorMessage);
-        }
-      }, {
-        scope: 'ads_read,ads_management,read_insights,pages_read_engagement,business_management,pages_show_list',
-        return_scopes: true,
-        auth_type: 'rerequest'
-      });
-    }, 200);
-  }, [isSdkReady, onSuccess, onError, isLoading, isInitializing, retryCount, maxRetries, initializeFacebookSDK]);
+        onError('Facebook login error. Please try again.');
+      }
+    }, loginDelay);
+  }, [isSdkReady, onSuccess, onError, isLoading, isInitializing, retryCount, maxRetries, initializeFacebookSDK, isProduction]);
 
   const handleFacebookLogout = useCallback(() => {
     if (!window.FB) return;
     
-    window.FB.logout((response: any) => {
-      console.log('🔵 FacebookLogin: Logout response:', response);
-      setIsConnected(false);
-      setUserName('');
-    });
+    try {
+      window.FB.logout((response: any) => {
+        console.log('🔵 FacebookLogin: Logout response:', response);
+        setIsConnected(false);
+        setUserName('');
+      });
+    } catch (error) {
+      console.error('❌ FacebookLogin: Error during logout:', error);
+    }
   }, []);
 
   // Show error state if SDK failed to load
@@ -450,6 +476,11 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
           <div>
             <p className="text-sm font-medium text-red-800">Facebook SDK Error</p>
             <p className="text-xs text-red-600">{sdkError}</p>
+            {isProduction && (
+              <p className="text-xs text-red-500 mt-1">
+                Production environment detected. Check domain configuration in Facebook App settings.
+              </p>
+            )}
           </div>
         </div>
         <div className="space-y-2">
@@ -528,10 +559,16 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
             <p className="text-xs text-red-600">
               Please update your .env.local file with a valid Facebook App ID
             </p>
+            {isProduction && (
+              <p className="text-xs text-red-500 mt-1">
+                Production environment detected. Make sure to configure environment variables in Vercel.
+              </p>
+            )}
           </div>
         </div>
         <div className="text-xs text-gray-500">
           <p>Current App ID: {FB_APP_ID}</p>
+          <p>Environment: {isProduction ? 'Production' : 'Development'}</p>
           <p>Follow the setup guide: FACEBOOK_APP_SETUP_QUICK.md</p>
         </div>
       </div>
@@ -546,6 +583,7 @@ const FacebookLogin: React.FC<FacebookLoginProps> = ({ onSuccess, onError }) => 
         <span className="ml-2 text-sm text-gray-600">
           {isInitializing ? 'Initializing Facebook SDK...' : 'Preparing Facebook SDK...'}
           {retryCount > 0 && ` (attempt ${retryCount + 1})`}
+          {isProduction && ' (Production mode)'}
         </span>
       </div>
     );

@@ -117,11 +117,8 @@ export function createOptimizedThumbnailUrl(
     return imageUrl;
   }
   
-  // If URL already has size parameters, just add access token
-  if (/([?&](width|height)=\d+)/i.test(imageUrl)) {
-    return appendAccessTokenToImageUrl(imageUrl, accessToken);
-  }
-  
+  console.log(`🔍 Processing FB CDN URL for ${contentType}:`, imageUrl);
+
   // Different optimizations for different content types
   let width = 1080;
   let height = 1080;
@@ -133,13 +130,15 @@ export function createOptimizedThumbnailUrl(
       width = 1280;
       height = 720;
       quality = 98; // Higher quality for video thumbnails
+      console.log(`🎥 Using video optimized params: ${width}x${height} q=${quality}`);
       break;
     case 'carousel':
     case 'dynamic':
       // Carousels and dynamic ads often use square or 4:5 aspect ratio
       width = 1080;
-      height = 1080;
+      height = 1350; // 4:5 aspect ratio often used in feed
       quality = 95;
+      console.log(`🎠 Using carousel/dynamic optimized params: ${width}x${height} q=${quality}`);
       break;
     case 'image':
     default:
@@ -147,11 +146,58 @@ export function createOptimizedThumbnailUrl(
       width = 1080;
       height = 1080;
       quality = 95;
+      console.log(`🖼️ Using standard image params: ${width}x${height} q=${quality}`);
       break;
   }
-  
-  const separator = imageUrl.includes('?') ? '&' : '?';
-  const optimizedUrl = `${imageUrl}${separator}width=${width}&height=${height}&quality=${quality}`;
-  
-  return appendAccessTokenToImageUrl(optimizedUrl, accessToken);
+
+  try {
+    const urlObj = new URL(imageUrl);
+    const originalPath = urlObj.pathname;
+    console.log(`🔍 Original pathname:`, originalPath);
+
+    // Handle various low-res path patterns
+    urlObj.pathname = urlObj.pathname
+      // Replace /p64x64 or /p64x64/ variants
+      .replace(/\/p\d+x\d+(?=\/|$)/i, `/p${width}x${height}`)
+      // Replace /s64x64 variants
+      .replace(/\/s\d+x\d+(?=\/|$)/i, `/s${width}x${height}`)
+      // Replace /t64x64 variants (table size)
+      .replace(/\/t\d+x\d+(?=\/|$)/i, `/t${width}x${height}`)
+      // Replace /w64/ or /h64/ variants
+      .replace(/\/(w|h)\d+(?=\/|$)/gi, `/w${width}`);
+
+    // Strip low-res query params that Facebook uses for tables
+    ['table', 'width', 'height', 'w', 'h', 'stp'].forEach(param => {
+      if (urlObj.searchParams.has(param)) {
+        urlObj.searchParams.delete(param);
+      }
+    });
+ 
+    if (originalPath !== urlObj.pathname) {
+      console.log(`✨ Updated pathname:`, urlObj.pathname);
+    }
+
+    // Normalize query params to enforce high-res
+    // Handle both width/height and possible w/h variants
+    urlObj.searchParams.set('width', String(width));
+    urlObj.searchParams.set('height', String(height));
+    urlObj.searchParams.set('quality', String(quality));
+    // Some variants use w/h
+    urlObj.searchParams.set('w', String(width));
+    urlObj.searchParams.set('h', String(height));
+
+    // Ensure access token present
+    if (accessToken) {
+      urlObj.searchParams.set('access_token', accessToken);
+    }
+
+    const finalUrl = urlObj.toString();
+    console.log(`✅ Final optimized URL:`, finalUrl);
+    return finalUrl;
+  } catch {
+    // Fallback to simple concatenation if URL parsing fails
+    const separator = imageUrl.includes('?') ? '&' : '?';
+    const optimizedUrl = `${imageUrl}${separator}width=${width}&height=${height}&quality=${quality}`;
+    return appendAccessTokenToImageUrl(optimizedUrl, accessToken);
+  }
 } 

@@ -205,8 +205,7 @@ export async function POST(request: NextRequest) {
       isFacebookCDN: isFacebookCDNUrl(imageUrl),
       isHTTPS: imageUrl.startsWith('https://'),
       hasParameters: imageUrl.includes('?'),
-      parameters: new URL(imageUrl).searchParams.entries ? 
-                  Object.fromEntries(new URL(imageUrl).searchParams.entries()) : {},
+      parameters: Object.fromEntries(new URL(imageUrl).searchParams.entries()),
       pathSegments: new URL(imageUrl).pathname.split('/').filter(Boolean)
     };
 

@@ -255,8 +255,8 @@ export async function POST(request: NextRequest) {
 
         const creativeType = determineCreativeType(ad.creative);
         const imageUrl = extractImageUrl(ad.creative, objectStorySpec);
-        let videoUrl = null;
-        let assets = undefined;
+        const videoUrl = null;
+        const assets = undefined;
 
         if (creativeType === 'video') {
           // Collect video ID for batch processing

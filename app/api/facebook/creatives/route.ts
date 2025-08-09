@@ -43,7 +43,7 @@ async function fetchVideoSource(videoId: string, accessToken: string): Promise<s
     }
     
     // Primary: Use the 'source' field which contains the MP4 URL
-    let source = data.source || null;
+    const source = data.source || null;
     
     // Fallback: If source is not available, try permalink_url (though this is usually not direct MP4)
     if (!source && data.permalink_url) {
@@ -253,8 +253,8 @@ export async function POST(request: NextRequest) {
           objectStorySpec = creativeDetails.object_story_spec;
         }
 
-        let creativeType = determineCreativeType(ad.creative);
-        let imageUrl = extractImageUrl(ad.creative, objectStorySpec);
+        const creativeType = determineCreativeType(ad.creative);
+        const imageUrl = extractImageUrl(ad.creative, objectStorySpec);
         let videoUrl = null;
         let assets = undefined;
 

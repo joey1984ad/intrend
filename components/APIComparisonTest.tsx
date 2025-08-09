@@ -190,7 +190,7 @@ const APIComparisonTest: React.FC<APIComparisonTestProps> = ({
           <li>Tests creative-focused fields with deep object_story_spec expansion</li>
           <li>Tests individual creative API calls vs bulk ad calls</li>
           <li>Compares multiple Facebook API versions (v23, v19, v18)</li>
-          <li>Identifies exactly where image URLs are (or aren't) in the response</li>
+          <li>Identifies exactly where image URLs are (or aren&apos;t) in the response</li>
           <li>Provides specific recommendations for fixing the issue</li>
         </ul>
         <div className="mt-2 text-blue-700 text-sm">

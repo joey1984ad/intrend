@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities; 
+
+/* Inline-flex default and hover/highlight styles within main content */
+.max-w-7xl .inline-flex {
+  color: #000 !important;
+}
+
+.max-w-7xl .inline-flex:hover,
+.max-w-7xl .inline-flex:focus {
+  background-color: #000 !important;
+  color: #fff !important;
+}

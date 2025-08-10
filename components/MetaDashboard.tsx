@@ -567,6 +567,10 @@ const MetaDashboardRefactored: React.FC = () => {
         setShowNotifications={setShowNotifications}
         notifications={notifications}
         isLoadingCreatives={isLoadingCreatives}
+        isLoadingCampaigns={isLoadingFacebookData}
+        isLoadingAdSets={isLoadingAdsets}
+        isLoadingAds={isLoadingAds}
+        isLoadingDemographics={isLoadingDemographics}
       />
 
       {/* Main Content */}

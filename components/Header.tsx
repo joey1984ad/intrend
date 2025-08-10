@@ -20,6 +20,10 @@ interface HeaderProps {
   setShowNotifications: (show: boolean) => void;
   notifications: Notification[];
   isLoadingCreatives?: boolean;
+  isLoadingCampaigns?: boolean;
+  isLoadingAdSets?: boolean;
+  isLoadingAds?: boolean;
+  isLoadingDemographics?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -36,7 +40,11 @@ const Header: React.FC<HeaderProps> = ({
   showNotifications,
   setShowNotifications,
   notifications,
-  isLoadingCreatives
+  isLoadingCreatives,
+  isLoadingCampaigns,
+  isLoadingAdSets,
+  isLoadingAds,
+  isLoadingDemographics
 }) => {
   return (
     <>
@@ -60,25 +68,45 @@ const Header: React.FC<HeaderProps> = ({
                   onClick={() => setActiveTab('campaigns')}
                   className={`pb-2 ${activeTab === 'campaigns' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
                 >
-                  Campaigns
+                  <span className="inline-flex items-center gap-2">
+                    Campaigns
+                    {isLoadingCampaigns && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                    )}
+                  </span>
                 </button>
                 <button 
                   onClick={() => setActiveTab('adsets')}
                   className={`pb-2 ${activeTab === 'adsets' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
                 >
-                  Ad Sets
+                  <span className="inline-flex items-center gap-2">
+                    Ad Sets
+                    {isLoadingAdSets && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                    )}
+                  </span>
                 </button>
                 <button 
                   onClick={() => setActiveTab('ads')}
                   className={`pb-2 ${activeTab === 'ads' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
                 >
-                  Ads
+                  <span className="inline-flex items-center gap-2">
+                    Ads
+                    {isLoadingAds && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                    )}
+                  </span>
                 </button>
                 <button 
                   onClick={() => setActiveTab('demographics')}
                   className={`pb-2 ${activeTab === 'demographics' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
                 >
-                  Demographics
+                  <span className="inline-flex items-center gap-2">
+                    Demographics
+                    {isLoadingDemographics && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                    )}
+                  </span>
                 </button>
                 <button 
                   onClick={() => setActiveTab('creatives')}

@@ -9,6 +9,5 @@
 
 .max-w-7xl .inline-flex:hover,
 .max-w-7xl .inline-flex:focus {
-  background-color: #000 !important;
   color: #fff !important;
 }

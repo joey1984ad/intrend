@@ -131,13 +131,13 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
                 </button>
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-50">
-                    <div className="p-3 border-b">
+                  <div className="absolute right-0 mt-2 w-80 bg-black rounded-lg shadow-lg border border-gray-700 z-50">
+                    <div className="p-3 border-b border-gray-700 bg-black">
                       <h3 className="font-medium">Notifications</h3>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
                       {notifications.map(notification => (
-                        <div key={notification.id} className="p-3 border-b hover:bg-gray-50">
+                        <div key={notification.id} className="p-3 border-b border-gray-700 hover:bg-gray-800">
                           <div className="flex items-start">
                             <div className={`w-2 h-2 rounded-full mt-2 mr-3 ${
                               notification.type === 'warning' ? 'bg-yellow-500' :
@@ -145,7 +145,7 @@ const Header: React.FC<HeaderProps> = ({
                             }`}></div>
                             <div>
                               <p className="text-sm">{notification.message}</p>
-                              <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                              <p className="text-xs text-gray-300 mt-1">{notification.time}</p>
                             </div>
                           </div>
                         </div>
@@ -157,7 +157,7 @@ const Header: React.FC<HeaderProps> = ({
               <select 
                 value={selectedAccount} 
                 onChange={(e) => setSelectedAccount(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="border border-gray-700 bg-black text-white rounded-md px-3 py-2 text-sm"
               >
                 {connectedAccounts.length > 0 ? (
                   connectedAccounts.filter(acc => acc.status === 'connected').map(account => (
@@ -169,7 +169,7 @@ const Header: React.FC<HeaderProps> = ({
               </select>
               <button 
                 onClick={() => setShowAccountModal(true)}
-                className="bg-gray-100 text-gray-600 px-3 py-2 rounded-md text-sm flex items-center hover:bg-gray-200"
+                className="bg-black border border-gray-700 text-white px-3 py-2 rounded-md text-sm flex items-center hover:bg-gray-800"
               >
                 <Settings className="w-4 h-4 mr-2" />
                 Manage
@@ -180,7 +180,7 @@ const Header: React.FC<HeaderProps> = ({
                   onChange={(e) => {
                     setSelectedDateRange(e.target.value);
                   }}
-                  className="border border-gray-300 rounded-md px-3 py-2 text-sm appearance-none pr-8"
+                  className="border border-gray-700 bg-black text-white rounded-md px-3 py-2 text-sm appearance-none pr-8"
                 >
                   <option value="last_7d">Last 7 Days</option>
                   <option value="last_30d">Last 30 Days</option>

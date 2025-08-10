@@ -30,6 +30,7 @@ const Modals: React.FC<ModalsProps> = ({
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   const [modalReady, setModalReady] = useState(false);
+  const [modalOpenedAt, setModalOpenedAt] = useState<number | null>(null);
   const maxConnectionAttempts = 3;
 
   // Improved modal state management - don't force remount
@@ -37,6 +38,7 @@ const Modals: React.FC<ModalsProps> = ({
     if (showConnectModal) {
       console.log('🔵 Modals: Modal opened, preparing connection...');
       setIsConnecting(false);
+      setModalOpenedAt(Date.now());
       
       // Only reset attempts if this is a fresh connection
       if (connectionAttempts >= maxConnectionAttempts) {
@@ -46,12 +48,13 @@ const Modals: React.FC<ModalsProps> = ({
       // Set modal as ready after a short delay to allow for smooth transition
       const timer = setTimeout(() => {
         setModalReady(true);
-      }, 200);
+      }, 50);
       
       return () => clearTimeout(timer);
     } else {
       // When modal closes, reset ready state but keep connection attempts
       setModalReady(false);
+      setModalOpenedAt(null);
     }
   }, [showConnectModal, connectionAttempts, maxConnectionAttempts]);
 

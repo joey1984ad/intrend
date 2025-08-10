@@ -102,63 +102,65 @@ class FacebookSDKManager {
 
   private async performInitialization(appId: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      // Check if FB already exists and is properly initialized
-      if (window.FB && typeof window.FB.init === 'function' && window.__facebookSDKInitialized) {
-        console.log('✅ FacebookSDKManager: FB already initialized globally');
-        resolve(true);
-        return;
+      // If FB is present, attempt a direct init (idempotent)
+      if (window.FB && typeof window.FB.init === 'function') {
+        try {
+          if (!window.__facebookSDKInitialized) {
+            console.log('🔧 FacebookSDKManager: Directly initializing existing FB instance...');
+            window.FB.init({ appId, cookie: true, xfbml: true, version: 'v23.0' });
+            window.__facebookSDKInitialized = true;
+          }
+          console.log('✅ FacebookSDKManager: FB present; initialization state:', window.__facebookSDKInitialized);
+          resolve(true);
+          return;
+        } catch (error) {
+          console.warn('⚠️ FacebookSDKManager: Direct init failed, resetting state...', error);
+          delete window.FB;
+          window.__facebookSDKInitialized = false;
+        }
       }
 
-      // Clear any existing FB state if it's in a bad state
-      if (window.FB && !window.__facebookSDKInitialized) {
-        console.log('🔄 FacebookSDKManager: Clearing existing FB state');
-        delete window.FB;
-        window.__facebookSDKInitialized = false;
-      }
+      // Ensure fbAsyncInit is set BEFORE loading the script per FB docs
+      window.fbAsyncInit = () => {
+        try {
+          console.log('🔧 FacebookSDKManager: fbAsyncInit fired, calling FB.init...');
+          window.FB.init({ appId, cookie: true, xfbml: true, version: 'v23.0' });
+          window.__facebookSDKInitialized = true;
+          console.log('✅ FacebookSDKManager: FB initialized via fbAsyncInit');
+          resolve(true);
+        } catch (error) {
+          console.error('❌ FacebookSDKManager: Error initializing FB in fbAsyncInit:', error);
+          reject(error);
+        }
+      };
 
-      // Check if script is already loaded
+      // If script already exists, wait for FB and attempt init again
       const existingScript = document.querySelector('script[src*="connect.facebook.net"]');
       if (existingScript) {
-        console.log('📜 FacebookSDKManager: Script already exists, waiting for FB...');
-        this.waitForFB(10000).then(resolve).catch(reject);
+        console.log('📜 FacebookSDKManager: Script exists; waiting for FB then initializing...');
+        this.waitForFB(10000)
+          .then(() => {
+            if (!window.__facebookSDKInitialized) {
+              try {
+                window.FB.init({ appId, cookie: true, xfbml: true, version: 'v23.0' });
+                window.__facebookSDKInitialized = true;
+              } catch (e) {
+                reject(e);
+                return;
+              }
+            }
+            resolve(true);
+          })
+          .catch(reject);
         return;
       }
 
       console.log('📜 FacebookSDKManager: Loading Facebook SDK...');
-      
-      // Load Facebook SDK
       const script = document.createElement('script');
       script.src = 'https://connect.facebook.net/en_US/sdk.js';
       script.async = true;
       script.defer = true;
       script.crossOrigin = 'anonymous';
-      
-      script.onload = () => {
-        console.log('✅ FacebookSDKManager: Facebook SDK loaded successfully');
-        
-        // Set up fbAsyncInit
-        window.fbAsyncInit = () => {
-          console.log('🔧 FacebookSDKManager: fbAsyncInit called, initializing FB...');
-          
-          try {
-            window.FB.init({
-              appId: appId,
-              cookie: true,
-              xfbml: true,
-              version: 'v23.0'
-            });
-            console.log('✅ FacebookSDKManager: FB initialized with appId:', appId);
-            window.__facebookSDKInitialized = true;
-            resolve(true);
-          } catch (error) {
-            console.error('❌ FacebookSDKManager: Error initializing FB:', error);
-            reject(error);
-          }
-        };
-        
-        // Wait for FB to be available
-        this.waitForFB(10000).then(resolve).catch(reject);
-      };
 
       script.onerror = () => {
         console.error('❌ FacebookSDKManager: Failed to load Facebook SDK');

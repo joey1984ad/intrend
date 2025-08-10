@@ -111,7 +111,7 @@ const Modals: React.FC<ModalsProps> = ({
           {isConnecting ? (
             <div className="flex items-center justify-center p-8">
               <div className="text-center">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+                <Loader2 className="w-8 h-8 animate-spin loader-light mx-auto mb-4" />
                 <p className="text-gray-600">Connecting to Facebook...</p>
                 <p className="text-sm text-gray-500 mt-2">Please wait while we fetch your ad accounts</p>
                 {connectionAttempts > 0 && (
@@ -122,7 +122,7 @@ const Modals: React.FC<ModalsProps> = ({
           ) : !modalReady ? (
             <div className="flex items-center justify-center p-8">
               <div className="text-center">
-                <Loader2 className="w-6 h-6 animate-spin text-blue-600 mx-auto mb-4" />
+                <Loader2 className="w-6 h-6 animate-spin loader-light mx-auto mb-4" />
                 <p className="text-sm text-gray-600">Preparing Facebook connection...</p>
               </div>
             </div>

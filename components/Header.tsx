@@ -71,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="inline-flex items-center gap-2">
                     Campaigns
                     {isLoadingCampaigns && (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin loader-light" />
                     )}
                   </span>
                 </button>
@@ -82,7 +82,7 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="inline-flex items-center gap-2">
                     Ad Sets
                     {isLoadingAdSets && (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin loader-light" />
                     )}
                   </span>
                 </button>
@@ -93,7 +93,7 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="inline-flex items-center gap-2">
                     Ads
                     {isLoadingAds && (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin loader-light" />
                     )}
                   </span>
                 </button>
@@ -104,7 +104,7 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="inline-flex items-center gap-2">
                     Demographics
                     {isLoadingDemographics && (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin loader-light" />
                     )}
                   </span>
                 </button>
@@ -115,7 +115,7 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="inline-flex items-center gap-2">
                     Creatives
                     {isLoadingCreatives && (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin loader-light" />
                     )}
                   </span>
                 </button>

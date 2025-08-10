@@ -237,8 +237,8 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
         <h3 className="text-lg font-semibold text-gray-900">Performance Data</h3>
         <div className="flex items-center space-x-2">
           {loading && (
-            <div className="flex items-center text-sm text-blue-600">
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              <div className="flex items-center text-sm">
+                <Loader2 className="w-4 h-4 animate-spin mr-2 loader-light" />
               Loading data...
             </div>
           )}
@@ -253,7 +253,7 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+            <Loader2 className="w-8 h-8 animate-spin loader-light mx-auto mb-4" />
             <p className="text-gray-600">Loading performance data...</p>
           </div>
         </div>

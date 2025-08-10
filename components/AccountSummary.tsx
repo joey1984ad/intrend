@@ -108,7 +108,6 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
           {facebookAccessToken && (
             <>
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">Date Range:</span>
                 <select
                   value={selectedDateRange}
                   onChange={(e) => setSelectedDateRange(e.target.value)}

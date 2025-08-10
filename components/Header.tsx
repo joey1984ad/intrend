@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react';
+import { Loader2 } from 'lucide-react';
 import { Bell, Settings, ChevronDown, RefreshCw } from 'lucide-react';
 import { ConnectedAccount, Notification } from './types';
 
@@ -18,6 +19,7 @@ interface HeaderProps {
   showNotifications: boolean;
   setShowNotifications: (show: boolean) => void;
   notifications: Notification[];
+  isLoadingCreatives?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -33,7 +35,8 @@ const Header: React.FC<HeaderProps> = ({
   isLoading,
   showNotifications,
   setShowNotifications,
-  notifications
+  notifications,
+  isLoadingCreatives
 }) => {
   return (
     <>
@@ -81,7 +84,12 @@ const Header: React.FC<HeaderProps> = ({
                   onClick={() => setActiveTab('creatives')}
                   className={`pb-2 ${activeTab === 'creatives' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
                 >
-                  Creatives
+                  <span className="inline-flex items-center gap-2">
+                    Creatives
+                    {isLoadingCreatives && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                    )}
+                  </span>
                 </button>
               </nav>
             </div>

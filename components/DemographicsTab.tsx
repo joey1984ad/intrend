@@ -109,8 +109,8 @@ const DemographicsTab: React.FC<DemographicsTabProps> = ({
           <p className="text-gray-600">Analyze audience demographics and performance by age and gender</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-black border border-gray-700 rounded-md hover:bg-gray-900">
-            <Download className="w-4 h-4 text-white" />
+          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <Download className="w-4 h-4" />
             <span>Export Report</span>
           </button>
         </div>
@@ -123,7 +123,6 @@ const DemographicsTab: React.FC<DemographicsTabProps> = ({
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance by Age Group</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={ageGroupData}>
-              <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="age" />
               <YAxis />
               <Tooltip />
@@ -179,8 +178,8 @@ const DemographicsTab: React.FC<DemographicsTabProps> = ({
           </button>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-black border border-gray-700 rounded-md hover:bg-gray-900">
-            <RefreshCw className="w-4 h-4 text-white" />
+          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
           </button>
         </div>
@@ -189,7 +188,7 @@ const DemographicsTab: React.FC<DemographicsTabProps> = ({
       {/* Demographics Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left">
@@ -287,7 +286,7 @@ const DemographicsTab: React.FC<DemographicsTabProps> = ({
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white">
               {isLoading ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-4 text-center text-gray-500">

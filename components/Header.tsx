@@ -56,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({
       
       {/* Top Navigation */}
       <div className="bg-black text-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-black">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-white">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-6">
               <div className="flex items-center">

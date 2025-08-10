@@ -56,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({
       
       {/* Top Navigation */}
       <div className="bg-black text-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-black">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-6">
               <div className="flex items-center">
@@ -71,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="inline-flex items-center gap-2">
                     Campaigns
                     {isLoadingCampaigns && (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
                     )}
                   </span>
                 </button>
@@ -82,7 +82,7 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="inline-flex items-center gap-2">
                     Ad Sets
                     {isLoadingAdSets && (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
                     )}
                   </span>
                 </button>
@@ -93,7 +93,7 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="inline-flex items-center gap-2">
                     Ads
                     {isLoadingAds && (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
                     )}
                   </span>
                 </button>
@@ -104,7 +104,7 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="inline-flex items-center gap-2">
                     Demographics
                     {isLoadingDemographics && (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
                     )}
                   </span>
                 </button>
@@ -115,7 +115,7 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="inline-flex items-center gap-2">
                     Creatives
                     {isLoadingCreatives && (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
                     )}
                   </span>
                 </button>

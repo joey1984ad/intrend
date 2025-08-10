@@ -52,9 +52,10 @@ export async function POST(request: NextRequest) {
       sinceDate = yesterday.minus({ days: 89 });
       untilDate = yesterday;
     } else if (dateRange === 'last_12m') {
-      // Last 12 months: from 12 months ago to end of last month - complete months
-      sinceDate = yesterday.minus({ months: 12 }).startOf('month');
-      untilDate = yesterday.endOf('month');
+      // Last 12 complete months ending at the end of the previous month
+      const endOfPreviousMonth = yesterday.startOf('month').minus({ days: 1 });
+      untilDate = endOfPreviousMonth;
+      sinceDate = endOfPreviousMonth.minus({ months: 12 }).startOf('month');
     } else {
       // Default to last 30 days
       sinceDate = yesterday.minus({ days: 29 });
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
     console.log(`🔍 [DEBUG] Using timezone: ${accountTimezone}`);
 
     // --- Fetch summary insights for the period (time_increment=all) ---
-    const summaryInsightsUrl = `${baseUrl}/${adAccountId}/insights?fields=spend,impressions,clicks,reach,frequency,cpc,cpm,ctr,actions,action_values&time_range=${timeRange}&time_increment=all&access_token=${accessToken}`;
+    const summaryInsightsUrl = `${baseUrl}/${adAccountId}/insights?fields=spend,impressions,clicks,reach,frequency,cpc,cpm,ctr,actions,action_values&level=account&time_range=${timeRange}&time_increment=all&access_token=${accessToken}`;
     console.log(`🔍 [DEBUG] Fetching summary insights: ${summaryInsightsUrl}`);
     const summaryInsightsResponse = await fetch(summaryInsightsUrl);
     const summaryInsightsData = await summaryInsightsResponse.json();
@@ -176,7 +177,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get account-level insights
-    const accountInsightsUrl = `${baseUrl}/${adAccountId}/insights?fields=impressions,clicks,spend,reach,frequency,cpc,cpm,ctr,actions,action_values&time_range=${timeRange}&time_increment=1&access_token=${accessToken}`;
+    const accountInsightsUrl = `${baseUrl}/${adAccountId}/insights?fields=impressions,clicks,spend,reach,frequency,cpc,cpm,ctr,actions,action_values&level=account&time_range=${timeRange}&time_increment=1&access_token=${accessToken}`;
     console.log(`🔍 Fetching account insights: ${accountInsightsUrl}`);
     
     const accountInsightsResponse = await fetch(accountInsightsUrl);
@@ -203,8 +204,8 @@ export async function POST(request: NextRequest) {
       avgCTR: 0
     };
 
-    // If summary totals are available, prefer them to avoid overcounting reach
-    if (summaryTotals) {
+    // If summary totals are available and date coverage looks complete, prefer them to avoid over/undercounting
+    if (summaryTotals && expectedDays >= 1) {
       accountTotals = summaryTotals;
     } else if (accountInsightsData.data && accountInsightsData.data.length > 0) {
       console.log(`📊 Debug: Processing ${accountInsightsData.data.length} days of account insights`);
@@ -261,7 +262,7 @@ export async function POST(request: NextRequest) {
       console.log(`📅 Previous period: ${previousSince} to ${previousUntil} (${periodDuration} days)`);
       
       // Fetch previous period account insights (use summary totals for consistency)
-      const previousSummaryUrl = `${baseUrl}/${adAccountId}/insights?fields=spend,impressions,clicks,reach,frequency,cpc,cpm,ctr,actions,action_values&time_range=${previousTimeRange}&time_increment=all&access_token=${accessToken}`;
+      const previousSummaryUrl = `${baseUrl}/${adAccountId}/insights?fields=spend,impressions,clicks,reach,frequency,cpc,cpm,ctr,actions,action_values&level=account&time_range=${previousTimeRange}&time_increment=all&access_token=${accessToken}`;
       console.log(`🔍 Fetching previous period summary insights: ${previousSummaryUrl}`);
       const previousSummaryResp = await fetch(previousSummaryUrl);
       const previousSummaryData = await previousSummaryResp.json();

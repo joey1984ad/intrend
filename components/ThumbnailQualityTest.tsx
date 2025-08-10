@@ -49,7 +49,7 @@ const ThumbnailQualityTest: React.FC<ThumbnailQualityTestProps> = ({
                     className="w-32 h-32 object-cover rounded border"
                     onError={(e) => {
                       console.warn(`Failed to load ${contentType} thumbnail:`, optimizedUrl);
-                      (e.target as HTMLImageElement).style.display = 'none';
+                    // keep visible; rely on fallback chain in FacebookImage
                     }}
                   />
                 </div>

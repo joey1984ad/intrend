@@ -57,9 +57,8 @@ const CreativePreview: React.FC<CreativePreviewProps> = ({
                 height={120} 
                 poster={getHighResUrl(asset.thumbnailUrl || asset.imageUrl, accessToken, 'video')} 
                 className="rounded object-cover flex-shrink-0"
-                onError={(e) => {
+                onError={() => {
                   console.log(`❌ Carousel video ${idx} failed to load:`, asset.videoUrl);
-                  e.currentTarget.style.display = 'none';
                 }}
               >
                 <source src={asset.videoUrl} type="video/mp4" />
@@ -73,7 +72,7 @@ const CreativePreview: React.FC<CreativePreviewProps> = ({
                 className="w-28 h-28 object-cover rounded flex-shrink-0"
                 contentType="carousel"
                 fallbackSrc="https://via.placeholder.com/112x112/6B7280/FFFFFF?text=Failed"
-                onError={(e) => {
+                onError={() => {
                   console.log(`❌ Carousel image ${idx} failed to load:`, asset.imageUrl);
                 }}
               />
@@ -87,14 +86,15 @@ const CreativePreview: React.FC<CreativePreviewProps> = ({
       );
     } else if (creative.imageUrl) {
       return (
-        <img 
-          src={creative.imageUrl} 
-          alt={creative.name} 
-          className="w-full h-full object-cover rounded" 
-          onError={(e) => {
+        <FacebookImage
+          src={creative.imageUrl || creative.thumbnailUrl}
+          accessToken={accessToken}
+          alt={creative.name}
+          className="w-full h-full object-cover rounded"
+          contentType={creative.creativeType === 'video' ? 'video' : creative.creativeType === 'carousel' || creative.creativeType === 'dynamic' ? 'carousel' : 'image'}
+          fallbackSrc="https://via.placeholder.com/400x200/6B7280/FFFFFF?text=Image+Failed+to+Load"
+          onError={() => {
             console.log('❌ Image failed to load:', creative.imageUrl);
-            const target = e.target as HTMLImageElement;
-            target.src = 'https://via.placeholder.com/400x200/6B7280/FFFFFF?text=Image+Failed+to+Load';
           }}
         />
       );

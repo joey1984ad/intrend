@@ -14,16 +14,16 @@ export function appendAccessTokenToImageUrl(imageUrl: string, accessToken: strin
     return imageUrl;
   }
 
-  // Check if URL already has access_token parameter
+  // If URL already has access_token parameter
   if (imageUrl.includes('access_token=')) {
     return imageUrl;
   }
 
-  // Check if it's a Facebook CDN URL
-  const isFacebookCDN = imageUrl.includes('fbcdn.net') || imageUrl.includes('fbsbx.com');
-  
-  // For Facebook CDN URLs, always append access token
-  // For other URLs, we can still append it as it might be needed
+  // Only append for Facebook-family URLs we know require it
+  if (!isFacebookCDNUrl(imageUrl)) {
+    return imageUrl;
+  }
+
   const separator = imageUrl.includes('?') ? '&' : '?';
   return `${imageUrl}${separator}access_token=${accessToken}`;
 }
@@ -34,7 +34,23 @@ export function appendAccessTokenToImageUrl(imageUrl: string, accessToken: strin
  * @returns true if it's a Facebook CDN URL
  */
 export function isFacebookCDNUrl(url: string): boolean {
-  return url.includes('fbcdn.net') || url.includes('fbsbx.com');
+  if (!url) return false;
+  // Treat all Facebook-family image hosts as optimizable
+  // Common hosts seen in creatives and previews:
+  // - scontent.xx.fbcdn.net (FB CDN)
+  // - lookaside.facebook.com (creative previews)
+  // - graph.facebook.com (picture endpoints)
+  // - fbsbx.com (attachments)
+  // - cdninstagram.com / akamaihd.net (legacy/IG mirrors)
+  return (
+    url.includes('fbcdn.net') ||
+    url.includes('fbsbx.com') ||
+    url.includes('lookaside.facebook.com') ||
+    url.includes('graph.facebook.com') ||
+    url.includes('facebook.com') ||
+    url.includes('cdninstagram.com') ||
+    url.includes('akamaihd.net')
+  );
 }
 
 /**
@@ -157,21 +173,55 @@ export function createOptimizedThumbnailUrl(
 
     // Handle various low-res path patterns
     urlObj.pathname = urlObj.pathname
-      // Replace /p64x64 or /p64x64/ variants
+      // Replace /p64x64 or /p64x64/ variants (profile/picture sizes)
       .replace(/\/p\d+x\d+(?=\/|$)/i, `/p${width}x${height}`)
-      // Replace /s64x64 variants
+      // Replace /s64x64 variants (small sizes)
       .replace(/\/s\d+x\d+(?=\/|$)/i, `/s${width}x${height}`)
-      // Replace /t64x64 variants (table size)
+      // Replace /t64x64 variants (table/thumbnail size) - this is the main culprit
       .replace(/\/t\d+x\d+(?=\/|$)/i, `/t${width}x${height}`)
-      // Replace /w64/ or /h64/ variants
-      .replace(/\/(w|h)\d+(?=\/|$)/gi, `/w${width}`);
+      // Replace /w64/ or /h64/ variants (width/height specific)
+      .replace(/\/w\d+(?=\/|$)/gi, `/w${width}`)
+      .replace(/\/h\d+(?=\/|$)/gi, `/h${height}`)
+      // Handle additional patterns that Facebook uses for low-res
+      .replace(/\/c\d+x\d+(?=\/|$)/i, `/c${width}x${height}`) // crop variants
+      .replace(/\/n\d+x\d+(?=\/|$)/i, `/n${width}x${height}`) // normal variants
+      .replace(/\/q\d+(?=\/|$)/i, `/q${quality}`) // quality variants
+      // Handle table-specific patterns more aggressively
+      .replace(/table_\d+x\d+/gi, `table_${width}x${height}`);
 
-    // Strip low-res query params that Facebook uses for tables
-    ['table', 'width', 'height', 'w', 'h'].forEach(param => {
+    // Strip low-res query params that Facebook uses for tables and thumbnails
+    ['table', 'width', 'height', 'w', 'h', 'size', 'thumbnail', 'thumb', 'small', 'low_res'].forEach(param => {
       if (urlObj.searchParams.has(param)) {
+        console.log(`🗑️ Removing low-res param: ${param}=${urlObj.searchParams.get(param)}`);
         urlObj.searchParams.delete(param);
       }
     });
+
+    // Normalize/upgrade Facebook 'type' hints when present (graph picture endpoint)
+    if (urlObj.searchParams.has('type')) {
+      const typeVal = (urlObj.searchParams.get('type') || '').toLowerCase();
+      if (['thumb', 'thumbnail', 'small', 'normal'].includes(typeVal)) {
+        console.log(`🔁 Upgrading type=${typeVal} → large`);
+        urlObj.searchParams.set('type', 'large');
+      }
+    }
+
+    // Many fbcdn URLs embed size constraints in the stp param (e.g., stp=dst-jpg_p64x64)
+    // If present, upsize any embedded pWxH/sWxH/tWxH segments to our target
+    if (urlObj.searchParams.has('stp')) {
+      const originalStp = urlObj.searchParams.get('stp') || '';
+      const upgradedStp = originalStp
+        .replace(/_p\d+x\d+(?=_|$)/i, `_p${width}x${height}`)
+        .replace(/_s\d+x\d+(?=_|$)/i, `_s${width}x${height}`)
+        .replace(/_t\d+x\d+(?=_|$)/i, `_t${width}x${height}`)
+        .replace(/_q\d+(?=_|$)/i, `_q${quality}`)
+        // Remove table-thumbnail tokens like _tt6 that can force tiny table variants
+        .replace(/_tt\d+(?=_|$)/i, '');
+      if (upgradedStp !== originalStp) {
+        console.log(`🔧 Upsized stp: ${originalStp} → ${upgradedStp}`);
+        urlObj.searchParams.set('stp', upgradedStp);
+      }
+    }
  
     if (originalPath !== urlObj.pathname) {
       console.log(`✨ Updated pathname:`, urlObj.pathname);
@@ -185,6 +235,14 @@ export function createOptimizedThumbnailUrl(
     // Some variants use w/h
     urlObj.searchParams.set('w', String(width));
     urlObj.searchParams.set('h', String(height));
+    
+    // Force high-res by removing any Facebook table/thumbnail flags (again, post-normalization)
+    ['table', 'thumb', 'thumbnail'].forEach(param => urlObj.searchParams.delete(param));
+    // Remove Facebook's EDM gating/variant hints when present to avoid tiny crops
+    ['edm', 'edm_id', 'ur', 'st'].forEach(param => urlObj.searchParams.delete(param));
+    
+    // Override any size constraints with our high-res values
+    console.log(`📏 Applied high-res params: width=${width}, height=${height}, quality=${quality}`);
 
     // Ensure access token present
     if (accessToken) {

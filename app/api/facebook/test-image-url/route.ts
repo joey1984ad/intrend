@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
 
     // Test 5: Content type and size check for successful responses
     const successfulTest = Object.values(testResults.tests).find((test: any) => test.success);
-    if (successfulTest && !successfulTest.error) {
+    if (successfulTest && !(successfulTest as any).error) {
       console.log(`\n🔍 Test 5: Content analysis for successful response`);
       try {
         const contentUrl = successfulTest.finalUrl || successfulTest.url || imageUrl;

@@ -115,6 +115,7 @@ const CreativeComparisonModal: React.FC<CreativeComparisonModalProps> = ({
                         accessToken={facebookAccessToken}
                         alt={creative.name}
                         className="w-full h-full object-cover"
+                        contentType={creative.creativeType === 'video' ? 'video' : creative.creativeType === 'carousel' || creative.creativeType === 'dynamic' ? 'carousel' : 'image'}
                         fallbackSrc="https://via.placeholder.com/300x200/6B7280/FFFFFF?text=No+Image"
                       />
                     ) : creative.assets && creative.assets.length > 0 ? (
@@ -125,9 +126,8 @@ const CreativeComparisonModal: React.FC<CreativeComparisonModalProps> = ({
                           height="100%"
                           poster={getHighResUrl(creative.assets?.[0]?.thumbnailUrl || creative.thumbnailUrl, facebookAccessToken, 'video')}
                           className="w-full h-full object-cover"
-                          onError={(e) => {
+                          onError={() => {
                             console.warn('Video failed to load:', creative.assets?.[0]?.videoUrl);
-                            (e.target as HTMLVideoElement).style.display = 'none';
                           }}
                         >
                           <source src={creative.assets?.[0]?.videoUrl} type="video/mp4" />

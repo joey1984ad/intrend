@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { CreativeData } from './types';
 import FacebookImage from './FacebookImage';
-import { appendAccessTokenToImageUrl } from '../lib/facebook-utils';
+import { createOptimizedThumbnailUrl } from '../lib/facebook-utils';
 
 interface CreativeDetailModalProps {
   creative: CreativeData | null;
@@ -13,12 +13,8 @@ interface CreativeDetailModalProps {
 }
 
 // Helper for hi-res poster images
-const getHighResUrl = (url: string | null | undefined, token: string) => {
-  if (!url) return url || undefined;
-  if (!(url.includes('fbcdn.net') || url.includes('fbsbx.com'))) return url;
-  if (/([?&](width|height)=\d+)/i.test(url)) return appendAccessTokenToImageUrl(url, token);
-  const sep = url.includes('?') ? '&' : '?';
-  return appendAccessTokenToImageUrl(`${url}${sep}width=720&height=720`, token);
+const getHighResUrl = (url: string | null | undefined, token: string, contentType: 'video' | 'carousel' | 'dynamic' | 'image' = 'video') => {
+  return createOptimizedThumbnailUrl(url, token, contentType);
 };
 
 const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
@@ -224,7 +220,7 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                         <video
                           src={creative.videoUrl}
                           controls
-                          poster={getHighResUrl(creative.thumbnailUrl, facebookAccessToken)}
+                          poster={getHighResUrl(creative.thumbnailUrl, facebookAccessToken, 'video')}
                           className="w-full h-64 object-cover"
                         />
                       ) : creative.imageUrl ? (
@@ -233,6 +229,7 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                           accessToken={facebookAccessToken}
                           alt={creative.name}
                           className="w-full h-64 object-cover"
+                          contentType={creative.creativeType === 'video' ? 'video' : creative.creativeType === 'carousel' || creative.creativeType === 'dynamic' ? 'carousel' : 'image'}
                         />
                       ) : (
                         <div className="w-full h-64 bg-gray-200 flex items-center justify-center">

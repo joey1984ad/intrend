@@ -546,7 +546,8 @@ export async function POST(request: NextRequest) {
  * 1. creative.image_url
  * 2. creative.object_story_spec.link_data.picture  
  * 3. creative.object_story_spec.link_data.image_url
- * 4. creative.thumbnail_url
+ * 4. creative.object_story_spec.video_data.image_url (video poster)
+ * 5. creative.thumbnail_url
  * Returns the first one that exists
  */
 function extractImageUrl(creative: any, objectStorySpec: any): string | null {
@@ -573,12 +574,19 @@ function extractImageUrl(creative: any, objectStorySpec: any): string | null {
   }
   console.log(`   ❌ Priority 3 - link_data.image_url: MISSING`);
   
-  // Priority 4: creative.thumbnail_url
+  // Priority 4: object_story_spec.video_data.image_url (video poster)
+  if (objectStorySpec?.video_data?.image_url) {
+    console.log(`   ✅ Priority 4 - video_data.image_url: ${objectStorySpec.video_data.image_url}`);
+    return objectStorySpec.video_data.image_url;
+  }
+  console.log(`   ❌ Priority 4 - video_data.image_url: MISSING`);
+
+  // Priority 5: creative.thumbnail_url
   if (creative.thumbnail_url) {
-    console.log(`   ✅ Priority 4 - creative.thumbnail_url: ${creative.thumbnail_url}`);
+    console.log(`   ✅ Priority 5 - creative.thumbnail_url: ${creative.thumbnail_url}`);
     return creative.thumbnail_url;
   }
-  console.log(`   ❌ Priority 4 - creative.thumbnail_url: MISSING`);
+  console.log(`   ❌ Priority 5 - creative.thumbnail_url: MISSING`);
   
   console.log(`   ❌ No image URL found in any priority field`);
   return null;

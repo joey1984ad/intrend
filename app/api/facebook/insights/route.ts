@@ -51,9 +51,11 @@ export async function POST(request: NextRequest) {
       sinceDate = yesterday.minus({ days: 89 });
       untilDate = yesterday;
     } else if (dateRange === 'last_12m') {
-      // Last 12 months: from 12 months ago to end of last month - complete months
-      sinceDate = yesterday.minus({ months: 12 }).startOf('month');
-      untilDate = yesterday.endOf('month');
+      // Last 12 complete months ending at the end of the previous month
+      // Example: If today is 2025-08-10, we want 2024-08-01 .. 2025-07-31
+      const endOfPreviousMonth = yesterday.startOf('month').minus({ days: 1 });
+      untilDate = endOfPreviousMonth;
+      sinceDate = endOfPreviousMonth.minus({ months: 12 }).startOf('month');
     } else {
       // Default to last 30 days
       sinceDate = yesterday.minus({ days: 29 });
@@ -80,7 +82,7 @@ export async function POST(request: NextRequest) {
       console.log(`🔍 Debug: Comparison period: ${previousSince} to ${previousUntil} (${periodLength} days)`);
       
       // Fetch comparison data
-      const comparisonInsightsUrl = `${baseUrl}/${adAccountId}/insights?fields=impressions,spend,clicks,actions,action_values,ctr,cpc,cpm&time_range=${JSON.stringify({ since: previousSince, until: previousUntil })}&time_increment=1&access_token=${accessToken}`;
+      const comparisonInsightsUrl = `${baseUrl}/${adAccountId}/insights?fields=impressions,spend,clicks,actions,action_values,ctr,cpc,cpm&level=account&time_range=${JSON.stringify({ since: previousSince, until: previousUntil })}&time_increment=1&access_token=${accessToken}`;
       console.log(`🔍 Fetching comparison insights: ${comparisonInsightsUrl}`);
       
       const comparisonInsightsResponse = await fetch(comparisonInsightsUrl);
@@ -146,7 +148,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get detailed insights with time_increment=1
-    const insightsUrl = `${baseUrl}/${adAccountId}/insights?fields=impressions,spend,clicks,actions,action_values,ctr,cpc,cpm&time_range=${JSON.stringify({ since, until })}&time_increment=1&access_token=${accessToken}`;
+    const insightsUrl = `${baseUrl}/${adAccountId}/insights?fields=impressions,spend,clicks,actions,action_values,ctr,cpc,cpm&level=account&time_range=${JSON.stringify({ since, until })}&time_increment=1&access_token=${accessToken}`;
     console.log(`🔍 Fetching detailed insights: ${insightsUrl}`);
     
     const insightsResponse = await fetch(insightsUrl);

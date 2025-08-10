@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useFacebookImageUrl } from './hooks/useFacebookImageUrl';
 
 interface FacebookImageProps {
@@ -37,8 +37,23 @@ export const FacebookImage: React.FC<FacebookImageProps> = ({
 }) => {
   const { processedUrl, optimizedUrl, isFacebookCDN, needsAccessToken, hasAccessToken } = useFacebookImageUrl(src, accessToken, contentType);
 
-  // Use the optimized URL from the hook
-  const finalUrl = optimizedUrl || processedUrl || src;
+  // Robust fallback chain: optimized → token-appended → original → provided fallback
+  const candidateUrls = useMemo(() => {
+    const urls: Array<string | null | undefined> = [optimizedUrl, processedUrl, src, fallbackSrc];
+    const seen = new Set<string>();
+    return urls.filter((u): u is string => {
+      if (!u) return false;
+      if (seen.has(u)) return false;
+      seen.add(u);
+      return true;
+    });
+  }, [optimizedUrl, processedUrl, src, fallbackSrc]);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [candidateUrls.length, src, accessToken, contentType]);
 
   const handleError = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.warn('FacebookImage error:', {
@@ -50,9 +65,11 @@ export const FacebookImage: React.FC<FacebookImageProps> = ({
       error: event
     });
 
-    // If we have a fallback and the current URL failed, try the fallback
-    if (fallbackSrc && event.currentTarget.src !== fallbackSrc) {
-      event.currentTarget.src = fallbackSrc;
+    // Try next candidate in chain
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < candidateUrls.length) {
+      setCurrentIndex(nextIndex);
+      event.currentTarget.src = candidateUrls[nextIndex] as string;
       return;
     }
 
@@ -83,7 +100,7 @@ export const FacebookImage: React.FC<FacebookImageProps> = ({
 
   return (
     <img
-      src={finalUrl || processedUrl || src}
+      src={candidateUrls[currentIndex]}
       alt={alt}
       className={className}
       width={width}

@@ -251,13 +251,17 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
     );
   }
 
+  // For dynamic creatives, force a black border on the card
+  const cardVariantClass =
+    creative.creativeType === 'dynamic'
+      ? `${isSelected ? 'bg-blue-50' : 'bg-white'} border-black`
+      : isSelected
+        ? 'border-blue-500 bg-blue-50'
+        : getPerformanceColor(creative.performance);
+
   return (
     <div
-      className={`relative group cursor-pointer rounded-lg border-2 transition-all duration-200 hover:shadow-lg ${
-        isSelected 
-          ? 'border-blue-500 bg-blue-50' 
-          : getPerformanceColor(creative.performance)
-      } ${isTopPerformer ? 'ring-2 ring-green-500 ring-opacity-50' : ''}`}
+      className={`relative group cursor-pointer rounded-lg border-2 transition-all duration-200 hover:shadow-lg ${cardVariantClass} ${isTopPerformer ? 'ring-2 ring-green-500 ring-opacity-50' : ''}`}
     >
       {/* Selection Checkbox */}
       <div className="absolute top-2 right-2 z-10">

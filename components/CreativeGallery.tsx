@@ -50,7 +50,15 @@ const CreativeGallery: React.FC<CreativeGalleryProps> = ({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="space-y-4">
+        <div className="flex items-center text-sm text-blue-600">
+          <svg className="w-4 h-4 animate-spin mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          Loading creatives gallery...
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {[...Array(8)].map((_, i) => (
           <div key={i} className="animate-pulse">
             <div className="bg-gray-200 rounded-lg h-48 mb-3"></div>
@@ -60,6 +68,7 @@ const CreativeGallery: React.FC<CreativeGalleryProps> = ({
             </div>
           </div>
         ))}
+        </div>
       </div>
     );
   }
@@ -167,8 +176,11 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
         poster={getHighResUrl(creative.thumbnailUrl, accessToken, 'video')}
         className="w-full h-full object-cover rounded-t-lg"
         onError={(e) => {
-          console.warn('Video failed to load:', creative.videoUrl);
-          (e.target as HTMLVideoElement).style.display = 'none';
+          console.warn('Video poster failed to load (using fallback):', creative.videoUrl);
+          const el = e.target as HTMLVideoElement;
+          if (creative.thumbnailUrl) {
+            el.poster = creative.thumbnailUrl;
+          }
         }}
       >
         <source src={creative.videoUrl} type="video/mp4" />
@@ -188,8 +200,12 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
               poster={getHighResUrl(asset.thumbnailUrl || asset.imageUrl, accessToken, 'video')}
               className="rounded object-cover flex-shrink-0"
               onError={(e) => {
-                console.warn(`Carousel video ${idx} failed to load:`, asset.videoUrl);
-                (e.target as HTMLVideoElement).style.display = 'none';
+                console.warn(`Carousel video poster failed (using fallback) idx=${idx}:`, asset.videoUrl);
+                const el = e.target as HTMLVideoElement;
+                const fallback = asset.thumbnailUrl || asset.imageUrl;
+                if (fallback) {
+                  el.poster = fallback;
+                }
               }}
             >
               <source src={asset.videoUrl} type="video/mp4" />
@@ -203,7 +219,7 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
               className="w-28 h-28 object-cover rounded flex-shrink-0"
               contentType="carousel"
               fallbackSrc="https://via.placeholder.com/112x112/6B7280/FFFFFF?text=Failed"
-              onError={(e) => {
+              onError={() => {
                 console.warn(`Carousel image ${idx} failed to load:`, asset.imageUrl);
               }}
             />
@@ -220,8 +236,9 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
         accessToken={accessToken}
         alt={creative.name}
         className="w-full h-full object-cover rounded-t-lg"
+        contentType={creative.creativeType === 'video' ? 'video' : creative.creativeType === 'carousel' || creative.creativeType === 'dynamic' ? 'carousel' : 'image'}
         fallbackSrc="https://via.placeholder.com/400x200/6B7280/FFFFFF?text=Image+Failed"
-        onError={(e) => {
+        onError={() => {
           console.warn('Image failed to load:', creative.imageUrl);
         }}
       />

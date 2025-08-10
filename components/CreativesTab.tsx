@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react';
+import { Loader2 } from 'lucide-react';
 import { DataTable } from './DataTable';
 import { CreativeData, ColumnDefinition } from './types';
 import CreativeGallery from './CreativeGallery';
@@ -62,6 +63,7 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
               accessToken={facebookAccessToken}
               alt={creative.name}
               className="w-full h-full object-cover"
+              contentType={creative.creativeType === 'video' ? 'video' : creative.creativeType === 'carousel' || creative.creativeType === 'dynamic' ? 'carousel' : 'image'}
               fallbackSrc="https://via.placeholder.com/64x64/6B7280/FFFFFF?text=No+Image"
             />
           </div>
@@ -283,6 +285,12 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
         </div>
         
         <div className="flex items-center space-x-3">
+          {isLoadingCreatives && (
+            <div className="flex items-center text-sm text-blue-600">
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              Loading creatives...
+            </div>
+          )}
           {/* View Mode Toggle */}
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button

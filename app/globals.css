@@ -6,3 +6,8 @@
 .max-w-7xl .inline-flex {
   color: #000 !important;
 }
+
+/* Ensure bold labels render black within main content */
+.max-w-7xl .font-semibold {
+  color: #000 !important;
+}

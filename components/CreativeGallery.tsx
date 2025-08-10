@@ -251,10 +251,10 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
     );
   }
 
-  // For dynamic creatives, force a blue border on the card
+  // For dynamic creatives, force a purple border on the card
   const cardVariantClass =
     creative.creativeType === 'dynamic'
-      ? `${isSelected ? 'bg-blue-50' : 'bg-white'} border-blue-500`
+      ? `${isSelected ? 'bg-blue-50' : 'bg-white'} border-purple-600`
       : isSelected
         ? 'border-blue-500 bg-blue-50'
         : getPerformanceColor(creative.performance);

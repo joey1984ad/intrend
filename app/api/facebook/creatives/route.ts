@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DateTime } from 'luxon';
 import { appendAccessTokenToImageUrl } from '../../../../lib/facebook-utils';
+import { saveCreativesCache, getCreativesCache } from '@/lib/db';
 
 // Rate limiting helper
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -117,14 +118,24 @@ export async function POST(request: NextRequest) {
     const cacheKey = JSON.stringify({ adAccountId, dateRange });
     const ttlMs = Math.max(0, Number(cacheTtlHours) || 0) * 60 * 60 * 1000;
 
+    // Try persistent DB cache first
+    if (!refresh && cacheTtlHours > 0) {
+      const dbCached = await getCreativesCache(adAccountId, dateRange, cacheTtlHours);
+      if (dbCached) {
+        console.log(`🗄️ [DB CACHE HIT] creatives for ${cacheKey}`);
+        return NextResponse.json(dbCached);
+      }
+    }
+
+    // Then check in-memory cache
     if (!refresh && ttlMs > 0) {
       const existing = creativesCache.get(cacheKey);
       if (existing && Date.now() - existing.timestampMs < ttlMs) {
-        console.log(`🗄️ [CACHE HIT] creatives for ${cacheKey} (age ${(Date.now() - existing.timestampMs) / 1000}s)`);
+        console.log(`🗄️ [MEM CACHE HIT] creatives for ${cacheKey} (age ${(Date.now() - existing.timestampMs) / 1000}s)`);
         return NextResponse.json(existing.payload);
       }
       if (existing) {
-        console.log('🗑️ [CACHE EXPIRED] Removing stale cache for', cacheKey);
+        console.log('🗑️ [MEM CACHE EXPIRED] Removing stale cache for', cacheKey);
         creativesCache.delete(cacheKey);
       }
     }
@@ -552,10 +563,14 @@ export async function POST(request: NextRequest) {
       message: `Successfully fetched ${creativesWithInsights.length} creatives`
     };
 
-    // Save to cache
+    // Save to caches
     if (ttlMs > 0) {
       creativesCache.set(cacheKey, { timestampMs: Date.now(), payload: responsePayload });
-      console.log('🗃️ [CACHE SAVE] creatives for', cacheKey);
+      console.log('🗃️ [MEM CACHE SAVE] creatives for', cacheKey);
+      // Also persist to DB (non-blocking)
+      saveCreativesCache(adAccountId, dateRange, responsePayload).catch((e) =>
+        console.warn('⚠️ Failed to persist creatives cache:', e)
+      );
     }
 
     return NextResponse.json(responsePayload);

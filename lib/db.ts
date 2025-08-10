@@ -49,6 +49,20 @@ export async function initDatabase() {
       )
     `;
 
+    // Cache creatives payloads per ad account and date range
+    await sql`
+      CREATE TABLE IF NOT EXISTS creatives_cache (
+        id SERIAL PRIMARY KEY,
+        ad_account_id VARCHAR(255) NOT NULL,
+        date_range VARCHAR(20) NOT NULL,
+        payload JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    // Helpful index for TTL lookups
+    await sql`CREATE INDEX IF NOT EXISTS idx_creatives_cache_key ON creatives_cache (ad_account_id, date_range)`;
+
     console.log('✅ Database initialized successfully');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
@@ -191,3 +205,51 @@ export async function getMetricsCache(sessionId: number, dateRange: string) {
 }
 
 export { sql }; 
+
+// --- Creatives cache (persistent) ---
+export async function saveCreativesCache(adAccountId: string, dateRange: string, payload: any) {
+  try {
+    // Upsert by key (ad_account_id, date_range)
+    await sql`
+      INSERT INTO creatives_cache (ad_account_id, date_range, payload, created_at)
+      VALUES (${adAccountId}, ${dateRange}, ${JSON.stringify(payload)}, CURRENT_TIMESTAMP)
+      ON CONFLICT (id) DO NOTHING
+    `;
+
+    // Clean older duplicates, keep the newest
+    await sql`
+      DELETE FROM creatives_cache a
+      USING creatives_cache b
+      WHERE a.ad_account_id = b.ad_account_id
+        AND a.date_range = b.date_range
+        AND a.created_at < b.created_at
+    `;
+  } catch (error) {
+    console.error('Error saving creatives cache:', error);
+  }
+}
+
+export async function getCreativesCache(adAccountId: string, dateRange: string, maxAgeHours: number) {
+  try {
+    const rows = await sql`
+      SELECT payload, created_at
+      FROM creatives_cache
+      WHERE ad_account_id = ${adAccountId}
+        AND date_range = ${dateRange}
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    const row = rows[0];
+    if (!row) return null;
+    const createdAt = new Date(row.created_at).getTime();
+    const ageMs = Date.now() - createdAt;
+    const ttlMs = Math.max(0, Number(maxAgeHours) || 0) * 60 * 60 * 1000;
+    if (ttlMs > 0 && ageMs < ttlMs) {
+      return row.payload;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error reading creatives cache:', error);
+    return null;
+  }
+}

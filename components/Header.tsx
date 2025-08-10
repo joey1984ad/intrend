@@ -66,7 +66,7 @@ const Header: React.FC<HeaderProps> = ({
               <nav className="flex space-x-8">
                 <button 
                   onClick={() => setActiveTab('campaigns')}
-                  className={`pb-2 ${activeTab === 'campaigns' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`pb-2 ${activeTab === 'campaigns' ? 'text-blue-300 border-b-2 border-blue-300' : 'text-white hover:text-gray-200'}`}
                 >
                   <span className="inline-flex items-center gap-2">
                     Campaigns
@@ -77,7 +77,7 @@ const Header: React.FC<HeaderProps> = ({
                 </button>
                 <button 
                   onClick={() => setActiveTab('adsets')}
-                  className={`pb-2 ${activeTab === 'adsets' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`pb-2 ${activeTab === 'adsets' ? 'text-blue-300 border-b-2 border-blue-300' : 'text-white hover:text-gray-200'}`}
                 >
                   <span className="inline-flex items-center gap-2">
                     Ad Sets
@@ -88,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({
                 </button>
                 <button 
                   onClick={() => setActiveTab('ads')}
-                  className={`pb-2 ${activeTab === 'ads' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`pb-2 ${activeTab === 'ads' ? 'text-blue-300 border-b-2 border-blue-300' : 'text-white hover:text-gray-200'}`}
                 >
                   <span className="inline-flex items-center gap-2">
                     Ads
@@ -99,7 +99,7 @@ const Header: React.FC<HeaderProps> = ({
                 </button>
                 <button 
                   onClick={() => setActiveTab('demographics')}
-                  className={`pb-2 ${activeTab === 'demographics' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`pb-2 ${activeTab === 'demographics' ? 'text-blue-300 border-b-2 border-blue-300' : 'text-white hover:text-gray-200'}`}
                 >
                   <span className="inline-flex items-center gap-2">
                     Demographics
@@ -110,7 +110,7 @@ const Header: React.FC<HeaderProps> = ({
                 </button>
                 <button 
                   onClick={() => setActiveTab('creatives')}
-                  className={`pb-2 ${activeTab === 'creatives' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                  className={`pb-2 ${activeTab === 'creatives' ? 'text-blue-300 border-b-2 border-blue-300' : 'text-white hover:text-gray-200'}`}
                 >
                   <span className="inline-flex items-center gap-2">
                     Creatives

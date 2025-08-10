@@ -112,7 +112,7 @@ const MetaDashboardRefactored: React.FC = () => {
 
   // Auto-load data when selectedAdAccount changes
   useEffect(() => {
-    if (facebookAccessToken && selectedAdAccount && !isLoadingFacebookData) {
+    if (facebookAccessToken && selectedAdAccount) {
       console.log(`🔄 useEffect: Auto-loading data for account ${selectedAdAccount} with date range ${selectedDateRange}`);
       fetchFacebookAdsData();
     }
@@ -120,7 +120,7 @@ const MetaDashboardRefactored: React.FC = () => {
 
   // Auto-load data when date range or compare mode changes
   useEffect(() => {
-    if (facebookAccessToken && selectedAdAccount && !isLoadingFacebookData) {
+    if (facebookAccessToken && selectedAdAccount) {
       console.log(`🔄 useEffect: Date range changed to ${selectedDateRange} or compare mode changed to ${compareMode}, reloading data`);
       fetchFacebookAdsData();
     }
@@ -128,7 +128,7 @@ const MetaDashboardRefactored: React.FC = () => {
 
   // Auto-load creative data when tab changes to creatives
   useEffect(() => {
-    if (activeTab === 'creatives' && facebookAccessToken && selectedAdAccount && !isLoadingCreatives) {
+    if (activeTab === 'creatives' && facebookAccessToken && selectedAdAccount) {
       console.log(`🎨 useEffect: Tab changed to creatives, loading creative data`);
       fetchCreativeData();
     }
@@ -136,7 +136,7 @@ const MetaDashboardRefactored: React.FC = () => {
 
   // Auto-load creative data when date range or ad account changes (if on creatives tab)
   useEffect(() => {
-    if (activeTab === 'creatives' && facebookAccessToken && selectedAdAccount && !isLoadingCreatives) {
+    if (activeTab === 'creatives' && facebookAccessToken && selectedAdAccount) {
       console.log(`🎨 useEffect: Date range or ad account changed, refreshing creative data`);
       fetchCreativeData();
     }
@@ -213,6 +213,10 @@ const MetaDashboardRefactored: React.FC = () => {
 
   const fetchCreativeData = async () => {
     if (!facebookAccessToken || !selectedAdAccount) return;
+    if (isLoadingCreatives) {
+      console.log('🎨 MetaDashboard: Skipping creatives fetch because a load is already in progress');
+      return;
+    }
     
     setIsLoadingCreatives(true);
     try {
@@ -256,6 +260,10 @@ const MetaDashboardRefactored: React.FC = () => {
 
   const fetchAdsetsData = async () => {
     if (!facebookAccessToken || !selectedAdAccount) return;
+    if (isLoadingAdsets) {
+      console.log('📊 MetaDashboard: Skipping ad sets fetch because a load is already in progress');
+      return;
+    }
     
     setIsLoadingAdsets(true);
     try {
@@ -283,6 +291,10 @@ const MetaDashboardRefactored: React.FC = () => {
 
   const fetchAdsData = async () => {
     if (!facebookAccessToken || !selectedAdAccount) return;
+    if (isLoadingAds) {
+      console.log('📊 MetaDashboard: Skipping ads fetch because a load is already in progress');
+      return;
+    }
     
     setIsLoadingAds(true);
     try {
@@ -310,6 +322,10 @@ const MetaDashboardRefactored: React.FC = () => {
 
   const fetchDemographicsData = async () => {
     if (!facebookAccessToken || !selectedAdAccount) return;
+    if (isLoadingDemographics) {
+      console.log('📊 MetaDashboard: Skipping demographics fetch because a load is already in progress');
+      return;
+    }
     
     setIsLoadingDemographics(true);
     try {
@@ -441,6 +457,10 @@ const MetaDashboardRefactored: React.FC = () => {
 
   const fetchFacebookAdsData = async () => {
     if (!facebookAccessToken || !selectedAdAccount) return;
+    if (isLoadingFacebookData) {
+      console.log('🟦 MetaDashboard: Skipping ads data fetch because a load is already in progress');
+      return;
+    }
     
     setIsLoadingFacebookData(true);
     try {

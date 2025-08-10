@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities; 
 
+/* Light theme default for inline-flex in main content */
+.max-w-7xl .inline-flex {
+  color: #000 !important;
+}
+
 /* Inline-flex default and hover/highlight styles within main content (dark theme only) */
 .theme-dark .max-w-7xl .inline-flex {
   color: #fff !important;

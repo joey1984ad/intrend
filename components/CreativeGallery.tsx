@@ -48,6 +48,16 @@ const CreativeGallery: React.FC<CreativeGalleryProps> = ({
     }
   };
 
+  const getPerformanceBackground = (performance: string) => {
+    switch (performance) {
+      case 'excellent': return 'bg-green-50';
+      case 'good': return 'bg-blue-50';
+      case 'average': return 'bg-yellow-50';
+      case 'poor': return 'bg-red-50';
+      default: return 'bg-white';
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -242,16 +252,16 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
     );
   }
 
-  // Use neutral border for dynamic creatives unless selected
-  const cardBorderClass = (
+  // Background color based on selection, type, and performance
+  const cardBackgroundClass = (
     creative.creativeType === 'dynamic'
-      ? (isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white')
-      : (isSelected ? 'border-blue-500 bg-blue-50' : getPerformanceColor(creative.performance))
+      ? (isSelected ? 'bg-blue-50' : 'bg-white')
+      : (isSelected ? 'bg-blue-50' : getPerformanceBackground(creative.performance))
   );
 
   return (
     <div
-      className={`relative group cursor-pointer rounded-lg transition-all duration-200 hover:shadow-lg ${cardBorderClass.replace('border-', '')} ${isTopPerformer ? 'ring-2 ring-green-500 ring-opacity-50' : ''}`}
+      className={`relative group cursor-pointer rounded-lg border-2 border-blue-900 transition-all duration-200 hover:shadow-lg ${cardBackgroundClass} ${isTopPerformer ? 'ring-2 ring-green-500 ring-opacity-50' : ''}`}
     >
       {/* Selection Checkbox */}
       <div className="absolute top-2 right-2 z-10">

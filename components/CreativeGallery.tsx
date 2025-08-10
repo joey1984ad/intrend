@@ -251,7 +251,7 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
 
   return (
     <div
-      className={`relative group cursor-pointer rounded-lg border-2 transition-all duration-200 hover:shadow-lg ${cardBorderClass} ${isTopPerformer ? 'ring-2 ring-green-500 ring-opacity-50' : ''}`}
+      className={`relative group cursor-pointer rounded-lg transition-all duration-200 hover:shadow-lg ${cardBorderClass.replace('border-', '')} ${isTopPerformer ? 'ring-2 ring-green-500 ring-opacity-50' : ''}`}
     >
       {/* Selection Checkbox */}
       <div className="absolute top-2 right-2 z-10">

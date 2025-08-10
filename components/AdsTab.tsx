@@ -138,12 +138,12 @@ const AdsTab: React.FC<AdsTabProps> = ({
           </button>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-            <Download className="w-4 h-4" />
+           <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-black border border-gray-700 rounded-md hover:bg-gray-900">
+            <Download className="w-4 h-4 text-white" />
             <span>Export</span>
           </button>
-          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-            <RefreshCw className="w-4 h-4" />
+          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-black border border-gray-700 rounded-md hover:bg-gray-900">
+            <RefreshCw className="w-4 h-4 text-white" />
             <span>Refresh</span>
           </button>
         </div>

@@ -2,9 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DateTime } from 'luxon';
 import { saveFacebookSession, saveCampaignData, saveMetricsCache } from '@/lib/db';
 
+// Simple in-memory cache for campaign/insights responses
+// Keyed by adAccountId + dateRange
+type CachedEntry = { timestampMs: number; payload: any };
+const campaignsCache = new Map<string, CachedEntry>();
+
 export async function POST(request: NextRequest) {
   try {
-    const { accessToken, adAccountId, dateRange = 'last_30d', userId, compare = false } = await request.json();
+    const { accessToken, adAccountId, dateRange = 'last_30d', userId, compare = false, cacheTtlHours = 6, refresh = false } = await request.json();
+    // Cache key and TTL handling
+    const cacheKey = JSON.stringify({ adAccountId, dateRange, compare });
+    const ttlMs = Math.max(0, Number(cacheTtlHours) || 0) * 60 * 60 * 1000;
+
+    if (!refresh && ttlMs > 0) {
+      const existing = campaignsCache.get(cacheKey);
+      if (existing && Date.now() - existing.timestampMs < ttlMs) {
+        console.log(`🗄️ [CACHE HIT] campaigns for ${cacheKey} (age ${(Date.now() - existing.timestampMs) / 1000}s)`);
+        return NextResponse.json(existing.payload);
+      }
+      if (existing) {
+        console.log('🗑️ [CACHE EXPIRED] Removing stale cache for', cacheKey);
+        campaignsCache.delete(cacheKey);
+      }
+    }
 
     if (!accessToken || !adAccountId) {
       return NextResponse.json(
@@ -377,7 +397,7 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    return NextResponse.json({
+    const responsePayload = {
       success: true,
       campaigns: campaignsWithInsights,
       insights: accountInsightsData.data || [],
@@ -396,7 +416,15 @@ export async function POST(request: NextRequest) {
         dataComplete: accountInsightsData.data ? accountInsightsData.data.length === expectedDays : false
       },
       comparison: previousPeriodData
-    });
+    };
+
+    // Save to in-memory cache
+    if (ttlMs > 0) {
+      campaignsCache.set(cacheKey, { timestampMs: Date.now(), payload: responsePayload });
+      console.log('🗃️ [CACHE SAVE] campaigns for', cacheKey);
+    }
+
+    return NextResponse.json(responsePayload);
 
   } catch (error: any) {
     console.error('Facebook ads API error:', error);

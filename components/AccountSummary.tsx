@@ -18,6 +18,9 @@ interface AccountSummaryProps {
   facebookAdAccounts?: any[];
   selectedAdAccount?: string;
   setSelectedAdAccount?: (accountId: string) => void;
+  cacheTtlHours?: number;
+  setCacheTtlHours?: (hours: number) => void;
+  onRefreshNow?: () => void;
 }
 
 const AccountSummary: React.FC<AccountSummaryProps> = ({
@@ -34,7 +37,10 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
   facebookError,
   facebookAdAccounts = [],
   selectedAdAccount = '',
-  setSelectedAdAccount
+  setSelectedAdAccount,
+  cacheTtlHours = 6,
+  setCacheTtlHours,
+  onRefreshNow
 }) => {
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
@@ -114,6 +120,18 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
                   <option value="last_12m">Last 12 Months</option>
                 </select>
               </div>
+
+              {/* Cache TTL */}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Cache (hrs):</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={cacheTtlHours}
+                  onChange={(e) => setCacheTtlHours?.(Math.max(0, Number(e.target.value)))}
+                  className="w-20 border border-gray-300 rounded-md px-2 py-1 text-sm"
+                />
+              </div>
               
               {/* Compare Toggle */}
               <button
@@ -125,6 +143,15 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
                 }`}
               >
                 {compareMode ? 'Hide Comparison' : 'Compare to Previous Period'}
+              </button>
+
+              {/* Force Refresh */}
+              <button
+                onClick={onRefreshNow}
+                className="px-3 py-1 rounded-md text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-100"
+                title="Refresh now (bypass cache)"
+              >
+                Refresh
               </button>
             </>
           )}

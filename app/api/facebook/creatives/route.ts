@@ -96,9 +96,13 @@ async function batchFetchVideoSources(videoIds: string[], accessToken: string): 
   return results;
 }
 
+// Simple in-memory cache for creatives responses
+type CreativeCacheEntry = { timestampMs: number; payload: any };
+const creativesCache = new Map<string, CreativeCacheEntry>();
+
 export async function POST(request: NextRequest) {
   try {
-    const { accessToken, adAccountId, dateRange = 'last_30d' } = await request.json();
+    const { accessToken, adAccountId, dateRange = 'last_30d', cacheTtlHours = 6, refresh = false } = await request.json();
 
     if (!accessToken || !adAccountId) {
       return NextResponse.json(
@@ -108,6 +112,22 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`🔍 Debug: Fetching creatives for ad account ${adAccountId}`);
+
+    // Cache key and TTL handling
+    const cacheKey = JSON.stringify({ adAccountId, dateRange });
+    const ttlMs = Math.max(0, Number(cacheTtlHours) || 0) * 60 * 60 * 1000;
+
+    if (!refresh && ttlMs > 0) {
+      const existing = creativesCache.get(cacheKey);
+      if (existing && Date.now() - existing.timestampMs < ttlMs) {
+        console.log(`🗄️ [CACHE HIT] creatives for ${cacheKey} (age ${(Date.now() - existing.timestampMs) / 1000}s)`);
+        return NextResponse.json(existing.payload);
+      }
+      if (existing) {
+        console.log('🗑️ [CACHE EXPIRED] Removing stale cache for', cacheKey);
+        creativesCache.delete(cacheKey);
+      }
+    }
 
     // Special case for testing/mock data
     if (accessToken === 'mock' || adAccountId === 'mock') {
@@ -526,11 +546,19 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    const responsePayload = {
       success: true,
       creatives: creativesWithInsights,
       message: `Successfully fetched ${creativesWithInsights.length} creatives`
-    });
+    };
+
+    // Save to cache
+    if (ttlMs > 0) {
+      creativesCache.set(cacheKey, { timestampMs: Date.now(), payload: responsePayload });
+      console.log('🗃️ [CACHE SAVE] creatives for', cacheKey);
+    }
+
+    return NextResponse.json(responsePayload);
 
   } catch (error) {
     console.error('❌ Error in creatives API:', error);

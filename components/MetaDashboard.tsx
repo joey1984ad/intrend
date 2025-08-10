@@ -46,6 +46,7 @@ const MetaDashboardRefactored: React.FC = () => {
   const [selectedDateRange, setSelectedDateRange] = useState('last_30d');
   const [isUsingRealData, setIsUsingRealData] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
+  const [cacheTtlHours, setCacheTtlHours] = useState<number>(6);
 
   // Dynamic data state for real Facebook data
   const [clicksData, setClicksData] = useState<any[]>([]);
@@ -211,7 +212,7 @@ const MetaDashboardRefactored: React.FC = () => {
     setSelectedCampaigns([]);
   };
 
-  const fetchCreativeData = async () => {
+  const fetchCreativeData = async (forceRefresh: boolean = false) => {
     if (!facebookAccessToken || !selectedAdAccount) return;
     
     setIsLoadingCreatives(true);
@@ -225,7 +226,9 @@ const MetaDashboardRefactored: React.FC = () => {
         body: JSON.stringify({
           accessToken: facebookAccessToken,
           adAccountId: selectedAdAccount,
-          dateRange: selectedDateRange
+          dateRange: selectedDateRange,
+          cacheTtlHours: cacheTtlHours,
+          refresh: forceRefresh === true
         })
       });
       
@@ -347,6 +350,19 @@ const MetaDashboardRefactored: React.FC = () => {
     }
   };
 
+  // Force refresh bypassing cache for campaigns and creatives
+  const handleRefreshNow = async () => {
+    setIsLoading(true);
+    try {
+      await Promise.all([
+        fetchFacebookAdsData(true),
+        fetchCreativeData(true)
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleFacebookSuccess = async (accessToken: string, userId: string) => {
     console.log('🟢 MetaDashboard: handleFacebookSuccess called with userId:', userId);
     console.log('🟢 MetaDashboard: Access token length:', accessToken.length);
@@ -439,7 +455,7 @@ const MetaDashboardRefactored: React.FC = () => {
     setIsUsingRealData(false);
   };
 
-  const fetchFacebookAdsData = async () => {
+  const fetchFacebookAdsData = async (forceRefresh: boolean = false) => {
     if (!facebookAccessToken || !selectedAdAccount) return;
     
     setIsLoadingFacebookData(true);
@@ -454,7 +470,9 @@ const MetaDashboardRefactored: React.FC = () => {
           accessToken: facebookAccessToken,
           adAccountId: selectedAdAccount,
           dateRange: selectedDateRange,
-          compare: compareMode
+          compare: compareMode,
+          cacheTtlHours: cacheTtlHours,
+          refresh: forceRefresh === true
         })
       });
       
@@ -590,6 +608,9 @@ const MetaDashboardRefactored: React.FC = () => {
           facebookAdAccounts={facebookAdAccounts}
           selectedAdAccount={selectedAdAccount}
           setSelectedAdAccount={setSelectedAdAccount}
+          cacheTtlHours={cacheTtlHours}
+          setCacheTtlHours={setCacheTtlHours}
+          onRefreshNow={handleRefreshNow}
         />
 
         {/* Tab Content */}

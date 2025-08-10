@@ -35,28 +35,30 @@ export async function POST(request: NextRequest) {
     let sinceDate, untilDate;
     
     // Use timezone-aware date calculations
+    // Use yesterday as end date to ensure complete data availability
     const today = DateTime.now().setZone(accountTimezone).startOf('day');
+    const yesterday = today.minus({ days: 1 });
     
     if (dateRange === 'last_7d') {
-      // Last 7 days: from 6 days ago to today (inclusive)
-      sinceDate = today.minus({ days: 6 });
-      untilDate = today;
+      // Last 7 days: from 7 days ago to yesterday (inclusive) - 7 complete days
+      sinceDate = yesterday.minus({ days: 6 });
+      untilDate = yesterday;
     } else if (dateRange === 'last_30d') {
-      // Last 30 days: from 29 days ago to today (inclusive)
-      sinceDate = today.minus({ days: 29 });
-      untilDate = today;
+      // Last 30 days: from 30 days ago to yesterday (inclusive) - 30 complete days
+      sinceDate = yesterday.minus({ days: 29 });
+      untilDate = yesterday;
     } else if (dateRange === 'last_90d') {
-      // Last 90 days: from 89 days ago to today (inclusive)
-      sinceDate = today.minus({ days: 89 });
-      untilDate = today;
+      // Last 90 days: from 90 days ago to yesterday (inclusive) - 90 complete days
+      sinceDate = yesterday.minus({ days: 89 });
+      untilDate = yesterday;
     } else if (dateRange === 'last_12m') {
-      // Last 12 months: from 11 months ago to today (inclusive)
-      sinceDate = today.minus({ months: 11 }).startOf('month');
-      untilDate = today.endOf('month');
+      // Last 12 months: from 12 months ago to end of last month - complete months
+      sinceDate = yesterday.minus({ months: 12 }).startOf('month');
+      untilDate = yesterday.endOf('month');
     } else {
       // Default to last 30 days
-      sinceDate = today.minus({ days: 29 });
-      untilDate = today;
+      sinceDate = yesterday.minus({ days: 29 });
+      untilDate = yesterday;
     }
 
     // Format dates as YYYY-MM-DD (ensure until date is inclusive)
@@ -76,17 +78,48 @@ export async function POST(request: NextRequest) {
     console.log(`🔍 [DEBUG] Time range JSON: ${timeRange}`);
     console.log(`🔍 [DEBUG] Using timezone: ${accountTimezone}`);
 
-    // --- Fetch summary spend for the period (time_increment=all) ---
+    // --- Fetch summary insights for the period (time_increment=all) ---
     const summaryInsightsUrl = `${baseUrl}/${adAccountId}/insights?fields=spend,impressions,clicks,reach,frequency,cpc,cpm,ctr,actions,action_values&time_range=${timeRange}&time_increment=all&access_token=${accessToken}`;
     console.log(`🔍 [DEBUG] Fetching summary insights: ${summaryInsightsUrl}`);
     const summaryInsightsResponse = await fetch(summaryInsightsUrl);
     const summaryInsightsData = await summaryInsightsResponse.json();
+
+    // Prefer summary totals to avoid incorrect reach aggregation and ensure period-accurate metrics
+    let summaryTotals: {
+      totalSpent: number;
+      totalClicks: number;
+      totalImpressions: number;
+      totalReach: number;
+      avgCPC: number;
+      avgCPM: number;
+      avgCTR: number;
+    } | null = null;
+
     if (summaryInsightsData.error) {
       console.error('[DEBUG] Summary insights API error:', summaryInsightsData.error);
     } else {
       console.log('[DEBUG] Summary insights data:', summaryInsightsData.data);
       if (summaryInsightsData.data && summaryInsightsData.data.length > 0) {
-        console.log(`[DEBUG] Summary spend for period: $${summaryInsightsData.data[0].spend}`);
+        const s = summaryInsightsData.data[0] || {};
+        const totalSpent = parseFloat(s.spend || 0);
+        const totalClicks = parseInt(s.clicks || 0);
+        const totalImpressions = parseInt(s.impressions || 0);
+        const totalReach = parseInt(s.reach || 0);
+        // cpc/cpm/ctr can come as strings
+        const avgCPC = s.cpc != null ? parseFloat(s.cpc) : (totalClicks > 0 ? totalSpent / totalClicks : 0);
+        const avgCPM = s.cpm != null ? parseFloat(s.cpm) : (totalImpressions > 0 ? (totalSpent / totalImpressions) * 1000 : 0);
+        const avgCTR = s.ctr != null ? parseFloat(String(s.ctr)) : (totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0);
+
+        summaryTotals = {
+          totalSpent,
+          totalClicks,
+          totalImpressions,
+          totalReach,
+          avgCPC,
+          avgCPM,
+          avgCTR,
+        };
+        console.log(`[DEBUG] Summary spend for period: $${totalSpent}`);
       }
     }
 
@@ -108,7 +141,8 @@ export async function POST(request: NextRequest) {
     const campaignsWithInsights = [];
     for (const campaign of campaignsData.data || []) {
       try {
-        const insightsUrl = `${baseUrl}/${campaign.id}/insights?fields=impressions,clicks,spend,reach,frequency,cpc,cpm,ctr,actions,action_values&time_range=${timeRange}&time_increment=1&access_token=${accessToken}`;
+        // Use aggregated insights for the whole period to avoid picking just the first day
+        const insightsUrl = `${baseUrl}/${campaign.id}/insights?fields=impressions,clicks,spend,reach,frequency,cpc,cpm,ctr,actions,action_values&time_range=${timeRange}&time_increment=all&access_token=${accessToken}`;
         console.log(`🔍 Fetching insights for campaign ${campaign.id}: ${insightsUrl}`);
         
         const insightsResponse = await fetch(insightsUrl);
@@ -123,7 +157,7 @@ export async function POST(request: NextRequest) {
           });
         } else {
           console.log(`📊 Campaign ${campaign.id} insights data:`, insightsData.data);
-          // Add campaign with insights
+          // Add campaign with aggregated insights for the period
           const insights = insightsData.data && insightsData.data.length > 0 ? insightsData.data[0] : {
             impressions: 0, clicks: 0, spend: 0, reach: 0, cpc: 0, cpm: 0, ctr: '0%'
           };
@@ -169,7 +203,10 @@ export async function POST(request: NextRequest) {
       avgCTR: 0
     };
 
-    if (accountInsightsData.data && accountInsightsData.data.length > 0) {
+    // If summary totals are available, prefer them to avoid overcounting reach
+    if (summaryTotals) {
+      accountTotals = summaryTotals;
+    } else if (accountInsightsData.data && accountInsightsData.data.length > 0) {
       console.log(`📊 Debug: Processing ${accountInsightsData.data.length} days of account insights`);
       console.log(`📊 Debug: Expected days: ${expectedDays}, Actual days: ${accountInsightsData.data.length}`);
       console.log(`📊 Debug: Sample daily data:`, accountInsightsData.data.slice(0, 3));
@@ -223,76 +260,67 @@ export async function POST(request: NextRequest) {
       
       console.log(`📅 Previous period: ${previousSince} to ${previousUntil} (${periodDuration} days)`);
       
-      // Fetch previous period account insights
-      const previousAccountInsightsUrl = `${baseUrl}/${adAccountId}/insights?fields=impressions,clicks,spend,reach,frequency,cpc,cpm,ctr,actions,action_values&time_range=${previousTimeRange}&time_increment=1&access_token=${accessToken}`;
-      console.log(`🔍 Fetching previous period account insights: ${previousAccountInsightsUrl}`);
-      
-      const previousAccountInsightsResponse = await fetch(previousAccountInsightsUrl);
-      const previousAccountInsightsData = await previousAccountInsightsResponse.json();
+      // Fetch previous period account insights (use summary totals for consistency)
+      const previousSummaryUrl = `${baseUrl}/${adAccountId}/insights?fields=spend,impressions,clicks,reach,frequency,cpc,cpm,ctr,actions,action_values&time_range=${previousTimeRange}&time_increment=all&access_token=${accessToken}`;
+      console.log(`🔍 Fetching previous period summary insights: ${previousSummaryUrl}`);
+      const previousSummaryResp = await fetch(previousSummaryUrl);
+      const previousSummaryData = await previousSummaryResp.json();
 
-      if (previousAccountInsightsData.error) {
-        console.error('Previous period account insights API error:', previousAccountInsightsData.error);
-      } else {
-        console.log(`📊 Previous period account insights data:`, previousAccountInsightsData.data);
-        
-        // Calculate previous period totals
-        let previousTotals = {
-          totalSpent: 0,
-          totalClicks: 0,
-          totalImpressions: 0,
-          totalReach: 0,
-          avgCPC: 0,
-          avgCPM: 0,
-          avgCTR: 0
-        };
+      let previousTotals = {
+        totalSpent: 0,
+        totalClicks: 0,
+        totalImpressions: 0,
+        totalReach: 0,
+        avgCPC: 0,
+        avgCPM: 0,
+        avgCTR: 0
+      };
 
-        if (previousAccountInsightsData.data && previousAccountInsightsData.data.length > 0) {
-          previousTotals = previousAccountInsightsData.data.reduce((totals: any, day: any) => {
-            const daySpend = parseFloat(day.spend || 0);
-            const dayClicks = parseInt(day.clicks || 0);
-            const dayImpressions = parseInt(day.impressions || 0);
-            const dayReach = parseInt(day.reach || 0);
-            
-            return {
-              totalSpent: totals.totalSpent + daySpend,
-              totalClicks: totals.totalClicks + dayClicks,
-              totalImpressions: totals.totalImpressions + dayImpressions,
-              totalReach: totals.totalReach + dayReach,
-              avgCPC: 0,
-              avgCPM: 0,
-              avgCTR: 0
-            };
-          }, previousTotals);
+      if (previousSummaryData.error) {
+        console.error('Previous period summary insights API error:', previousSummaryData.error);
+      } else if (previousSummaryData.data && previousSummaryData.data.length > 0) {
+        const ps = previousSummaryData.data[0] || {};
+        const totalSpent = parseFloat(ps.spend || 0);
+        const totalClicks = parseInt(ps.clicks || 0);
+        const totalImpressions = parseInt(ps.impressions || 0);
+        const totalReach = parseInt(ps.reach || 0);
+        const avgCPC = ps.cpc != null ? parseFloat(ps.cpc) : (totalClicks > 0 ? totalSpent / totalClicks : 0);
+        const avgCPM = ps.cpm != null ? parseFloat(ps.cpm) : (totalImpressions > 0 ? (totalSpent / totalImpressions) * 1000 : 0);
+        const avgCTR = ps.ctr != null ? parseFloat(String(ps.ctr)) : (totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0);
 
-          // Calculate averages
-          previousTotals.avgCPC = previousTotals.totalClicks > 0 ? previousTotals.totalSpent / previousTotals.totalClicks : 0;
-          previousTotals.avgCPM = previousTotals.totalImpressions > 0 ? (previousTotals.totalSpent / previousTotals.totalImpressions) * 1000 : 0;
-          previousTotals.avgCTR = previousTotals.totalImpressions > 0 ? (previousTotals.totalClicks / previousTotals.totalImpressions) * 100 : 0;
-        }
-
-        console.log(`📊 Previous period totals calculated:`, previousTotals);
-        
-        // Calculate percentage changes
-        const calculateChange = (current: number, previous: number) => {
-          if (previous === 0) return current > 0 ? 100 : 0;
-          return ((current - previous) / previous) * 100;
-        };
-
-        previousPeriodData = {
-          totals: previousTotals,
-          insights: previousAccountInsightsData.data || [],
-          dateRange: { since: previousSince, until: previousUntil },
-          changes: {
-            totalSpent: calculateChange(accountTotals.totalSpent, previousTotals.totalSpent),
-            totalClicks: calculateChange(accountTotals.totalClicks, previousTotals.totalClicks),
-            totalImpressions: calculateChange(accountTotals.totalImpressions, previousTotals.totalImpressions),
-            totalReach: calculateChange(accountTotals.totalReach, previousTotals.totalReach),
-            avgCPC: calculateChange(accountTotals.avgCPC, previousTotals.avgCPC),
-            avgCPM: calculateChange(accountTotals.avgCPM, previousTotals.avgCPM),
-            avgCTR: calculateChange(accountTotals.avgCTR, previousTotals.avgCTR)
-          }
+        previousTotals = {
+          totalSpent,
+          totalClicks,
+          totalImpressions,
+          totalReach,
+          avgCPC,
+          avgCPM,
+          avgCTR,
         };
       }
+
+      console.log(`📊 Previous period totals calculated:`, previousTotals);
+      
+      // Calculate percentage changes
+      const calculateChange = (current: number, previous: number) => {
+        if (previous === 0) return current > 0 ? 100 : 0;
+        return ((current - previous) / previous) * 100;
+      };
+
+      previousPeriodData = {
+        totals: previousTotals,
+        insights: [],
+        dateRange: { since: previousSince, until: previousUntil },
+        changes: {
+          totalSpent: calculateChange(accountTotals.totalSpent, previousTotals.totalSpent),
+          totalClicks: calculateChange(accountTotals.totalClicks, previousTotals.totalClicks),
+          totalImpressions: calculateChange(accountTotals.totalImpressions, previousTotals.totalImpressions),
+          totalReach: calculateChange(accountTotals.totalReach, previousTotals.totalReach),
+          avgCPC: calculateChange(accountTotals.avgCPC, previousTotals.avgCPC),
+          avgCPM: calculateChange(accountTotals.avgCPM, previousTotals.avgCPM),
+          avgCTR: calculateChange(accountTotals.avgCTR, previousTotals.avgCTR)
+        }
+      };
     }
 
     // Get ad sets

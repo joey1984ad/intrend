@@ -140,23 +140,30 @@ export async function POST(request: NextRequest) {
     // Convert dateRange to proper date format with timezone awareness
     let sinceDate, untilDate;
     
+    // Use yesterday as end date to ensure complete data availability
     const today = DateTime.now().setZone(accountTimezone).startOf('day');
+    const yesterday = today.minus({ days: 1 });
     
     if (dateRange === 'last_7d') {
-      sinceDate = today.minus({ days: 6 });
-      untilDate = today;
+      // Last 7 days: from 7 days ago to yesterday (inclusive) - 7 complete days
+      sinceDate = yesterday.minus({ days: 6 });
+      untilDate = yesterday;
     } else if (dateRange === 'last_30d') {
-      sinceDate = today.minus({ days: 29 });
-      untilDate = today;
+      // Last 30 days: from 30 days ago to yesterday (inclusive) - 30 complete days
+      sinceDate = yesterday.minus({ days: 29 });
+      untilDate = yesterday;
     } else if (dateRange === 'last_90d') {
-      sinceDate = today.minus({ days: 89 });
-      untilDate = today;
+      // Last 90 days: from 90 days ago to yesterday (inclusive) - 90 complete days
+      sinceDate = yesterday.minus({ days: 89 });
+      untilDate = yesterday;
     } else if (dateRange === 'last_12m') {
-      sinceDate = today.minus({ months: 11 }).startOf('month');
-      untilDate = today.endOf('month');
+      // Last 12 months: from 12 months ago to end of last month - complete months
+      sinceDate = yesterday.minus({ months: 12 }).startOf('month');
+      untilDate = yesterday.endOf('month');
     } else {
-      sinceDate = today.minus({ days: 29 });
-      untilDate = today;
+      // Default to last 30 days
+      sinceDate = yesterday.minus({ days: 29 });
+      untilDate = yesterday;
     }
 
     const since = sinceDate.toISODate();

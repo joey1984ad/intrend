@@ -2,62 +2,62 @@
 @tailwind components;
 @tailwind utilities; 
 
-/* Inline-flex default and hover/highlight styles within main content */
-.max-w-7xl .inline-flex {
-  color: #000 !important;
+/* Inline-flex default and hover/highlight styles within main content (dark theme only) */
+.theme-dark .max-w-7xl .inline-flex {
+  color: #fff !important;
 }
 
-/* Ensure bold labels render black within main content */
-.max-w-7xl .font-semibold {
+/* Ensure bold labels render white within main content (dark theme only) */
+.theme-dark .max-w-7xl .font-semibold {
   color: #fff !important;
 }
 
 /* Dark theme overrides for main content container */
-.max-w-7xl {
+.theme-dark .max-w-7xl {
   background-color: #0b0b0b !important; /* near-black */
   color: #f5f5f5 !important; /* light text */
 }
 
 /* Surface backgrounds inside content */
-.max-w-7xl .bg-white,
-.max-w-7xl .bg-gray-50,
-.max-w-7xl .bg-gray-100,
-.max-w-7xl .bg-gray-200 {
+.theme-dark .max-w-7xl .bg-white,
+.theme-dark .max-w-7xl .bg-gray-50,
+.theme-dark .max-w-7xl .bg-gray-100,
+.theme-dark .max-w-7xl .bg-gray-200 {
   background-color: #111827 !important; /* slate-900-ish */
   color: #f5f5f5 !important;
 }
 
 /* Text tones */
-.max-w-7xl .text-gray-900 { color: #ffffff !important; }
-.max-w-7xl .text-gray-700,
-.max-w-7xl .text-gray-600,
-.max-w-7xl .text-gray-500 { color: #d1d5db !important; }
+.theme-dark .max-w-7xl .text-gray-900 { color: #ffffff !important; }
+.theme-dark .max-w-7xl .text-gray-700,
+.theme-dark .max-w-7xl .text-gray-600,
+.theme-dark .max-w-7xl .text-gray-500 { color: #d1d5db !important; }
 
 /* Borders and dividers */
-.max-w-7xl .border-gray-200,
-.max-w-7xl .border-gray-300 { border-color: #374151 !important; }
-.max-w-7xl .divide-gray-200 { border-color: #374151 !important; }
+.theme-dark .max-w-7xl .border-gray-200,
+.theme-dark .max-w-7xl .border-gray-300 { border-color: #374151 !important; }
+.theme-dark .max-w-7xl .divide-gray-200 { border-color: #374151 !important; }
 
 /* Tables */
-.max-w-7xl thead { background-color: #0f172a !important; }
-.max-w-7xl tbody { background-color: #111827 !important; }
-.max-w-7xl tr:hover { background-color: #1f2937 !important; }
+.theme-dark .max-w-7xl thead { background-color: #0f172a !important; }
+.theme-dark .max-w-7xl tbody { background-color: #111827 !important; }
+.theme-dark .max-w-7xl tr:hover { background-color: #1f2937 !important; }
 
 /* Form controls */
-.max-w-7xl input,
-.max-w-7xl select,
-.max-w-7xl textarea {
+.theme-dark .max-w-7xl input,
+.theme-dark .max-w-7xl select,
+.theme-dark .max-w-7xl textarea {
   background-color: #0f172a !important;
   color: #f5f5f5 !important;
   border-color: #374151 !important;
 }
 
 /* Buttons with light defaults */
-.max-w-7xl button.bg-white {
+.theme-dark .max-w-7xl button.bg-white {
   background-color: #111827 !important;
   color: #f5f5f5 !important;
   border-color: #374151 !important;
 }
 
 /* Tailwind hover utility override */
-.max-w-7xl .hover\:bg-gray-50:hover { background-color: #1f2937 !important; }
+.theme-dark .max-w-7xl .hover\:bg-gray-50:hover { background-color: #1f2937 !important; }

@@ -49,13 +49,13 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <>
       {/* Header */}
-      <div className="bg-blue-600 text-white p-2 text-center text-sm">
+      <div className="bg-black text-white p-2 text-center text-sm">
         Use this exact template for free with AgencyAnalytics. 
         <button className="ml-2 underline hover:no-underline">Start Your 14-Day Free Trial</button>
       </div>
       
       {/* Top Navigation */}
-      <div className="bg-black text-white shadow-sm">
+      <div className="bg-white text-black shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-white">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-6">
@@ -131,8 +131,8 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
                 </button>
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-black rounded-lg shadow-lg border border-gray-700 z-50">
-                    <div className="p-3 border-b border-gray-700 bg-black">
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div className="p-3 border-b border-gray-200 bg-white">
                       <h3 className="font-medium">Notifications</h3>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
@@ -145,7 +145,7 @@ const Header: React.FC<HeaderProps> = ({
                             }`}></div>
                             <div>
                               <p className="text-sm">{notification.message}</p>
-                              <p className="text-xs text-gray-300 mt-1">{notification.time}</p>
+                              <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
                             </div>
                           </div>
                         </div>
@@ -157,7 +157,7 @@ const Header: React.FC<HeaderProps> = ({
               <select 
                 value={selectedAccount} 
                 onChange={(e) => setSelectedAccount(e.target.value)}
-                className="border border-gray-700 bg-black text-white rounded-md px-3 py-2 text-sm"
+                className="border border-gray-300 bg-white text-gray-900 rounded-md px-3 py-2 text-sm"
               >
                 {connectedAccounts.length > 0 ? (
                   connectedAccounts.filter(acc => acc.status === 'connected').map(account => (
@@ -168,11 +168,12 @@ const Header: React.FC<HeaderProps> = ({
                 )}
               </select>
               <button 
-                onClick={() => setShowAccountModal(true)}
-                className="bg-black border border-gray-700 text-white px-3 py-2 rounded-md text-sm flex items-center hover:bg-gray-800"
+                onClick={() => document.body.classList.toggle('theme-dark')}
+                className="bg-white border border-gray-300 text-gray-800 px-3 py-2 rounded-md text-sm flex items-center hover:bg-gray-100"
+                title="Toggle dark/light theme"
               >
                 <Settings className="w-4 h-4 mr-2" />
-                Manage
+                Theme
               </button>
               <div className="relative">
                 <select 
@@ -180,7 +181,7 @@ const Header: React.FC<HeaderProps> = ({
                   onChange={(e) => {
                     setSelectedDateRange(e.target.value);
                   }}
-                  className="border border-gray-700 bg-black text-white rounded-md px-3 py-2 text-sm appearance-none pr-8"
+                  className="border border-gray-300 bg-white text-gray-900 rounded-md px-3 py-2 text-sm appearance-none pr-8"
                 >
                   <option value="last_7d">Last 7 Days</option>
                   <option value="last_30d">Last 30 Days</option>

@@ -50,15 +50,7 @@ const CreativeGallery: React.FC<CreativeGalleryProps> = ({
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center text-sm text-blue-600">
-          <svg className="w-4 h-4 animate-spin mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-          </svg>
-          Loading creatives gallery...
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {[...Array(8)].map((_, i) => (
           <div key={i} className="animate-pulse">
             <div className="bg-gray-200 rounded-lg h-48 mb-3"></div>
@@ -68,7 +60,6 @@ const CreativeGallery: React.FC<CreativeGalleryProps> = ({
             </div>
           </div>
         ))}
-        </div>
       </div>
     );
   }
@@ -251,17 +242,16 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
     );
   }
 
-  // For dynamic creatives, force a purple border on the card
-  const cardVariantClass =
+  // Use neutral border for dynamic creatives unless selected
+  const cardBorderClass = (
     creative.creativeType === 'dynamic'
-      ? `${isSelected ? 'bg-blue-50' : 'bg-white'} border-purple-600`
-      : isSelected
-        ? 'border-blue-500 bg-blue-50'
-        : getPerformanceColor(creative.performance);
+      ? (isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white')
+      : (isSelected ? 'border-blue-500 bg-blue-50' : getPerformanceColor(creative.performance))
+  );
 
   return (
     <div
-      className={`relative group cursor-pointer rounded-lg border-2 transition-all duration-200 hover:shadow-lg ${cardVariantClass} ${isTopPerformer ? 'border-blue-900 ring-2 ring-blue-900 ring-opacity-50' : ''}`}
+      className={`relative group cursor-pointer rounded-lg border-2 transition-all duration-200 hover:shadow-lg ${cardBorderClass} ${isTopPerformer ? 'ring-2 ring-green-500 ring-opacity-50' : ''}`}
     >
       {/* Selection Checkbox */}
       <div className="absolute top-2 right-2 z-10">

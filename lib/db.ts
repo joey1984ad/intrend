@@ -63,6 +63,23 @@ export async function initDatabase() {
     // Helpful index for TTL lookups
     await sql`CREATE INDEX IF NOT EXISTS idx_creatives_cache_key ON creatives_cache (ad_account_id, date_range)`;
 
+    // AI Creative Scores table for storing ChatGPT Vision analysis results
+    await sql`
+      CREATE TABLE IF NOT EXISTS ai_creative_scores (
+        id SERIAL PRIMARY KEY,
+        creative_id VARCHAR(255) NOT NULL,
+        ad_account_id VARCHAR(255) NOT NULL,
+        score DECIMAL(3,2) NOT NULL CHECK (score >= 0 AND score <= 10),
+        analysis_data JSONB,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    // Index for fast lookups by creative ID
+    await sql`CREATE INDEX IF NOT EXISTS idx_ai_creative_scores_creative_id ON ai_creative_scores (creative_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_ai_creative_scores_ad_account_id ON ai_creative_scores (ad_account_id)`;
+
     console.log('✅ Database initialized successfully');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
@@ -250,6 +267,42 @@ export async function getCreativesCache(adAccountId: string, dateRange: string, 
     return null;
   } catch (error) {
     console.error('Error reading creatives cache:', error);
+    return null;
+  }
+}
+
+// AI Creative Score management
+export async function saveAICreativeScore(creativeId: string, adAccountId: string, score: number, analysisData?: any) {
+  try {
+    const result = await sql`
+      INSERT INTO ai_creative_scores (creative_id, ad_account_id, score, analysis_data)
+      VALUES (${creativeId}, ${adAccountId}, ${score}, ${analysisData ? JSON.stringify(analysisData) : null})
+      ON CONFLICT (creative_id, ad_account_id) 
+      DO UPDATE SET 
+        score = EXCLUDED.score,
+        analysis_data = EXCLUDED.analysis_data,
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING id
+    `;
+    return result[0]?.id;
+  } catch (error) {
+    console.error('Error saving AI creative score:', error);
+    throw error;
+  }
+}
+
+export async function getAICreativeScore(creativeId: string, adAccountId: string) {
+  try {
+    const result = await sql`
+      SELECT score, analysis_data, created_at, updated_at
+      FROM ai_creative_scores 
+      WHERE creative_id = ${creativeId} AND ad_account_id = ${adAccountId}
+      ORDER BY updated_at DESC 
+      LIMIT 1
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error('Error getting AI creative score:', error);
     return null;
   }
 }

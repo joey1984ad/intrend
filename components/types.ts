@@ -98,6 +98,8 @@ export interface CreativeData {
   roas?: number;
   conversions?: number;
   conversionRate?: number;
+  aiScore?: number; // AI analysis score from n8n workflow
+  adAccountId?: string; // Facebook ad account ID for API calls
   costPerConversion?: number;
   status: string;
   createdAt: string;

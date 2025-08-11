@@ -355,6 +355,7 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
           onExport={() => setShowExportModal(true)}
           bulkActions={[
             { label: 'Compare Selected', action: 'compare', variant: 'primary' },
+            { label: '🤖 AI Analysis', action: 'ai-analysis', variant: 'secondary' },
             { label: 'Pause Selected', action: 'pause', variant: 'secondary' },
             { label: 'Delete Selected', action: 'delete', variant: 'danger' }
           ]}

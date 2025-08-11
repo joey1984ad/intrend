@@ -34,6 +34,7 @@ const MetaDashboardRefactored: React.FC = () => {
   const [sortField, setSortField] = useState('campaign');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [selectedCampaigns, setSelectedCampaigns] = useState<number[]>([]);
+  const [selectedCreatives, setSelectedCreatives] = useState<number[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   
   // Facebook integration state
@@ -209,6 +210,65 @@ const MetaDashboardRefactored: React.FC = () => {
 
   const handleBulkAction = (action: string) => {
     console.log(`Bulk action: ${action} for campaigns:`, selectedCampaigns);
+    
+    if (action === 'ai-analysis') {
+      // Handle AI analysis for selected creatives
+      const imageCreatives = creativeData.filter(creative => 
+        selectedCreatives.includes(creative.id) && creative.creativeType === 'image'
+      );
+      
+      if (imageCreatives.length === 0) {
+        alert('Please select image creatives to analyze. Video analysis is coming soon.');
+        return;
+      }
+      
+      if (imageCreatives.length > 10) {
+        alert('Please select 10 or fewer creatives for AI analysis to avoid overwhelming the system.');
+        return;
+      }
+      
+      alert(`Starting AI analysis for ${imageCreatives.length} image creatives. Results will appear when analysis is complete.`);
+      
+      // Start AI analysis for each selected creative
+      imageCreatives.forEach(async (creative) => {
+        try {
+          const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
+          if (!webhookUrl) {
+            console.error('No webhook URL configured for AI analysis');
+            return;
+          }
+          
+          const webhookPayload = {
+            creativeId: creative.id.toString(),
+            adAccountId: selectedAdAccount,
+            imageUrl: creative.imageUrl || creative.thumbnailUrl,
+            creativeName: creative.name,
+            creativeType: creative.creativeType,
+            timestamp: new Date().toISOString()
+          };
+          
+          const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(webhookPayload),
+          });
+          
+          if (response.ok) {
+            console.log(`✅ AI analysis started for creative ${creative.id}`);
+          } else {
+            console.error(`❌ AI analysis failed for creative ${creative.id}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error starting AI analysis for creative ${creative.id}:`, error);
+        }
+      });
+      
+      setSelectedCreatives([]);
+      return;
+    }
+    
     setSelectedCampaigns([]);
   };
 

@@ -1,0 +1,10 @@
+[33m9a62b1d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mLatest[m[33m, [m[1;31morigin/Latest[m[33m, [m[1;32mfacebook-first-attempt-fix[m[33m)[m Latest: design and cache updates
+[33m6d87864[m[33m ([m[1;31morigin/facebook-first-attempt-fix[m[33m)[m Theme: in light mode, set .w-6 background to blue-600 as well
+[33m1ce6b1a[m Theme: in dark mode, set .w-6 elements background to blue-600
+[33m395964a[m Revert: remove light theme global button override
+[33m9153a7a[m Theme: in dark mode, treat bg-white as true black (global override)
+[33m0ddeb11[m Cache: add persistent DB cache for creatives with TTL; fall back to in-memory; fix intermittent cache misses
+[33m7b85e58[m UI: add dark blue border to Creatives grid cards with performance-based background
+[33mdd1c8a7[m UI: remove card border in Creatives grid items
+[33mcf88959[m UI: remove grid/table borders in Demographics (no CartesianGrid, no table divide-* classes)
+[33mcc338a9[m Theme: loader-light utility for spinners; black in light theme, white in dark; applied across header, graph, modals, login

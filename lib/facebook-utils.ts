@@ -261,3 +261,221 @@ export function createOptimizedThumbnailUrl(
     return appendAccessTokenToImageUrl(optimizedUrl, accessToken);
   }
 } 
+
+/**
+ * Enhanced Facebook SDK Initialization Utilities
+ * 
+ * These functions provide multiple solutions to prevent "FB.login() called before FB.init()" errors:
+ * 
+ * 1. ensureFBInit() - Simple callback-based approach with retry logic
+ * 2. ensureFacebookReady() - Comprehensive async utility
+ * 3. createGlobalFacebookInitPromise() - Global Promise-based initialization
+ */
+
+declare global {
+  interface Window {
+    FB: any;
+    fbAsyncInit: () => void;
+    __facebookSDKInitialized?: boolean;
+    __facebookSDKPromise?: Promise<boolean>;
+    __facebookSDKRetryCount?: number;
+    fbInitialized?: boolean;
+    __facebookInitPromise?: Promise<void>;
+    __facebookScriptLoaded?: boolean; // Global flag to prevent duplicate script loading
+  }
+}
+
+/**
+ * Centralized Facebook SDK script loader
+ * Ensures the script is loaded only once across the entire application
+ */
+function loadFacebookScript(): void {
+  if (window.__facebookScriptLoaded) {
+    console.log('📜 Facebook script already loaded, skipping...');
+    return;
+  }
+
+  if (document.querySelector('script[src*="connect.facebook.net"]')) {
+    console.log('📜 Facebook script element already exists, marking as loaded...');
+    window.__facebookScriptLoaded = true;
+    return;
+  }
+
+  console.log('📜 Loading Facebook SDK script (first time)...');
+  window.__facebookScriptLoaded = true;
+
+  (function(d, s, id) {
+    var js: HTMLScriptElement, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s) as HTMLScriptElement; js.id = id;
+    js.src = "https://connect.facebook.net/en_US/sdk.js";
+    js.async = true;
+    js.defer = true;
+    js.crossOrigin = "anonymous";
+    if (fjs && fjs.parentNode) {
+      fjs.parentNode.insertBefore(js, fjs);
+    } else {
+      d.head.appendChild(js);
+    }
+  }(document, 'script', 'facebook-jssdk'));
+}
+
+/**
+ * Solution 3: Enhanced FB Status Checking Function
+ * Ensures Facebook SDK is ready before executing callback
+ */
+export function ensureFBInit(callback: () => void, maxAttempts = 50): void {
+  if (typeof window !== 'undefined' && 
+      window.FB && 
+      window.__facebookSDKInitialized && 
+      typeof window.FB.getLoginStatus === 'function' &&
+      typeof window.FB.login === 'function' &&
+      typeof window.FB.api === 'function') {
+    console.log('✅ ensureFBInit: FB is ready, executing callback immediately');
+    callback();
+  } else {
+    if (maxAttempts > 0) {
+      console.log(`⏳ ensureFBInit: FB not ready, retrying in 100ms... (${maxAttempts} attempts left)`);
+      setTimeout(() => {
+        ensureFBInit(callback, maxAttempts - 1);
+      }, 100);
+    } else {
+      console.error('❌ ensureFBInit: FB initialization timeout after maximum attempts');
+    }
+  }
+}
+
+/**
+ * Global Facebook SDK initialization with Promise-based approach
+ * Creates a global promise that can be reused across components
+ */
+export function createGlobalFacebookInitPromise(appId: string): Promise<void> {
+  if (window.__facebookInitPromise) {
+    console.log('🌐 Global Facebook init promise already exists, reusing...');
+    return window.__facebookInitPromise;
+  }
+
+  console.log('🔧 Creating global Facebook init promise for App ID:', appId);
+  
+  window.__facebookInitPromise = new Promise<void>((resolve, reject) => {
+    // Set fbAsyncInit BEFORE loading the script
+    window.fbAsyncInit = () => {
+      try {
+        console.log('🔧 Global fbAsyncInit fired, calling FB.init...');
+        window.FB.init({
+          appId: appId,
+          cookie: true,
+          xfbml: true,
+          version: 'v23.0'
+        });
+        window.__facebookSDKInitialized = true;
+        window.fbInitialized = true;
+        console.log('✅ Global FB initialized successfully');
+        resolve();
+      } catch (error) {
+        console.error('❌ Global FB initialization failed:', error);
+        reject(error);
+      }
+    };
+
+    // Use centralized script loader to prevent duplicates
+    loadFacebookScript();
+
+    // Fallback timeout
+    setTimeout(() => {
+      if (!window.FB || !window.__facebookSDKInitialized) {
+        const error = new Error('Global Facebook SDK initialization timeout');
+        console.error('❌ Global Facebook init timeout:', error);
+        reject(error);
+      }
+    }, 15000);
+  });
+
+  return window.__facebookInitPromise;
+}
+
+/**
+ * Comprehensive Facebook readiness utility that combines all solutions
+ * Use this function to ensure Facebook is fully ready before any operations
+ */
+export async function ensureFacebookReady(appId: string): Promise<void> {
+  // Solution 1: Check if already ready
+  if (window.FB && window.__facebookSDKInitialized && 
+      typeof window.FB.login === 'function' && 
+      typeof window.FB.getLoginStatus === 'function' && 
+      typeof window.FB.api === 'function') {
+    console.log('✅ ensureFacebookReady: FB already ready');
+    return;
+  }
+
+  // Solution 2: Use global Promise-based approach
+  if (window.__facebookInitPromise) {
+    console.log('🌐 ensureFacebookReady: Using existing global init promise');
+    await window.__facebookInitPromise;
+    return;
+  }
+
+  // Solution 3: Create new global promise and wait
+  console.log('🔧 ensureFacebookReady: Creating new global init promise');
+  await createGlobalFacebookInitPromise(appId);
+  
+  // Final validation
+  if (!window.FB || !window.__facebookSDKInitialized) {
+    throw new Error('Facebook SDK failed to initialize properly');
+  }
+}
+
+/**
+ * Utility function to check if Facebook SDK is ready
+ */
+export function isFacebookReady(): boolean {
+  return typeof window !== 'undefined' && 
+         window.FB && 
+         window.__facebookSDKInitialized && 
+         typeof window.FB.login === 'function' && 
+         typeof window.FB.getLoginStatus === 'function' && 
+         typeof window.FB.api === 'function';
+}
+
+/**
+ * Safe Facebook login wrapper that ensures SDK is ready
+ */
+export async function safeFacebookLogin(
+  appId: string, 
+  callback: (response: any) => void, 
+  options?: any
+): Promise<void> {
+  await ensureFacebookReady(appId);
+  
+  if (typeof window.FB.login === 'function') {
+    window.FB.login(callback, options);
+  } else {
+    throw new Error('Facebook login method not available');
+  }
+}
+
+/**
+ * Safe Facebook API wrapper that ensures SDK is ready
+ */
+export async function safeFacebookAPI(
+  appId: string, 
+  path: string, 
+  method: string = 'GET', 
+  params?: any
+): Promise<any> {
+  await ensureFacebookReady(appId);
+  
+  if (typeof window.FB.api === 'function') {
+    return new Promise((resolve, reject) => {
+      window.FB.api(path, method, params, (response: any) => {
+        if (response && !response.error) {
+          resolve(response);
+        } else {
+          reject(response?.error || new Error('Facebook API call failed'));
+        }
+      });
+    });
+  } else {
+    throw new Error('Facebook API method not available');
+  }
+} 

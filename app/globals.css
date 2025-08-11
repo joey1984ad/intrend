@@ -82,3 +82,18 @@
 .theme-dark .min-h-screen {
   background-color: #000 !important;
 }
+
+/* Dark theme: any element sized w-6 gets blue background */
+.theme-dark .w-6 {
+  background-color: #2563eb !important; /* Tailwind blue-600 */
+}
+
+/* Light theme: turn Tailwind blue buttons into black buttons */
+body:not(.theme-dark) .bg-blue-600 {
+  background-color: #000 !important;
+  color: #fff !important;
+  border-color: #000 !important;
+}
+body:not(.theme-dark) .hover\:bg-blue-700:hover {
+  background-color: #111 !important;
+}

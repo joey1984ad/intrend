@@ -43,7 +43,7 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
   onRefreshNow
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+    <div className="card p-4 mb-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">

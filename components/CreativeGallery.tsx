@@ -5,6 +5,17 @@ import FacebookImage from './FacebookImage';
 import { createOptimizedThumbnailUrl } from '../lib/facebook-utils';
 import { CreativeData } from './types';
 
+// Shared helper for background color based on performance
+function getPerformanceBackground(performance: string): string {
+  switch (performance) {
+    case 'excellent': return 'bg-green-50';
+    case 'good': return 'bg-blue-50';
+    case 'average': return 'bg-yellow-50';
+    case 'poor': return 'bg-red-50';
+    default: return 'bg-white';
+  }
+}
+
 
 interface CreativeGalleryProps {
   creatives: CreativeData[];
@@ -48,7 +59,7 @@ const CreativeGallery: React.FC<CreativeGalleryProps> = ({
     }
   };
 
-  const getPerformanceBackground = (performance: string) => {
+  function getPerformanceBackground(performance: string): string {
     switch (performance) {
       case 'excellent': return 'bg-green-50';
       case 'good': return 'bg-blue-50';
@@ -56,7 +67,7 @@ const CreativeGallery: React.FC<CreativeGalleryProps> = ({
       case 'poor': return 'bg-red-50';
       default: return 'bg-white';
     }
-  };
+  }
 
   if (isLoading) {
     return (

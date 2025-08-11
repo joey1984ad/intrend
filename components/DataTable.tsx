@@ -127,20 +127,20 @@ export function DataTable<T extends WithId>({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
+    <div className="card">
       {/* Header */}
       {(title || subtitle) && (
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              {title && <h2 className="text-lg font-semibold text-gray-900">{title}</h2>}
+              {title && <h2 className="text-xl font-semibold">{title}</h2>}
               {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
             </div>
             <div className="flex items-center space-x-3">
               {showExport && onExport && (
                 <button
                   onClick={onExport}
-                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="btn"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Export

@@ -93,12 +93,41 @@ body:not(.theme-dark) .w-6 {
   background-color: #2563eb !important; /* Tailwind blue-600 */
 }
 
-/* Light theme: turn Tailwind blue buttons into black buttons */
+/* Buttons using width utility w-6 should appear navy blue with white text */
+body:not(.theme-dark) button.w-6 {
+  background-color: #1e3a8a !important; /* Tailwind blue-800 (navy-ish) */
+  color: #ffffff !important;
+}
+.theme-dark button.w-6 {
+  background-color: #1e3a8a !important;
+  color: #ffffff !important;
+}
+
+/* Light theme: turn Tailwind blue buttons to blue (ensure consistency) */
 body:not(.theme-dark) .bg-blue-600 {
-  background-color: #000 !important;
+  background-color: #2563eb !important;
   color: #fff !important;
-  border-color: #000 !important;
+  border-color: #2563eb !important;
 }
 body:not(.theme-dark) .hover\:bg-blue-700:hover {
-  background-color: #111 !important;
+  background-color: #1d4ed8 !important;
+}
+
+/* Trendy visual polish */
+@layer base {
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl shadow-lg ring-1 ring-black/5 bg-white;
+  }
+  .theme-dark .card {
+    @apply bg-white/5 backdrop-blur ring-white/10;
+  }
+  .btn {
+    @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors;
+  }
 }

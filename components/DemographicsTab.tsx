@@ -105,11 +105,11 @@ const DemographicsTab: React.FC<DemographicsTabProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Demographics</h2>
+          <h2 className="text-2xl font-bold">Demographics</h2>
           <p className="text-gray-600">Analyze audience demographics and performance by age and gender</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+          <button className="btn-secondary">
             <Download className="w-4 h-4" />
             <span>Export Report</span>
           </button>

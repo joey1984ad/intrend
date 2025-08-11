@@ -88,6 +88,11 @@
   background-color: #2563eb !important; /* Tailwind blue-600 */
 }
 
+/* Light theme: any element sized w-6 gets blue background */
+body:not(.theme-dark) .w-6 {
+  background-color: #2563eb !important; /* Tailwind blue-600 */
+}
+
 /* Light theme: turn Tailwind blue buttons into black buttons */
 body:not(.theme-dark) .bg-blue-600 {
   background-color: #000 !important;

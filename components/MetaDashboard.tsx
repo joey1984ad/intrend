@@ -685,6 +685,7 @@ const MetaDashboardRefactored: React.FC = () => {
             creativeData={creativeData}
             facebookAccessToken={facebookAccessToken}
             dateRange={selectedDateRange}
+            adAccountId={selectedAdAccount || ''}
           />
         )}
 

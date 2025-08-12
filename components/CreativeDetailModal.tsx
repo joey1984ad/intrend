@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CreativeData } from './types';
 import FacebookImage from './FacebookImage';
 import { createOptimizedThumbnailUrl } from '../lib/facebook-utils';
@@ -8,7 +8,13 @@ import {
   createCreativeAnalysisSession,
   logCreativeAnalysis,
   logCreativeAnalysisError,
-  logCreativeAnalysisSuccess
+  logCreativeAnalysisSuccess,
+  getSessionLogs,
+  getAllLogs,
+  clearLogs,
+  exportLogs,
+  setDebugMode,
+  isDebugMode
 } from '../lib/creative-analysis-logger';
 
 interface CreativeDetailModalProps {
@@ -16,6 +22,7 @@ interface CreativeDetailModalProps {
   onClose: () => void;
   dateRange: string;
   facebookAccessToken: string;
+  adAccountId: string; // Add adAccountId as required prop
 }
 
 // Helper for hi-res poster images
@@ -27,14 +34,59 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
   creative,
   onClose,
   dateRange,
-  facebookAccessToken
+  facebookAccessToken,
+  adAccountId
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'breakdown' | 'campaigns' | 'ai'>('overview');
   const [selectedMetric, setSelectedMetric] = useState<'roas' | 'spend' | 'impressions' | 'clicks' | 'ctr'>('roas');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiScore, setAiScore] = useState<number | null>(creative?.aiScore || null);
+  
+  // Debug panel state
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [debugMode, setDebugModeState] = useState(false);
+  const [currentSessionLogs, setCurrentSessionLogs] = useState<any[]>([]);
+  const [lastSessionId, setLastSessionId] = useState<string | null>(null);
 
   if (!creative) return null;
+
+  // Sync debug mode with the logger
+  useEffect(() => {
+    setDebugModeState(isDebugMode());
+  }, []);
+
+  // Update debug mode when it changes
+  const toggleDebugMode = () => {
+    const newMode = !debugMode;
+    setDebugModeState(newMode);
+    setDebugMode(newMode);
+  };
+
+  // Get logs for the current session
+  const refreshSessionLogs = () => {
+    if (lastSessionId) {
+      const logs = getSessionLogs(lastSessionId);
+      setCurrentSessionLogs(logs);
+    }
+  };
+
+  // Auto-refresh logs when analyzing
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isAnalyzing && lastSessionId) {
+      interval = setInterval(refreshSessionLogs, 1000); // Refresh every second during analysis
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isAnalyzing, lastSessionId]);
+
+  // Refresh logs when session ID changes
+  useEffect(() => {
+    if (lastSessionId) {
+      refreshSessionLogs();
+    }
+  }, [lastSessionId]);
 
   // Mock trend data - in real implementation, this would come from API
   const trendData = {
@@ -167,120 +219,312 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
     }
 
     const sessionId = createCreativeAnalysisSession(creative.id);
+    setLastSessionId(sessionId); // Store session ID for debugging
+    const startTime = Date.now();
     
     try {
+      // 🚀 INITIALIZATION PHASE
       logCreativeAnalysis(sessionId, 'info', '🚀 Starting individual creative analysis');
       logCreativeAnalysis(sessionId, 'info', '🎯 Creative details', {
         id: creative.id,
         type: creative.creativeType,
-        name: creative.name
+        name: creative.name,
+        hasImageUrl: !!creative.imageUrl,
+        hasThumbnailUrl: !!creative.thumbnailUrl,
+        adAccountId: creative.adAccountId || 'unknown',
+        timestamp: new Date().toISOString()
       });
 
+      // 📋 VALIDATION PHASE
+      logCreativeAnalysis(sessionId, 'info', '📋 Starting validation phase');
+      
       // Validate creative type
       if (creative.creativeType !== 'image') {
-        logCreativeAnalysis(sessionId, 'warn', '⚠️ Creative is not an image, analysis may not work properly');
+        logCreativeAnalysis(sessionId, 'warn', '⚠️ Creative is not an image, analysis may not work properly', {
+          creativeType: creative.creativeType,
+          supportedTypes: ['image'],
+          message: 'AI analysis is currently only available for image creatives. Video analysis is coming soon!'
+        });
         alert('AI analysis is currently only available for image creatives. Video analysis is coming soon!');
         return;
       }
 
       // Check if creative has image URLs
       if (!creative.imageUrl && !creative.thumbnailUrl) {
-        logCreativeAnalysis(sessionId, 'error', '❌ Creative has no image URLs available for analysis');
+        logCreativeAnalysis(sessionId, 'error', '❌ Creative has no image URLs available for analysis', {
+          imageUrl: creative.imageUrl,
+          thumbnailUrl: creative.thumbnailUrl,
+          message: 'This creative has no image content available for AI analysis.'
+        });
         alert('This creative has no image content available for AI analysis.');
         return;
       }
 
-      logCreativeAnalysis(sessionId, 'info', '✅ Creative validation passed, proceeding with analysis');
-
-      // Get ad account ID from the creative data or props
-      const adAccountId = creative.adAccountId || 'unknown';
+      // Validate ad account ID
       if (!adAccountId || adAccountId === 'unknown') {
-        logCreativeAnalysis(sessionId, 'error', '❌ No ad account ID available for this creative');
+        logCreativeAnalysis(sessionId, 'error', '❌ No ad account ID available for this creative', {
+          adAccountId,
+          creativeId: creative.id,
+          message: 'Ad account ID is required for AI analysis'
+        });
+        alert('Ad account ID is required for AI analysis. Please check your configuration.');
         return;
       }
 
-      logCreativeAnalysis(sessionId, 'info', '🏢 Ad account ID', { adAccountId });
+      logCreativeAnalysis(sessionId, 'info', '✅ Creative validation passed', {
+        validationTime: Date.now() - startTime,
+        adAccountId,
+        imageUrl: creative.imageUrl || creative.thumbnailUrl
+      });
 
-      // Prepare webhook payload
+      // 🔧 CONFIGURATION PHASE
+      logCreativeAnalysis(sessionId, 'info', '🔧 Starting configuration phase');
+      
+      // Get webhook URL from environment
+      const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
+      if (!webhookUrl) {
+        logCreativeAnalysis(sessionId, 'error', '❌ No webhook URL configured for AI analysis', {
+          envVar: 'NEXT_PUBLIC_N8N_WEBHOOK_URL',
+          message: 'AI analysis is not configured. Please check your environment settings.'
+        });
+        alert('AI analysis is not configured. Please check your environment settings.');
+        return;
+      }
+
+      // Validate webhook URL format
+      try {
+        new URL(webhookUrl);
+        logCreativeAnalysis(sessionId, 'info', '✅ Webhook URL format validation passed', { webhookUrl });
+      } catch (urlError) {
+        logCreativeAnalysis(sessionId, 'error', '❌ Invalid webhook URL format', {
+          webhookUrl,
+          error: urlError instanceof Error ? urlError.message : 'Unknown URL error',
+          message: 'Webhook URL is not properly formatted'
+        });
+        alert('Webhook URL is not properly formatted. Please check your configuration.');
+        return;
+      }
+
+      // 📦 PAYLOAD PREPARATION PHASE
+      logCreativeAnalysis(sessionId, 'info', '📦 Starting payload preparation phase');
+      
       const webhookPayload = {
         creativeId: creative.id.toString(),
         adAccountId: adAccountId,
         imageUrl: creative.imageUrl || creative.thumbnailUrl,
         creativeName: creative.name,
         creativeType: creative.creativeType,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        sessionId: sessionId,
+        userAgent: navigator.userAgent,
+        pageUrl: window.location.href
       };
 
-      logCreativeAnalysis(sessionId, 'info', '📦 Webhook payload prepared', webhookPayload);
-
-      // Get webhook URL from environment
-      const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
-      if (!webhookUrl) {
-        logCreativeAnalysis(sessionId, 'error', '❌ No webhook URL configured for AI analysis');
-        alert('AI analysis is not configured. Please check your environment settings.');
-        return;
-      }
-
-      logCreativeAnalysis(sessionId, 'info', '🔗 Calling webhook URL', { webhookUrl });
-
-      setIsAnalyzing(true);
-      const startTime = Date.now();
-
-      // Call the webhook
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(webhookPayload),
+      logCreativeAnalysis(sessionId, 'info', '📦 Webhook payload prepared', {
+        payload: webhookPayload,
+        payloadSize: JSON.stringify(webhookPayload).length,
+        preparationTime: Date.now() - startTime
       });
 
-      const responseTime = Date.now() - startTime;
-      logCreativeAnalysis(sessionId, 'info', '⏱️ Webhook response time', { responseTime });
+      // 🌐 NETWORK PHASE
+      logCreativeAnalysis(sessionId, 'info', '🌐 Starting network phase');
+      logCreativeAnalysis(sessionId, 'info', '🔗 Calling webhook URL', { 
+        webhookUrl,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
 
-      if (!response.ok) {
-        logCreativeAnalysis(sessionId, 'error', '❌ Webhook call failed', {
+      setIsAnalyzing(true);
+      const networkStartTime = Date.now();
+
+      // Call the webhook with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+      try {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookPayload),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        const responseTime = Date.now() - networkStartTime;
+        
+        logCreativeAnalysis(sessionId, 'info', '⏱️ Webhook response received', {
           status: response.status,
           statusText: response.statusText,
-          responseTime
+          responseTime,
+          headers: Object.fromEntries(response.headers.entries()),
+          totalTime: Date.now() - startTime
         });
-        throw new Error(`Webhook call failed: ${response.status} ${response.statusText}`);
-      }
 
-      const result = await response.text();
-      logCreativeAnalysis(sessionId, 'info', '✅ Webhook call successful', result);
+        // Check response status
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'Unable to read error response');
+          logCreativeAnalysis(sessionId, 'error', '❌ Webhook call failed', {
+            status: response.status,
+            statusText: response.statusText,
+            responseTime,
+            errorResponse: errorText,
+            totalTime: Date.now() - startTime
+          });
+          
+          // Provide user-friendly error messages based on status codes
+          let userMessage = 'AI analysis failed. ';
+          switch (response.status) {
+            case 400:
+              userMessage += 'Invalid request data. Please check your creative information.';
+              break;
+            case 401:
+              userMessage += 'Authentication failed. Please check your credentials.';
+              break;
+            case 403:
+              userMessage += 'Access denied. Please check your permissions.';
+              break;
+            case 404:
+              userMessage += 'AI analysis service not found. Please check your configuration.';
+              break;
+            case 429:
+              userMessage += 'Too many requests. Please wait a moment and try again.';
+              break;
+            case 500:
+              userMessage += 'Server error. Please try again later.';
+              break;
+            case 502:
+            case 503:
+            case 504:
+              userMessage += 'Service temporarily unavailable. Please try again later.';
+              break;
+            default:
+              userMessage += `Server returned error ${response.status}. Please try again.`;
+          }
+          
+          throw new Error(`Webhook call failed: ${response.status} ${response.statusText} - ${userMessage}`);
+        }
 
-      let parsedResult;
-      try {
-        parsedResult = JSON.parse(result);
-      } catch (parseError) {
-        logCreativeAnalysis(sessionId, 'warn', '⚠️ Webhook response is not valid JSON', {
-          response: result,
-          parseError: parseError.message
+        // 📊 RESPONSE PROCESSING PHASE
+        logCreativeAnalysis(sessionId, 'info', '📊 Starting response processing phase');
+        
+        const result = await response.text();
+        const processingTime = Date.now() - networkStartTime;
+        
+        logCreativeAnalysis(sessionId, 'info', '✅ Webhook call successful', {
+          responseLength: result.length,
+          processingTime,
+          totalTime: Date.now() - startTime
         });
-        // Continue with the response as-is
-        parsedResult = { message: result };
+
+        // Parse response
+        let parsedResult;
+        try {
+          parsedResult = JSON.parse(result);
+          logCreativeAnalysis(sessionId, 'info', '✅ Response parsed successfully', {
+            parsedResult,
+            parseTime: Date.now() - networkStartTime
+          });
+        } catch (parseError) {
+          logCreativeAnalysis(sessionId, 'warn', '⚠️ Webhook response is not valid JSON', {
+            response: result,
+            parseError: parseError instanceof Error ? parseError.message : 'Unknown parse error',
+            parseTime: Date.now() - networkStartTime
+          });
+          // Continue with the response as-is
+          parsedResult = { message: result };
+        }
+
+        // 🎯 SUCCESS PHASE
+        const totalTime = Date.now() - startTime;
+        logCreativeAnalysisSuccess(sessionId, parsedResult, totalTime);
+
+        // Update local state with the AI score if available
+        if (parsedResult.score !== undefined) {
+          setAiScore(parsedResult.score);
+          logCreativeAnalysis(sessionId, 'info', '✅ AI score updated in local state', {
+            score: parsedResult.score,
+            previousScore: creative.aiScore
+          });
+        }
+
+        // Show success message with details
+        const scoreMessage = parsedResult.score !== undefined ? `Score: ${parsedResult.score}/10` : 'Analysis completed';
+        const timeMessage = `(${totalTime}ms)`;
+        alert(`AI analysis completed successfully! ${scoreMessage} ${timeMessage}`);
+
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          logCreativeAnalysis(sessionId, 'error', '⏰ Webhook call timed out', {
+            timeout: 30000,
+            totalTime: Date.now() - startTime,
+            message: 'Request took longer than 30 seconds'
+          });
+          throw new Error('AI analysis timed out. The request took longer than 30 seconds. Please try again.');
+        }
+        
+        throw fetchError;
       }
-
-      const totalTime = Date.now() - startTime;
-      logCreativeAnalysisSuccess(sessionId, parsedResult, totalTime);
-
-      // Update local state with the AI score if available
-      if (parsedResult.score !== undefined) {
-        setAiScore(parsedResult.score);
-      }
-
-      alert(`AI analysis completed! Score: ${parsedResult.score || 'N/A'}/10`);
 
     } catch (error) {
       const totalTime = Date.now() - startTime;
-      logCreativeAnalysisError(sessionId, error instanceof Error ? error : new Error('Unknown error occurred'), {
+      const errorDetails = {
         creativeId: creative.id,
-        totalTime
+        totalTime,
+        errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error occurred',
+        errorStack: error instanceof Error ? error.stack : undefined,
+        sessionId,
+        timestamp: new Date().toISOString()
+      };
+
+      logCreativeAnalysisError(sessionId, error instanceof Error ? error : new Error('Unknown error occurred'), errorDetails);
+      
+      // Enhanced error handling with user-friendly messages
+      let userMessage = 'AI analysis failed. ';
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          userMessage += 'The request timed out. Please try again.';
+        } else if (error.message.includes('fetch')) {
+          userMessage += 'Network error. Please check your internet connection.';
+        } else if (error.message.includes('webhook')) {
+          userMessage += error.message.split(' - ')[1] || 'Please try again.';
+        } else {
+          userMessage += 'An unexpected error occurred. Please try again.';
+        }
+      } else {
+        userMessage += 'An unexpected error occurred. Please try again.';
+      }
+      
+      alert(userMessage);
+      
+      // Log additional debugging information
+      console.group(`🔍 AI Analysis Debug Info - Session ${sessionId}`);
+      console.log('Creative Data:', creative);
+      console.log('Environment Check:', {
+        webhookUrl: process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL,
+        hasAccessToken: !!facebookAccessToken,
+        userAgent: navigator.userAgent,
+        timestamp: new Date().toISOString()
       });
-      alert('AI analysis failed. Please check the console for details.');
+      console.log('Error Details:', errorDetails);
+      console.groupEnd();
+      
     } finally {
       setIsAnalyzing(false);
+      const finalTime = Date.now() - startTime;
+      logCreativeAnalysis(sessionId, 'info', '🏁 AI analysis session completed', {
+        sessionId,
+        totalTime: finalTime,
+        success: aiScore !== null,
+        finalState: {
+          isAnalyzing: false,
+          aiScore: aiScore
+        }
+      });
     }
   };
 
@@ -635,7 +879,7 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                   )}
 
                   {/* AI Analysis Controls */}
-                  <div className="bg-gray-50 rounded-lg p-6">
+                  <div>
                     <h4 className="text-lg font-medium text-gray-900 mb-4">Analyze Creative</h4>
                     
                     {creative.creativeType === 'image' ? (
@@ -668,14 +912,12 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                             )}
                           </button>
                           
-                          {aiScore !== null && (
-                            <button
-                              onClick={() => window.open('/api/ai/creative-score?creativeId=' + creative.id + '&adAccountId=' + (creative.adAccountId || 'unknown'), '_blank')}
-                              className="px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
-                            >
-                              View Raw Data
-                            </button>
-                          )}
+                          <button
+                            onClick={() => window.open('/api/ai/creative-score?creativeId=' + creative.id + '&adAccountId=' + adAccountId, '_blank')}
+                            className="px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+                          >
+                            View Raw Data
+                          </button>
                         </div>
                       </div>
                     ) : (
@@ -687,20 +929,203 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                     )}
                   </div>
 
-                  {/* AI Analysis Info */}
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="text-yellow-600 text-xl">ℹ️</div>
-                      <div>
-                        <h4 className="font-medium text-yellow-900 mb-2">How AI Analysis Works</h4>
-                        <ul className="text-sm text-yellow-800 space-y-1">
-                          <li>• Analyzes visual elements, colors, and composition</li>
-                          <li>• Evaluates brand consistency and messaging</li>
-                          <li>• Provides score from 0-10 with detailed insights</li>
-                          <li>• Results are saved for future reference</li>
-                        </ul>
-                      </div>
+                  {/* Debug Panel Toggle */}
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-medium text-gray-900">🔧 Debug & Troubleshooting</h4>
+                      <button
+                        onClick={() => setShowDebugPanel(!showDebugPanel)}
+                        className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                      >
+                        {showDebugPanel ? 'Hide Debug Panel' : 'Show Debug Panel'}
+                      </button>
                     </div>
+                    
+                    {showDebugPanel && (
+                      <div className="mt-4 space-y-4">
+                        {/* Debug Controls */}
+                        <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={debugMode}
+                              onChange={toggleDebugMode}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm font-medium text-gray-700">Enable Debug Mode</span>
+                          </label>
+                          
+                          <button
+                            onClick={refreshSessionLogs}
+                            className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                          >
+                            🔄 Refresh Logs
+                          </button>
+                          
+                          <button
+                            onClick={() => {
+                              clearLogs();
+                              setCurrentSessionLogs([]);
+                            }}
+                            className="px-3 py-1 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded hover:bg-red-50 transition-colors"
+                          >
+                            🗑️ Clear Logs
+                          </button>
+                          
+                          <button
+                            onClick={exportLogs}
+                            className="px-3 py-1 text-sm text-green-600 hover:text-green-800 border border-green-300 rounded hover:bg-green-50 transition-colors"
+                          >
+                            📥 Export Logs
+                          </button>
+                        </div>
+
+                        {/* Session Information */}
+                        {lastSessionId && (
+                          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <h5 className="font-medium text-blue-900 mb-2">📋 Current Session</h5>
+                            <div className="text-sm text-blue-700">
+                              <p><strong>Session ID:</strong> {lastSessionId}</p>
+                              <p><strong>Status:</strong> {isAnalyzing ? '🔄 Analyzing...' : '⏸️ Idle'}</p>
+                              <p><strong>Creative ID:</strong> {creative.id}</p>
+                              <p><strong>Creative Type:</strong> {creative.creativeType}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Environment Check */}
+                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                          <h5 className="font-medium text-yellow-900 mb-2">🔍 Environment Check</h5>
+                          <div className="text-sm text-yellow-700 space-y-1">
+                            <p><strong>Webhook URL:</strong> {process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL ? '✅ Configured' : '❌ Not configured'}</p>
+                            <p><strong>Facebook Token:</strong> {facebookAccessToken ? '✅ Available' : '❌ Not available'}</p>
+                            <p><strong>Creative Data:</strong> {creative ? '✅ Available' : '❌ Not available'}</p>
+                            <p><strong>Ad Account ID:</strong> {adAccountId ? '✅ Available' : '❌ Missing'}</p>
+                          </div>
+                        </div>
+
+                        {/* Real-time Logs */}
+                        <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                          <div className="flex items-center justify-between mb-3">
+                            <h5 className="font-medium text-gray-900">📝 Real-time Logs</h5>
+                            <span className="text-xs text-gray-500">{currentSessionLogs.length} entries</span>
+                          </div>
+                          
+                          <div className="max-h-64 overflow-y-auto space-y-2">
+                            {currentSessionLogs.length > 0 ? (
+                              currentSessionLogs.map((log, index) => (
+                                <div key={index} className={`text-xs p-2 rounded border-l-4 ${
+                                  log.level === 'error' ? 'border-red-400 bg-red-50' :
+                                  log.level === 'warn' ? 'border-yellow-400 bg-yellow-50' :
+                                  'border-blue-400 bg-blue-50'
+                                }`}>
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-medium">{log.message}</span>
+                                    <span className="text-gray-500">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                                  </div>
+                                  {log.data && (
+                                    <details className="mt-1">
+                                      <summary className="cursor-pointer text-gray-600 hover:text-gray-800">View Data</summary>
+                                      <pre className="mt-1 text-xs bg-white p-2 rounded border overflow-x-auto">
+                                        {JSON.stringify(log.data, null, 2)}
+                                      </pre>
+                                    </details>
+                                  )}
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-gray-500 text-center py-4">No logs available. Start an AI analysis to see logs here.</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Troubleshooting Tips */}
+                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                          <h5 className="font-medium text-green-900 mb-2">💡 Troubleshooting Tips</h5>
+                          <div className="text-sm text-green-700 space-y-2">
+                            <p><strong>Common Issues:</strong></p>
+                            <ul className="list-disc list-inside space-y-1 ml-4">
+                              <li>Check if webhook URL is configured in environment variables</li>
+                              <li>Verify Facebook access token is valid</li>
+                              <li>Ensure creative has valid image URLs</li>
+                              <li>Check browser console for detailed error messages</li>
+                              <li>Verify n8n workflow is running and accessible</li>
+                            </ul>
+                            <p className="mt-2"><strong>Debug Mode:</strong> Enable debug mode for detailed logging and performance metrics.</p>
+                          </div>
+                        </div>
+
+                        {/* Error Summary */}
+                        {currentSessionLogs.some(log => log.level === 'error') && (
+                          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <h5 className="font-medium text-red-900 mb-2">🚨 Error Summary</h5>
+                            <div className="text-sm text-red-700 space-y-2">
+                              {(() => {
+                                const errorLogs = currentSessionLogs.filter(log => log.level === 'error');
+                                const warningLogs = currentSessionLogs.filter(log => log.level === 'warn');
+                                
+                                return (
+                                  <>
+                                    <p><strong>Errors:</strong> {errorLogs.length} | <strong>Warnings:</strong> {warningLogs.length}</p>
+                                    {errorLogs.length > 0 && (
+                                      <div className="space-y-1">
+                                        <p><strong>Recent Errors:</strong></p>
+                                        {errorLogs.slice(-3).map((log, index) => (
+                                          <div key={index} className="ml-4 p-2 bg-red-100 rounded border-l-2 border-red-400">
+                                            <p className="font-medium">{log.message}</p>
+                                            {log.data && (
+                                              <details className="mt-1">
+                                                <summary className="cursor-pointer text-red-600 hover:text-red-800 text-xs">View Error Details</summary>
+                                                <pre className="mt-1 text-xs bg-white p-2 rounded border overflow-x-auto">
+                                                  {JSON.stringify(log.data, null, 2)}
+                                                </pre>
+                                              </details>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Performance Metrics */}
+                        {currentSessionLogs.length > 0 && (
+                          <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                            <h5 className="font-medium text-purple-900 mb-2">📊 Performance Metrics</h5>
+                            <div className="text-sm text-purple-700 space-y-1">
+                              {(() => {
+                                const infoLogs = currentSessionLogs.filter(log => log.level === 'info');
+                                const performanceLogs = infoLogs.filter(log => 
+                                  log.message.includes('Phase completed') || 
+                                  log.message.includes('Performance Metric') ||
+                                  log.message.includes('response time')
+                                );
+                                
+                                return (
+                                  <>
+                                    <p><strong>Total Logs:</strong> {currentSessionLogs.length}</p>
+                                    <p><strong>Performance Logs:</strong> {performanceLogs.length}</p>
+                                    {performanceLogs.length > 0 && (
+                                      <div className="mt-2 space-y-1">
+                                        {performanceLogs.slice(-5).map((log, index) => (
+                                          <div key={index} className="ml-4 p-1 bg-purple-100 rounded text-xs">
+                                            {log.message} {log.data && `(${JSON.stringify(log.data)})`}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

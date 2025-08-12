@@ -19,6 +19,7 @@ interface CreativesTabProps {
   creativeData: CreativeData[];
   facebookAccessToken: string;
   dateRange: string;
+  adAccountId: string; // Add adAccountId prop
 }
 
 type ViewMode = 'gallery' | 'table';
@@ -32,7 +33,8 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
   isLoadingCreatives,
   creativeData,
   facebookAccessToken,
-  dateRange
+  dateRange,
+  adAccountId
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('gallery');
   const [selectedCreatives, setSelectedCreatives] = useState<number[]>([]);
@@ -393,6 +395,7 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
           }}
           dateRange={dateRange}
           facebookAccessToken={facebookAccessToken}
+          adAccountId={adAccountId}
         />
       )}
     </div>

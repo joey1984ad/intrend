@@ -16,6 +16,7 @@ import {
   setDebugMode,
   isDebugMode
 } from '../lib/creative-analysis-logger';
+import WebhookConnectionTester from './WebhookConnectionTester';
 
 interface CreativeDetailModalProps {
   creative: CreativeData | null;
@@ -1003,6 +1004,15 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                             <p><strong>Ad Account ID:</strong> {adAccountId ? '✅ Available' : '❌ Missing'}</p>
                           </div>
                         </div>
+
+                        {/* Webhook Connection Tester */}
+                        <WebhookConnectionTester 
+                          webhookUrl={process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL}
+                          onTestComplete={(results) => {
+                            console.log('Webhook test results:', results);
+                            // You can add additional logic here based on test results
+                          }}
+                        />
 
                         {/* Real-time Logs */}
                         <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">

@@ -8,7 +8,10 @@ import {
   createCreativeAnalysisSession,
   logCreativeAnalysis,
   logCreativeAnalysisError,
-  logCreativeAnalysisSuccess
+  logCreativeAnalysisSuccess,
+  logWebhookCall,
+  logWebhookResponse,
+  activeSessions
 } from '../lib/creative-analysis-logger';
 
 interface CreativeDetailModalProps {
@@ -168,6 +171,9 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
 
     const sessionId = createCreativeAnalysisSession(creative.id);
     
+    // Initialize timing variables outside try block for access in catch/finally
+    let startTime: number = Date.now();
+    
     try {
       logCreativeAnalysis(sessionId, 'info', '🚀 Starting individual creative analysis');
       logCreativeAnalysis(sessionId, 'info', '🎯 Creative details', {
@@ -176,111 +182,375 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
         name: creative.name
       });
 
+      // Enhanced validation with detailed logging
+      logCreativeAnalysis(sessionId, 'info', '🔍 Starting creative validation');
+      
       // Validate creative type
       if (creative.creativeType !== 'image') {
-        logCreativeAnalysis(sessionId, 'warn', '⚠️ Creative is not an image, analysis may not work properly');
+        logCreativeAnalysis(sessionId, 'warn', '⚠️ Creative is not an image, analysis may not work properly', {
+          expectedType: 'image',
+          actualType: creative.creativeType
+        });
         alert('AI analysis is currently only available for image creatives. Video analysis is coming soon!');
         return;
       }
 
-      // Check if creative has image URLs
-      if (!creative.imageUrl && !creative.thumbnailUrl) {
-        logCreativeAnalysis(sessionId, 'error', '❌ Creative has no image URLs available for analysis');
+      // Check if creative has image URLs with detailed validation
+      const imageUrl = creative.imageUrl || creative.thumbnailUrl;
+      if (!imageUrl) {
+        logCreativeAnalysis(sessionId, 'error', '❌ Creative has no image URLs available for analysis', {
+          imageUrl: creative.imageUrl,
+          thumbnailUrl: creative.thumbnailUrl,
+          availableFields: Object.keys(creative).filter(key => key.includes('url') || key.includes('image'))
+        });
         alert('This creative has no image content available for AI analysis.');
+        return;
+      }
+
+      // Validate image URL format
+      try {
+        new URL(imageUrl);
+        logCreativeAnalysis(sessionId, 'info', '✅ Image URL format validation passed', { imageUrl });
+      } catch (urlError) {
+        logCreativeAnalysis(sessionId, 'error', '❌ Invalid image URL format', { 
+          imageUrl, 
+          error: urlError instanceof Error ? urlError.message : 'Unknown URL error' 
+        });
+        alert('The creative image URL is not valid. Please check the creative data.');
         return;
       }
 
       logCreativeAnalysis(sessionId, 'info', '✅ Creative validation passed, proceeding with analysis');
 
-      // Get ad account ID from the creative data or props
+      // Enhanced ad account ID validation
       const adAccountId = creative.adAccountId || 'unknown';
       if (!adAccountId || adAccountId === 'unknown') {
-        logCreativeAnalysis(sessionId, 'error', '❌ No ad account ID available for this creative');
+        logCreativeAnalysis(sessionId, 'error', '❌ No ad account ID available for this creative', {
+          adAccountId,
+          creativeFields: Object.keys(creative),
+          hasAdAccountId: 'adAccountId' in creative
+        });
+        
+        // Try to extract from other fields
+        const possibleAdAccountId = creative.campaignName || creative.adsetName;
+        if (possibleAdAccountId) {
+          logCreativeAnalysis(sessionId, 'warn', '⚠️ Attempting to use alternative identifier', { 
+            alternativeId: possibleAdAccountId,
+            type: typeof possibleAdAccountId 
+          });
+        }
+        
+        alert('Unable to identify the ad account for this creative. Please refresh the data and try again.');
         return;
       }
 
-      logCreativeAnalysis(sessionId, 'info', '🏢 Ad account ID', { adAccountId });
+      logCreativeAnalysis(sessionId, 'info', '🏢 Ad account ID validation passed', { adAccountId });
 
-      // Prepare webhook payload
-      const webhookPayload = {
-        creativeId: creative.id.toString(),
-        adAccountId: adAccountId,
-        imageUrl: creative.imageUrl || creative.thumbnailUrl,
-        creativeName: creative.name,
-        creativeType: creative.creativeType,
-        timestamp: new Date().toISOString()
-      };
-
-      logCreativeAnalysis(sessionId, 'info', '📦 Webhook payload prepared', webhookPayload);
-
-      // Get webhook URL from environment
+      // Environment configuration validation
+      logCreativeAnalysis(sessionId, 'info', '🔧 Validating environment configuration');
+      
       const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
       if (!webhookUrl) {
-        logCreativeAnalysis(sessionId, 'error', '❌ No webhook URL configured for AI analysis');
+        logCreativeAnalysis(sessionId, 'error', '❌ No webhook URL configured for AI analysis', {
+          envVars: {
+            hasWebhookUrl: !!process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL,
+            hasAccessToken: !!facebookAccessToken,
+            nodeEnv: process.env.NODE_ENV
+          }
+        });
         alert('AI analysis is not configured. Please check your environment settings.');
         return;
       }
 
+      // Validate webhook URL format
+      try {
+        new URL(webhookUrl);
+        logCreativeAnalysis(sessionId, 'info', '✅ Webhook URL format validation passed', { webhookUrl });
+      } catch (urlError) {
+        logCreativeAnalysis(sessionId, 'error', '❌ Invalid webhook URL format', { 
+          webhookUrl, 
+          error: urlError instanceof Error ? urlError.message : 'Unknown URL error' 
+        });
+        alert('The AI analysis service URL is not properly configured. Please contact support.');
+        return;
+      }
+
+      // Enhanced webhook payload preparation
+      logCreativeAnalysis(sessionId, 'info', '📦 Preparing webhook payload');
+      
+      const webhookPayload = {
+        creativeId: creative.id.toString(),
+        adAccountId: adAccountId,
+        imageUrl: imageUrl,
+        creativeName: creative.name,
+        creativeType: creative.creativeType,
+        timestamp: new Date().toISOString(),
+        sessionId: sessionId, // Include session ID for tracking
+        metadata: {
+          campaignName: creative.campaignName,
+          adsetName: creative.adsetName,
+          performance: creative.performance,
+          impressions: creative.impressions,
+          clicks: creative.clicks,
+          spend: creative.spend
+        }
+      };
+
+      logCreativeAnalysis(sessionId, 'info', '📦 Webhook payload prepared successfully', webhookPayload);
+
+      // Pre-flight checks
+      logCreativeAnalysis(sessionId, 'info', '✈️ Performing pre-flight checks');
+      
+      // Check network connectivity
+      try {
+        const testResponse = await fetch(webhookUrl, { 
+          method: 'HEAD',
+          mode: 'no-cors' // Just check if we can reach the endpoint
+        });
+        logCreativeAnalysis(sessionId, 'info', '✅ Network connectivity test passed');
+      } catch (networkError) {
+        logCreativeAnalysis(sessionId, 'warn', '⚠️ Network connectivity test failed', { 
+          error: networkError instanceof Error ? networkError.message : 'Unknown network error',
+          webhookUrl 
+        });
+        // Continue anyway as this might be a CORS issue
+      }
+
+      // Check Facebook access token validity
+      if (facebookAccessToken) {
+        try {
+          const tokenTest = await fetch(`https://graph.facebook.com/me?access_token=${facebookAccessToken}`);
+          if (tokenTest.ok) {
+            logCreativeAnalysis(sessionId, 'info', '✅ Facebook access token validation passed');
+          } else {
+            logCreativeAnalysis(sessionId, 'warn', '⚠️ Facebook access token may be expired', { 
+              status: tokenTest.status,
+              statusText: tokenTest.statusText 
+            });
+          }
+        } catch (tokenError) {
+          logCreativeAnalysis(sessionId, 'warn', '⚠️ Facebook access token validation failed', { 
+            error: tokenError instanceof Error ? tokenError.message : 'Unknown token error' 
+          });
+        }
+      }
+
       logCreativeAnalysis(sessionId, 'info', '🔗 Calling webhook URL', { webhookUrl });
 
+      startTime = Date.now(); // Set startTime here
       setIsAnalyzing(true);
-      const startTime = Date.now();
 
-      // Call the webhook
+      // Enhanced webhook call with detailed logging
+      logWebhookCall(sessionId, webhookUrl, webhookPayload);
+
+      // Call the webhook with timeout and retry logic
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Session-ID': sessionId,
+          'X-Creative-ID': creative.id.toString(),
+          'X-Timestamp': new Date().toISOString()
         },
         body: JSON.stringify(webhookPayload),
+        signal: AbortSignal.timeout(30000) // 30 second timeout
       });
 
       const responseTime = Date.now() - startTime;
-      logCreativeAnalysis(sessionId, 'info', '⏱️ Webhook response time', { responseTime });
+      logCreativeAnalysis(sessionId, 'info', '⏱️ Webhook response received', { responseTime });
+
+      // Enhanced response handling
+      logWebhookResponse(sessionId, response, '', responseTime);
 
       if (!response.ok) {
-        logCreativeAnalysis(sessionId, 'error', '❌ Webhook call failed', {
+        const errorDetails = {
           status: response.status,
           statusText: response.statusText,
-          responseTime
-        });
-        throw new Error(`Webhook call failed: ${response.status} ${response.statusText}`);
+          responseTime,
+          headers: Object.fromEntries(response.headers.entries()),
+          webhookUrl
+        };
+        
+        logCreativeAnalysis(sessionId, 'error', '❌ Webhook call failed', errorDetails);
+        
+        // Provide specific error messages based on status codes
+        let userMessage = 'AI analysis failed. ';
+        switch (response.status) {
+          case 400:
+            userMessage += 'The request was invalid. Please check the creative data.';
+            break;
+          case 401:
+            userMessage += 'Authentication failed. Please check your credentials.';
+            break;
+          case 403:
+            userMessage += 'Access denied. You may not have permission to use this service.';
+            break;
+          case 404:
+            userMessage += 'AI analysis service not found. Please contact support.';
+            break;
+          case 429:
+            userMessage += 'Too many requests. Please wait a moment and try again.';
+            break;
+          case 500:
+            userMessage += 'Internal server error. The AI service is experiencing issues.';
+            break;
+          case 502:
+          case 503:
+          case 504:
+            userMessage += 'AI service temporarily unavailable. Please try again later.';
+            break;
+          default:
+            userMessage += `Server error (${response.status}). Please try again.`;
+        }
+        
+        throw new Error(`Webhook call failed: ${response.status} ${response.statusText} - ${userMessage}`);
       }
 
-      const result = await response.text();
-      logCreativeAnalysis(sessionId, 'info', '✅ Webhook call successful', result);
+      // Parse response with enhanced error handling
+      let result;
+      try {
+        result = await response.text();
+        logCreativeAnalysis(sessionId, 'info', '📄 Raw response received', { 
+          responseLength: result.length,
+          responsePreview: result.substring(0, 200) + (result.length > 200 ? '...' : '')
+        });
+      } catch (readError) {
+        logCreativeAnalysis(sessionId, 'error', '❌ Failed to read response body', { 
+          error: readError instanceof Error ? readError.message : 'Unknown read error' 
+        });
+        throw new Error('Failed to read response from AI analysis service');
+      }
 
       let parsedResult;
       try {
         parsedResult = JSON.parse(result);
+        logCreativeAnalysis(sessionId, 'info', '✅ Response parsed successfully as JSON', { 
+          hasScore: 'score' in parsedResult,
+          hasMessage: 'message' in parsedResult,
+          resultKeys: Object.keys(parsedResult)
+        });
       } catch (parseError) {
         logCreativeAnalysis(sessionId, 'warn', '⚠️ Webhook response is not valid JSON', {
           response: result,
-          parseError: parseError.message
+          parseError: parseError instanceof Error ? parseError.message : 'Unknown parse error',
+          responseLength: result.length
         });
-        // Continue with the response as-is
-        parsedResult = { message: result };
+        
+        // Try to extract useful information from non-JSON response
+        if (result.includes('score') || result.includes('Score')) {
+          const scoreMatch = result.match(/(?:score|Score)[:\s]*(\d+(?:\.\d+)?)/i);
+          if (scoreMatch) {
+            parsedResult = { 
+              score: parseFloat(scoreMatch[1]),
+              message: 'Score extracted from response',
+              rawResponse: result 
+            };
+            logCreativeAnalysis(sessionId, 'info', '🔍 Extracted score from non-JSON response', { 
+              extractedScore: parsedResult.score 
+            });
+          } else {
+            parsedResult = { message: result, rawResponse: result };
+          }
+        } else {
+          parsedResult = { message: result, rawResponse: result };
+        }
       }
 
       const totalTime = Date.now() - startTime;
       logCreativeAnalysisSuccess(sessionId, parsedResult, totalTime);
 
-      // Update local state with the AI score if available
+      // Enhanced result validation and user feedback
       if (parsedResult.score !== undefined) {
-        setAiScore(parsedResult.score);
+        const score = typeof parsedResult.score === 'number' ? parsedResult.score : parseFloat(parsedResult.score);
+        if (!isNaN(score) && score >= 0 && score <= 10) {
+          setAiScore(score);
+          logCreativeAnalysis(sessionId, 'info', '🎯 AI score updated successfully', { score });
+          
+          // Provide detailed feedback based on score
+          let feedback = '';
+          if (score >= 8) {
+            feedback = 'Excellent! This creative has high AI appeal.';
+          } else if (score >= 6) {
+            feedback = 'Good! This creative shows promise.';
+          } else if (score >= 4) {
+            feedback = 'Fair. Consider optimizing visual elements.';
+          } else {
+            feedback = 'Needs improvement. Focus on visual appeal and messaging.';
+          }
+          
+          alert(`AI analysis completed! Score: ${score}/10\n\n${feedback}`);
+        } else {
+          logCreativeAnalysis(sessionId, 'warn', '⚠️ Invalid score format received', { 
+            score: parsedResult.score,
+            parsedScore: score,
+            isValid: !isNaN(score) && score >= 0 && score <= 10
+          });
+          alert(`AI analysis completed! Score: ${parsedResult.score}/10\n\nNote: Score format may be unexpected.`);
+        }
+      } else {
+        logCreativeAnalysis(sessionId, 'warn', '⚠️ No score in response', { 
+          resultKeys: Object.keys(parsedResult),
+          hasScore: 'score' in parsedResult
+        });
+        alert(`AI analysis completed! ${parsedResult.message || 'Analysis finished successfully.'}`);
       }
-
-      alert(`AI analysis completed! Score: ${parsedResult.score || 'N/A'}/10`);
 
     } catch (error) {
       const totalTime = Date.now() - startTime;
-      logCreativeAnalysisError(sessionId, error instanceof Error ? error : new Error('Unknown error occurred'), {
+      
+      // Enhanced error context
+      const errorContext = {
         creativeId: creative.id,
-        totalTime
+        creativeType: creative.creativeType,
+        adAccountId: creative.adAccountId,
+        imageUrl: creative.imageUrl || creative.thumbnailUrl,
+        totalTime,
+        step: 'ai_analysis',
+        errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+        errorMessage: error instanceof Error ? error.message : String(error)
+      };
+      
+      logCreativeAnalysisError(sessionId, error instanceof Error ? error : new Error('Unknown error occurred'), errorContext);
+      
+      // Enhanced user error message
+      let userMessage = 'AI analysis failed. ';
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          userMessage += 'The request timed out. Please check your internet connection and try again.';
+        } else if (error.message.includes('fetch')) {
+          userMessage += 'Network error. Please check your internet connection.';
+        } else if (error.message.includes('webhook')) {
+          userMessage += error.message;
+        } else {
+          userMessage += 'An unexpected error occurred. Please try again or contact support.';
+        }
+      } else {
+        userMessage += 'An unexpected error occurred. Please try again.';
+      }
+      
+      alert(userMessage);
+      
+      // Log additional debugging information
+      console.group('🔍 AI Analysis Debug Information');
+      console.log('Session ID:', sessionId);
+      console.log('Creative Data:', creative);
+      console.log('Facebook Access Token:', facebookAccessToken ? 'Present' : 'Missing');
+      console.log('Environment Variables:', {
+        hasWebhookUrl: !!process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL,
+        nodeEnv: process.env.NODE_ENV
       });
-      alert('AI analysis failed. Please check the console for details.');
+      console.log('Error Details:', error);
+      console.groupEnd();
+      
     } finally {
       setIsAnalyzing(false);
+      
+      // Final session logging
+      logCreativeAnalysis(sessionId, 'info', '🏁 AI analysis session completed', {
+        finalStatus: 'completed',
+        totalDuration: Date.now() - startTime,
+        errors: activeSessions.get(sessionId)?.errors.length || 0
+      });
     }
   };
 
@@ -702,6 +972,123 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                       </div>
                     </div>
                   </div>
+
+                  {/* Debug Panel - Only show in development */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="text-gray-600 text-xl">🔧</div>
+                        <div className="w-full">
+                          <h4 className="font-medium text-gray-900 mb-2">Debug Information</h4>
+                          
+                          {/* Session Status */}
+                          <div className="mb-3">
+                            <h5 className="text-sm font-medium text-gray-700 mb-1">Session Status</h5>
+                            <div className="text-xs text-gray-600 bg-white p-2 rounded border">
+                              {activeSessions.size > 0 ? (
+                                <div>
+                                  <p>Active Sessions: {activeSessions.size}</p>
+                                  {Array.from(activeSessions.values()).map(session => (
+                                    <div key={session.id} className="mt-1 p-1 bg-gray-50 rounded">
+                                      <p><strong>ID:</strong> {session.id}</p>
+                                      <p><strong>Status:</strong> <span className={`px-1 py-0.5 rounded text-xs ${
+                                        session.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                        session.status === 'failed' ? 'bg-red-100 text-red-800' :
+                                        session.status === 'running' ? 'bg-blue-100 text-blue-800' :
+                                        'bg-gray-100 text-gray-800'
+                                      }`}>{session.status}</span></p>
+                                      <p><strong>Steps:</strong> {session.steps.length}</p>
+                                      <p><strong>Errors:</strong> {session.errors.length}</p>
+                                      <p><strong>Duration:</strong> {session.performance.totalTime}ms</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p>No active sessions</p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Environment Check */}
+                          <div className="mb-3">
+                            <h5 className="text-sm font-medium text-gray-700 mb-1">Environment Check</h5>
+                            <div className="text-xs text-gray-600 bg-white p-2 rounded border">
+                              <p><strong>Webhook URL:</strong> {process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL ? '✅ Configured' : '❌ Missing'}</p>
+                              <p><strong>Access Token:</strong> {facebookAccessToken ? '✅ Present' : '❌ Missing'}</p>
+                              <p><strong>Node Env:</strong> {process.env.NODE_ENV}</p>
+                              <p><strong>Creative Type:</strong> {creative.creativeType}</p>
+                              <p><strong>Has Image:</strong> {creative.imageUrl || creative.thumbnailUrl ? '✅ Yes' : '❌ No'}</p>
+                            </div>
+                          </div>
+
+                          {/* Troubleshooting Actions */}
+                          <div className="mb-3">
+                            <h5 className="text-sm font-medium text-gray-700 mb-1">Troubleshooting Actions</h5>
+                            <div className="space-y-2">
+                              <button
+                                onClick={() => {
+                                  const session = Array.from(activeSessions.values())[0];
+                                  if (session) {
+                                    console.group('🔍 Session Debug Data');
+                                    console.log('Full Session:', session);
+                                    console.log('Steps:', session.steps);
+                                    console.log('Errors:', session.errors);
+                                    console.log('Performance:', session.performance);
+                                    console.log('Troubleshooting:', session.troubleshooting);
+                                    console.groupEnd();
+                                  }
+                                }}
+                                className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs rounded transition-colors"
+                              >
+                                Log Session to Console
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const session = Array.from(activeSessions.values())[0];
+                                  if (session) {
+                                    const dataStr = JSON.stringify(session, null, 2);
+                                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                                    const url = URL.createObjectURL(dataBlob);
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = `ai-analysis-session-${session.id}.json`;
+                                    link.click();
+                                    URL.revokeObjectURL(url);
+                                  }
+                                }}
+                                className="px-2 py-1 bg-green-100 hover:bg-green-200 text-green-800 text-xs rounded transition-colors"
+                              >
+                                Export Session Data
+                              </button>
+                              <button
+                                onClick={() => {
+                                  activeSessions.clear();
+                                  console.log('🧹 All sessions cleared');
+                                }}
+                                className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-800 text-xs rounded transition-colors"
+                              >
+                                Clear All Sessions
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Common Issues */}
+                          <div>
+                            <h5 className="text-sm font-medium text-gray-700 mb-1">Common Issues & Solutions</h5>
+                            <div className="text-xs text-gray-600 bg-white p-2 rounded border">
+                              <ul className="space-y-1">
+                                <li>• <strong>Timeout:</strong> Check internet connection and webhook service status</li>
+                                <li>• <strong>Authentication:</strong> Verify Facebook access token is valid</li>
+                                <li>• <strong>Image Access:</strong> Ensure creative has accessible image URLs</li>
+                                <li>• <strong>Webhook Error:</strong> Check environment configuration</li>
+                                <li>• <strong>Rate Limit:</strong> Wait before retrying analysis</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -13,6 +13,13 @@ import DemographicsTab from './DemographicsTab';
 import Modals from './Modals';
 import InsightsGraph from './InsightsGraph';
 import { ConnectedAccount, Notification, Metric, Campaign, CreativeData } from './types';
+import { 
+  createCreativeAnalysisSession, 
+  logCreativeAnalysis, 
+  logCreativeAnalysisError, 
+  logWebhookCall, 
+  logWebhookResponse 
+} from '../lib/creative-analysis-logger';
 
 const MetaDashboardRefactored: React.FC = () => {
   // State management
@@ -231,36 +238,114 @@ const MetaDashboardRefactored: React.FC = () => {
       
       // Start AI analysis for each selected creative
       imageCreatives.forEach(async (creative) => {
+        const sessionId = createCreativeAnalysisSession(creative.id);
+        
         try {
-          const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
-          if (!webhookUrl) {
-            console.error('No webhook URL configured for AI analysis');
+          logCreativeAnalysis(sessionId, 'info', '🚀 Starting bulk AI analysis for creative', {
+            creativeId: creative.id,
+            creativeName: creative.name,
+            creativeType: creative.creativeType
+          });
+
+          // Validate creative data
+          if (!creative.imageUrl && !creative.thumbnailUrl) {
+            logCreativeAnalysis(sessionId, 'error', '❌ Creative has no image URLs for analysis', {
+              creativeId: creative.id,
+              imageUrl: creative.imageUrl,
+              thumbnailUrl: creative.thumbnailUrl
+            });
             return;
           }
-          
+
+          // Validate ad account ID
+          if (!selectedAdAccount) {
+            logCreativeAnalysis(sessionId, 'error', '❌ No ad account selected for bulk analysis', {
+              creativeId: creative.id,
+              selectedAdAccount
+            });
+            return;
+          }
+
+          const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
+          if (!webhookUrl) {
+            logCreativeAnalysis(sessionId, 'error', '❌ No webhook URL configured for bulk AI analysis', {
+              creativeId: creative.id,
+              envVars: {
+                hasWebhookUrl: !!process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL,
+                nodeEnv: process.env.NODE_ENV
+              }
+            });
+            return;
+          }
+
+          // Enhanced webhook payload
           const webhookPayload = {
             creativeId: creative.id.toString(),
             adAccountId: selectedAdAccount,
             imageUrl: creative.imageUrl || creative.thumbnailUrl,
             creativeName: creative.name,
             creativeType: creative.creativeType,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            sessionId: sessionId,
+            bulkAnalysis: true,
+            metadata: {
+              campaignName: creative.campaignName,
+              adsetName: creative.adsetName,
+              performance: creative.performance,
+              impressions: creative.impressions,
+              clicks: creative.clicks,
+              spend: creative.spend
+            }
           };
+
+          logCreativeAnalysis(sessionId, 'info', '📦 Bulk analysis webhook payload prepared', webhookPayload);
+          logWebhookCall(sessionId, webhookUrl, webhookPayload);
+
+          const startTime = Date.now();
           
           const response = await fetch(webhookUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'X-Session-ID': sessionId,
+              'X-Creative-ID': creative.id.toString(),
+              'X-Bulk-Analysis': 'true',
+              'X-Timestamp': new Date().toISOString()
             },
             body: JSON.stringify(webhookPayload),
+            signal: AbortSignal.timeout(30000) // 30 second timeout
           });
-          
+
+          const responseTime = Date.now() - startTime;
+          logWebhookResponse(sessionId, response, '', responseTime);
+
           if (response.ok) {
+            logCreativeAnalysis(sessionId, 'info', '✅ Bulk AI analysis started successfully', {
+              creativeId: creative.id,
+              responseTime,
+              status: response.status
+            });
             console.log(`✅ AI analysis started for creative ${creative.id}`);
           } else {
-            console.error(`❌ AI analysis failed for creative ${creative.id}`);
+            const errorDetails = {
+              status: response.status,
+              statusText: response.statusText,
+              responseTime,
+              creativeId: creative.id
+            };
+            
+            logCreativeAnalysis(sessionId, 'error', '❌ Bulk AI analysis failed', errorDetails);
+            console.error(`❌ AI analysis failed for creative ${creative.id}:`, errorDetails);
           }
         } catch (error) {
+          const errorContext = {
+            creativeId: creative.id,
+            creativeName: creative.name,
+            adAccountId: selectedAdAccount,
+            step: 'bulk_ai_analysis'
+          };
+          
+          logCreativeAnalysisError(sessionId, error instanceof Error ? error : new Error('Unknown bulk analysis error'), errorContext);
           console.error(`❌ Error starting AI analysis for creative ${creative.id}:`, error);
         }
       });

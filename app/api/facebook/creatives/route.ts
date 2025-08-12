@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
       console.log('🎭 Debug: Using mock data for testing');
       return NextResponse.json({
         success: true,
-        creatives: generateMockCreativeData(),
+        creatives: generateMockCreativeData(adAccountId),
         message: 'Using mock data for testing'
       });
     }
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
       // Return mock data if API fails
       return NextResponse.json({
         success: true,
-        creatives: generateMockCreativeData(),
+        creatives: generateMockCreativeData(adAccountId),
         message: 'Using mock data due to API error'
       });
     }
@@ -485,6 +485,7 @@ export async function POST(request: NextRequest) {
           createdAt: ad.creative.created_time || new Date().toISOString(),
           performance: determinePerformance(insights.ctr, insights.cpc),
           fatigueLevel: determineFatigueLevel(insights.impressions, insights.frequency),
+          adAccountId: adAccountId, // Add the ad account ID to each creative
           // Store additional data for later processing
           _objectStorySpec: objectStorySpec,
           _ad: ad
@@ -552,7 +553,7 @@ export async function POST(request: NextRequest) {
       console.log('⚠️ No real creatives found, returning mock data');
       return NextResponse.json({
         success: true,
-        creatives: generateMockCreativeData(),
+        creatives: generateMockCreativeData(adAccountId),
         message: 'No real creatives found, using mock data'
       });
     }
@@ -799,7 +800,7 @@ function determineFatigueLevel(impressions: number, frequency: number): 'low' | 
   return 'high';
 }
 
-function generateMockCreativeData() {
+function generateMockCreativeData(adAccountId: string = 'mock_account') {
   const mockCreatives = [
     {
       id: 'creative_001',
@@ -823,7 +824,8 @@ function generateMockCreativeData() {
       status: 'ACTIVE',
       createdAt: '2024-01-15T10:30:00Z',
       performance: 'excellent' as const,
-      fatigueLevel: 'medium' as const
+      fatigueLevel: 'medium' as const,
+      adAccountId: adAccountId
     },
     {
       id: 'creative_002',
@@ -847,7 +849,8 @@ function generateMockCreativeData() {
       status: 'ACTIVE',
       createdAt: '2024-01-20T14:15:00Z',
       performance: 'excellent' as const,
-      fatigueLevel: 'low' as const
+      fatigueLevel: 'low' as const,
+      adAccountId: adAccountId
     },
     {
       id: 'creative_003',
@@ -871,7 +874,8 @@ function generateMockCreativeData() {
       status: 'ACTIVE',
       createdAt: '2024-01-25T09:45:00Z',
       performance: 'good' as const,
-      fatigueLevel: 'low' as const
+      fatigueLevel: 'low' as const,
+      adAccountId: adAccountId
     },
     {
       id: 'creative_004',
@@ -895,7 +899,8 @@ function generateMockCreativeData() {
       status: 'ACTIVE',
       createdAt: '2024-01-30T16:20:00Z',
       performance: 'good' as const,
-      fatigueLevel: 'medium' as const
+      fatigueLevel: 'medium' as const,
+      adAccountId: adAccountId
     },
     {
       id: 'creative_005',

@@ -75,13 +75,55 @@ export async function POST(
     
     console.log(`📝 Processing creative data for ID: ${creativeId}`, body);
     
-    // This endpoint can be used for updating creative data or triggering analysis
-    // For now, just return success
+    // Extract access token and ad account ID from request body
+    const { accessToken, adAccountId, dateRange } = body;
+    
+    if (!accessToken) {
+      return NextResponse.json(
+        { error: 'Facebook access token is required' },
+        { status: 400 }
+      );
+    }
+    
+    // Fetch creative data from Facebook Graph API
+    const facebookApiUrl = `https://graph.facebook.com/v18.0/${creativeId}`;
+    const fields = 'id,name,creative_type,image_url,thumbnail_url,object_story_spec,status,created_time,updated_time';
+    
+    console.log(`🔍 Fetching from Facebook API: ${facebookApiUrl}`);
+    
+    const response = await fetch(`${facebookApiUrl}?fields=${fields}&access_token=${accessToken}`);
+    
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`❌ Facebook API error: ${response.status}`, errorData);
+      
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch creative from Facebook',
+          facebookError: errorData,
+          status: response.status
+        },
+        { status: response.status }
+      );
+    }
+    
+    const creativeData = await response.json();
+    
+    console.log(`✅ Successfully fetched creative data for ID: ${creativeId}`);
+    console.log(`📸 Creative type: ${creativeData.creative_type}`);
+    console.log(`🖼️ Has image: ${!!creativeData.image_url}`);
+    
+    // Return the actual creative data that n8n needs
     return NextResponse.json({
       success: true,
-      message: `Creative ${creativeId} processed successfully`,
-      receivedData: body,
-      processedAt: new Date().toISOString()
+      creative: creativeData,
+      message: `Creative ${creativeId} fetched successfully`,
+      fetchedAt: new Date().toISOString(),
+      metadata: {
+        creativeType: creativeData.creative_type,
+        hasImage: !!creativeData.image_url,
+        hasThumbnail: !!creativeData.thumbnail_url
+      }
     });
     
   } catch (error) {

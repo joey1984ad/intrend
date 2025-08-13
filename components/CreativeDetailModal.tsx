@@ -43,6 +43,17 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiScore, setAiScore] = useState<number | null>(creative?.aiScore || null);
   
+  // Enhanced AI analysis state
+  const [aiAnalysis, setAiAnalysis] = useState<{
+    score: number | null;
+    analysis: string | null;
+    recommendations: string[] | null;
+    generatedImage: string | null;
+    confidence: number | null;
+    processingTime: number | null;
+    completedAt: string | null;
+  } | null>(null);
+  
   // Debug panel state
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [debugMode, setDebugModeState] = useState(false);
@@ -55,6 +66,41 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
   useEffect(() => {
     setDebugModeState(isDebugMode());
   }, []);
+
+  // Load existing AI analysis results
+  useEffect(() => {
+    const loadExistingAnalysis = async () => {
+      if (creative?.id && adAccountId) {
+        try {
+          const response = await fetch(`/api/ai/creative-score?creativeId=${creative.id}&adAccountId=${adAccountId}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.score !== null) {
+              // Update AI score for backward compatibility
+              setAiScore(data.score);
+              
+              // Update comprehensive analysis results if available
+              if (data.analysisData) {
+                setAiAnalysis({
+                  score: data.score,
+                  analysis: data.analysisData.analysis || null,
+                  recommendations: data.analysisData.recommendations || null,
+                  generatedImage: data.analysisData.generatedImage || null,
+                  confidence: data.analysisData.confidence || null,
+                  processingTime: null, // Not stored in DB
+                  completedAt: data.updatedAt || data.createdAt || null
+                });
+              }
+            }
+          }
+        } catch (error) {
+          console.log('Could not load existing AI analysis:', error);
+        }
+      }
+    };
+
+    loadExistingAnalysis();
+  }, [creative?.id, adAccountId]);
 
   // Update debug mode when it changes
   const toggleDebugMode = () => {
@@ -441,19 +487,101 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
         const totalTime = Date.now() - startTime;
         logCreativeAnalysisSuccess(sessionId, parsedResult, totalTime);
 
-        // Update local state with the AI score if available
-        if (parsedResult.score !== undefined) {
-          setAiScore(parsedResult.score);
+        // Process and store comprehensive AI analysis results
+        const analysisResults = {
+          score: parsedResult.score || parsedResult.aiScore || null,
+          analysis: parsedResult.analysis || parsedResult.analysisText || parsedResult.message || null,
+          recommendations: parsedResult.recommendations || parsedResult.suggestions || null,
+          generatedImage: parsedResult.generatedImage || parsedResult.imageUrl || null,
+          confidence: parsedResult.confidence || parsedResult.confidenceScore || null,
+          processingTime: totalTime,
+          completedAt: new Date().toISOString()
+        };
+
+        // Update local state with comprehensive AI analysis results
+        setAiAnalysis(analysisResults);
+        
+        // Update local state with the AI score if available (for backward compatibility)
+        if (analysisResults.score !== null) {
+          setAiScore(analysisResults.score);
           logCreativeAnalysis(sessionId, 'info', '✅ AI score updated in local state', {
-            score: parsedResult.score,
+            score: analysisResults.score,
             previousScore: creative.aiScore
           });
+          
+          // Save AI analysis results to database
+          try {
+            const saveResponse = await fetch('/api/ai/creative-score', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                creativeId: creative.id.toString(),
+                adAccountId: adAccountId,
+                score: analysisResults.score,
+                analysisData: {
+                  analysis: analysisResults.analysis,
+                  recommendations: analysisResults.recommendations,
+                  generatedImage: analysisResults.generatedImage,
+                  confidence: analysisResults.confidence,
+                  processingTime: analysisResults.processingTime,
+                  completedAt: analysisResults.completedAt,
+                  sessionId: sessionId
+                }
+              })
+            });
+            
+            if (saveResponse.ok) {
+              logCreativeAnalysis(sessionId, 'info', '✅ AI analysis results saved to database', {
+                creativeId: creative.id,
+                score: analysisResults.score
+              });
+            } else {
+              logCreativeAnalysis(sessionId, 'warn', '⚠️ Failed to save AI analysis results to database', {
+                status: saveResponse.status,
+                statusText: saveResponse.statusText
+              });
+            }
+          } catch (saveError) {
+            logCreativeAnalysis(sessionId, 'warn', '⚠️ Error saving AI analysis results to database', {
+              error: saveError instanceof Error ? saveError.message : 'Unknown save error'
+            });
+          }
         }
 
-        // Show success message with details
-        const scoreMessage = parsedResult.score !== undefined ? `Score: ${parsedResult.score}/10` : 'Analysis completed';
-        const timeMessage = `(${totalTime}ms)`;
-        alert(`AI analysis completed successfully! ${scoreMessage} ${timeMessage}`);
+        // Log comprehensive results
+        logCreativeAnalysis(sessionId, 'info', '✅ AI analysis results processed and stored', {
+          results: analysisResults,
+          totalTime,
+          sessionId
+        });
+
+        // Show enhanced success message with details
+        let successMessage = 'AI analysis completed successfully! ';
+        
+        if (analysisResults.score !== null) {
+          successMessage += `Score: ${analysisResults.score}/10 `;
+        }
+        
+        if (analysisResults.confidence !== null) {
+          successMessage += `(Confidence: ${Math.round(analysisResults.confidence * 100)}%) `;
+        }
+        
+        if (analysisResults.recommendations && analysisResults.recommendations.length > 0) {
+          successMessage += `\n\nRecommendations:\n${analysisResults.recommendations.slice(0, 3).join('\n')}`;
+        }
+        
+        successMessage += `\n\nProcessing time: ${totalTime}ms`;
+        
+        // Use a more user-friendly notification instead of alert
+        if (analysisResults.score !== null) {
+          // Show success with score
+          alert(successMessage);
+        } else {
+          // Show completion message
+          alert(`AI analysis completed successfully! ${successMessage}`);
+        }
 
       } catch (fetchError) {
         clearTimeout(timeoutId);
@@ -874,6 +1002,126 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                           <h4 className="font-semibold text-blue-900">Current AI Score</h4>
                           <p className="text-3xl font-bold text-blue-600">{aiScore}/10</p>
                           <p className="text-sm text-blue-700">AI analysis completed</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Enhanced AI Analysis Results Display */}
+                  {aiAnalysis && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="text-2xl">✨</div>
+                        <div>
+                          <h4 className="font-semibold text-green-900">Latest AI Analysis Results</h4>
+                          <p className="text-sm text-green-700">
+                            Completed at {new Date(aiAnalysis.completedAt!).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Score and Confidence */}
+                        <div className="space-y-3">
+                          {aiAnalysis.score !== null && (
+                            <div className="bg-white rounded-lg p-3 border border-green-200">
+                              <h5 className="font-medium text-green-900 mb-1">AI Score</h5>
+                              <p className="text-2xl font-bold text-green-600">{aiAnalysis.score}/10</p>
+                            </div>
+                          )}
+                          
+                          {aiAnalysis.confidence !== null && (
+                            <div className="bg-white rounded-lg p-3 border border-green-200">
+                              <h5 className="font-medium text-green-900 mb-1">Confidence</h5>
+                              <p className="text-lg font-semibold text-green-600">
+                                {Math.round(aiAnalysis.confidence * 100)}%
+                              </p>
+                            </div>
+                          )}
+                          
+                          {aiAnalysis.processingTime && (
+                            <div className="bg-white rounded-lg p-3 border border-green-200">
+                              <h5 className="font-medium text-green-900 mb-1">Processing Time</h5>
+                              <p className="text-lg font-semibold text-green-600">{aiAnalysis.processingTime}ms</p>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Analysis and Recommendations */}
+                        <div className="space-y-3">
+                          {aiAnalysis.analysis && (
+                            <div className="bg-white rounded-lg p-3 border border-green-200">
+                              <h5 className="font-medium text-green-900 mb-1">Analysis</h5>
+                              <p className="text-sm text-gray-700 leading-relaxed">{aiAnalysis.analysis}</p>
+                            </div>
+                          )}
+                          
+                          {aiAnalysis.recommendations && aiAnalysis.recommendations.length > 0 && (
+                            <div className="bg-white rounded-lg p-3 border border-green-200">
+                              <h5 className="font-medium text-green-900 mb-1">Recommendations</h5>
+                              <ul className="text-sm text-gray-700 space-y-1">
+                                {aiAnalysis.recommendations.map((rec, index) => (
+                                  <li key={index} className="flex items-start space-x-2">
+                                    <span className="text-green-500 mt-1">•</span>
+                                    <span>{rec}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Generated Image Display */}
+                      {aiAnalysis.generatedImage && (
+                        <div className="mt-4 pt-4 border-t border-green-200">
+                          <h5 className="font-medium text-green-900 mb-2">Generated Image</h5>
+                          <div className="bg-white rounded-lg p-3 border border-green-200">
+                            <img 
+                              src={aiAnalysis.generatedImage} 
+                              alt="AI Generated Creative" 
+                              className="w-full h-auto rounded-lg shadow-sm"
+                              onError={(e) => {
+                                const target = e.currentTarget as HTMLImageElement;
+                                target.style.display = 'none';
+                                const nextElement = target.nextElementSibling as HTMLElement;
+                                if (nextElement) nextElement.style.display = 'block';
+                              }}
+                            />
+                            <div className="hidden text-sm text-gray-500 text-center py-4">
+                              Image failed to load. Check the URL: {aiAnalysis.generatedImage}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Analysis in Progress Display */}
+                  {isAnalyzing && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <div>
+                          <h4 className="font-semibold text-blue-900">AI Analysis in Progress</h4>
+                          <p className="text-sm text-blue-700">Please wait while we analyze your creative...</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white rounded-lg p-4 border border-blue-200">
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                            <span className="text-sm text-gray-600">Processing creative image...</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                            <span className="text-sm text-gray-600">Analyzing visual elements...</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                            <span className="text-sm text-gray-600">Generating insights...</span>
+                          </div>
                         </div>
                       </div>
                     </div>

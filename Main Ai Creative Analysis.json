@@ -1,5 +1,11 @@
 {
   "name": "Main Ai Creative Analysis - OPTIMIZED",
+  "description": "Complete AI Creative Analysis Workflow with Test Request Handling",
+  "workflowStructure": {
+    "mainFlow": "Webhook Trigger → Check If Test → [Test Response | Validate Webhook Data → Validate HTTP Request → Fetch Creative Data → Extract Creative Data → Build Tokenized URLs → ChatGPT Vision Analysis → Process AI Response → Check Score Threshold → [Enhance Low Score | Prepare Final Response] → Webhook Response]",
+    "testFlow": "Webhook Trigger → Check If Test → Test Response (for test requests)",
+    "analysisFlow": "Webhook Trigger → Check If Test → Validate Webhook Data → Validate HTTP Request → Fetch Creative Data → Extract Creative Data → Build Tokenized URLs → ChatGPT Vision Analysis → Process AI Response → Check Score Threshold → [Enhance Low Score | Prepare Final Response] → Webhook Response (for real AI analysis requests)"
+  },
   "nodes": [
     {
       "parameters": {
@@ -105,7 +111,20 @@
     },
     {
       "parameters": {
-        "jsCode": "const webhookData = $json;\n\n// 🔑 ADD YOUR FACEBOOK ACCESS TOKEN HERE\nconst FACEBOOK_ACCESS_TOKEN = 'YOUR_FACEBOOK_ACCESS_TOKEN_HERE';\n\nconsole.log('🔍 DEBUG: Full webhook data received:');\nconsole.log(JSON.stringify(webhookData, null, 2));\nconsole.log('\\n🔍 DEBUG: Data type and structure:');\nconsole.log('Type:', typeof webhookData);\nconsole.log('Keys:', Object.keys(webhookData || {}));\nconsole.log('creativeId:', webhookData?.creativeId);\nconsole.log('adAccountId:', webhookData?.adAccountId);\nconsole.log('accessToken:', webhookData?.accessToken ? 'Present' : 'Missing');\n\n// Enhanced validation with fallback to hardcoded token\nlet accessTokenToUse = webhookData?.accessToken || FACEBOOK_ACCESS_TOKEN;\n\nif (!accessTokenToUse || accessTokenToUse === 'YOUR_FACEBOOK_ACCESS_TOKEN_HERE') {\n  throw new Error('Access token is missing from webhook data. Please add your Facebook access token in the n8n workflow.');\n}\n\nif (!webhookData?.creativeId) {\n  throw new Error(`Creative ID is missing from webhook data. Received data: ${JSON.stringify(webhookData)}`);\n}\n\nif (!webhookData?.adAccountId) {\n  throw new Error(`Ad account ID is missing from webhook data. Received data: ${JSON.stringify(webhookData)}`);\n}\n\n// Update the webhook data with the token\nwebhookData.accessToken = accessTokenToUse;\n\nconsole.log(`✅ HTTP request validation passed`);\nconsole.log(`🔑 Using access token: ${accessTokenToUse.substring(0, 10)}...`);\nconsole.log(`🎯 Creative ID: ${webhookData.creativeId}`);\nconsole.log(`🏢 Ad Account ID: ${webhookData.adAccountId}`);\n\nreturn {\n  json: webhookData\n};"
+        "jsCode": "const webhookData = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Debug: Webhook data received:`);\nconsole.log('Full webhook data:', JSON.stringify(webhookData, null, 2));\nconsole.log('Creative ID:', webhookData.creativeId);\nconsole.log('Access Token:', webhookData.accessToken ? 'Present (' + webhookData.accessToken.substring(0, 10) + '...)' : 'MISSING');\nconsole.log('Ad Account ID:', webhookData.adAccountId);\nconsole.log('Creative Type:', webhookData.creativeType);\nconsole.log('Image URL:', webhookData.imageUrl ? 'Present' : 'Missing');\nconsole.log('Is Test Request:', webhookData.test === true);\n\n// IMPORTANT: Test requests should have been handled by the Check If Test node\n// If we reach this point, it means this is NOT a test request\nif (webhookData.test === true) {\n  console.log(`⚠️ [${sessionId}] Test request reached validation node - this should not happen`);\n  return {\n    json: {\n      error: \"Test request routing error\",\n      message: \"Test request should have been handled by test routing node\",\n      sessionId: sessionId,\n      receivedData: webhookData,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Enhanced validation with detailed error messages for real requests\nif (!webhookData.accessToken) {\n  console.error(`❌ [${sessionId}] Access token missing from webhook data`);\n  console.error(`❌ [${sessionId}] Available keys:`, Object.keys(webhookData));\n  return {\n    json: {\n      error: \"Missing access token\",\n      message: \"Facebook access token is required but not provided in webhook\",\n      sessionId: sessionId,\n      receivedData: webhookData,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\nif (!webhookData.creativeId) {\n  return {\n    json: {\n      error: \"Missing creative ID\",\n      message: \"Creative ID is required but not provided in webhook\",\n      sessionId: sessionId,\n      receivedData: webhookData,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\nif (!webhookData.adAccountId) {\n  return {\n    json: {\n      error: \"Missing ad account ID\",\n      message: \"Ad account ID is required but not provided in webhook\",\n      sessionId: sessionId,\n      receivedData: webhookData,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Validate creative type for analysis\nif (webhookData.creativeType && webhookData.creativeType !== 'image') {\n  console.log(`⚠️ [${sessionId}] Warning: Creative type is ${webhookData.creativeType}, analysis may not work optimally`);\n}\n\n// Add session tracking and metadata while preserving ALL original data\nconst enhancedData = {\n  ...webhookData, // ✅ PRESERVE ALL ORIGINAL DATA\n  sessionId: sessionId,\n  workflowVersion: '2.0-optimized',\n  receivedAt: new Date().toISOString(),\n  processingStartTime: Date.now()\n};\n\nconsole.log(`✅ [${sessionId}] Validation passed, proceeding with analysis`);\nconsole.log(`✅ [${sessionId}] Enhanced data keys:`, Object.keys(enhancedData));\nconsole.log(`✅ [${sessionId}] Access token preserved:`, enhancedData.accessToken ? 'Yes' : 'No');\n\nreturn {\n  json: enhancedData\n};"
+      },
+      "id": "validate-webhook-data",
+      "name": "Validate Webhook Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1664,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookData = $json;\n\nconsole.log('🔍 DEBUG: Validating HTTP request data:');\nconsole.log('Full webhook data:', JSON.stringify(webhookData, null, 2));\nconsole.log('Data type:', typeof webhookData);\nconsole.log('Keys:', Object.keys(webhookData || {}));\nconsole.log('creativeId:', webhookData?.creativeId);\nconsole.log('adAccountId:', webhookData?.adAccountId);\nconsole.log('accessToken:', webhookData?.accessToken ? 'Present' : 'Missing');\n\n// Get the original webhook data to ensure we have all fields\nconst originalData = $('validate-webhook-data').first().json;\nconsole.log('🔍 DEBUG: Original webhook data from previous node:', JSON.stringify(originalData, null, 2));\n\n// Use the original data if current data is missing fields\nconst dataToValidate = {\n  ...originalData,\n  ...webhookData\n};\n\nconsole.log('🔍 DEBUG: Combined data for validation:', JSON.stringify(dataToValidate, null, 2));\n\n// Enhanced validation for HTTP request\nif (!dataToValidate?.accessToken) {\n  console.error('❌ Access token missing from combined data');\n  console.error('Original data keys:', Object.keys(originalData || {}));\n  console.error('Current data keys:', Object.keys(webhookData || {}));\n  throw new Error('Access token is missing from webhook data. Please check your frontend configuration.');\n}\n\nif (!dataToValidate?.creativeId) {\n  throw new Error(`Creative ID is missing from webhook data. Received data: ${JSON.stringify(dataToValidate)}`);\n}\n\nif (!dataToValidate?.adAccountId) {\n  throw new Error(`Ad account ID is missing from webhook data. Received data: ${JSON.stringify(dataToValidate)}`);\n}\n\nconsole.log(`✅ HTTP request validation passed`);\nconsole.log(`🔑 Access token: ${dataToValidate.accessToken.substring(0, 10)}...`);\nconsole.log(`🎯 Creative ID: ${dataToValidate.creativeId}`);\nconsole.log(`🏢 Ad Account ID: ${dataToValidate.adAccountId}`);\n\nreturn {\n  json: dataToValidate\n};"
       },
       "id": "validate-http-request",
       "name": "Validate HTTP Request",
@@ -188,7 +207,7 @@
           ]
         }
       },
-      "id": "npm run debug:webhookchatgpt-vision-analysis",
+      "id": "chatgpt-vision-analysis",
       "name": "ChatGPT Vision Analysis",
       "type": "n8n-nodes-base.openAi",
       "typeVersion": 1,
@@ -328,7 +347,7 @@
       "main": [
         [
           {
-            "node": "Check If Test",
+            "node": "check-if-test",
             "type": "main",
             "index": 0
           }
@@ -339,14 +358,14 @@
       "main": [
         [
           {
-            "node": "Test Response",
+            "node": "test-response",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Validate Webhook Data",
+            "node": "validate-webhook-data",
             "type": "main",
             "index": 0
           }
@@ -357,7 +376,7 @@
       "main": [
         [
           {
-            "node": "Validate HTTP Request",
+            "node": "validate-http-request",
             "type": "main",
             "index": 0
           }
@@ -368,7 +387,7 @@
       "main": [
         [
           {
-            "node": "Fetch Creative Data",
+            "node": "fetch-creative-data",
             "type": "main",
             "index": 0
           }
@@ -379,7 +398,7 @@
       "main": [
         [
           {
-            "node": "Extract Creative Data",
+            "node": "extract-creative-data",
             "type": "main",
             "index": 0
           }
@@ -390,7 +409,7 @@
       "main": [
         [
           {
-            "node": "Build Tokenized URLs",
+            "node": "build-tokenized-urls",
             "type": "main",
             "index": 0
           }
@@ -401,7 +420,7 @@
       "main": [
         [
           {
-            "node": "ChatGPT Vision Analysis",
+            "node": "chatgpt-vision-analysis",
             "type": "main",
             "index": 0
           }
@@ -412,7 +431,7 @@
       "main": [
         [
           {
-            "node": "Process AI Response",
+            "node": "process-ai-response",
             "type": "main",
             "index": 0
           }
@@ -423,7 +442,7 @@
       "main": [
         [
           {
-            "node": "Check Score Threshold",
+            "node": "check-score-threshold",
             "type": "main",
             "index": 0
           }
@@ -434,14 +453,14 @@
       "main": [
         [
           {
-            "node": "Enhance Low Score",
+            "node": "enhance-low-score",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Prepare Final Response",
+            "node": "prepare-final-response",
             "type": "main",
             "index": 0
           }
@@ -452,7 +471,7 @@
       "main": [
         [
           {
-            "node": "Prepare Final Response",
+            "node": "prepare-final-response",
             "type": "main",
             "index": 0
           }
@@ -463,7 +482,7 @@
       "main": [
         [
           {
-            "node": "Webhook Response",
+            "node": "webhook-response",
             "type": "main",
             "index": 0
           }
@@ -475,18 +494,9 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "optimized-v2-0",
+  "versionId": "v2.0",
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "optimized-workflow-v2"
+    "templateCredsSetupCompleted": true
   },
-  "id": "optimized-ai-creative-analysis",
-  "tags": [
-    {
-      "createdAt": "2025-01-27T00:00:00.000Z",
-      "updatedAt": "2025-01-27T00:00:00.000Z",
-      "id": "optimized-tag",
-      "name": "AI Analysis - Optimized v2.0"
-    }
-  ]
+  "id": "ai-creative-analysis"
 }

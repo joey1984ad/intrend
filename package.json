@@ -10,7 +10,13 @@
     "start": "next start",
     "lint": "next lint",
     "test:facebook": "node scripts/test-facebook-api.js",
-    "setup:facebook": "node scripts/setup-facebook.js"
+    "setup:facebook": "node scripts/setup-facebook.js",
+    "setup:env": "node scripts/setup-env.js",
+    "validate:env": "node scripts/validate-env.js",
+    "test:ai": "node scripts/test-ai-analysis.js",
+    "test:webhook": "node scripts/test-webhook-access-token.js",
+    "test:variations": "node scripts/test-webhook-ad-variations.js",
+    "debug:webhook": "node scripts/debug-webhook-data.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",

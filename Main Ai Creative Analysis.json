@@ -1,0 +1,504 @@
+{
+  "name": "Main Ai Creative Analysis - OPTIMIZED",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "analyze-creatives",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "http://localhost:3000,https://intrend-pswh1dg2q-josephs-projects-4c670f3b.vercel.app,https://intrend-beta.vercel.app",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "GET, POST, PUT, DELETE, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization, X-Requested-With"
+              },
+              {
+                "name": "Access-Control-Allow-Credentials",
+                "value": "true"
+              }
+            ]
+          }
+        }
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1856,
+        752
+      ],
+      "webhookId": "ai-creative-analyzer-optimized"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.test }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              },
+              "id": "test-condition"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-if-test",
+      "name": "Check If Test",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -1664,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"Webhook test successful\",\n  \"connected\": true,\n  \"timestamp\": \"{{ $now.toISO() }}\",\n  \"version\": \"2.0-optimized\"\n}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "test-response",
+      "name": "Test Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookData = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Debug: Webhook data received:`);\nconsole.log('Full webhook data:', JSON.stringify(webhookData, null, 2));\nconsole.log('Creative ID:', webhookData.creativeId);\nconsole.log('Access Token:', webhookData.accessToken ? 'Present (' + webhookData.accessToken.substring(0, 10) + '...)' : 'MISSING');\nconsole.log('Ad Account ID:', webhookData.adAccountId);\nconsole.log('Creative Type:', webhookData.creativeType);\nconsole.log('Image URL:', webhookData.imageUrl ? 'Present' : 'Missing');\nconsole.log('Is Test Request:', webhookData.test === true);\n\n// Handle test requests separately\nif (webhookData.test === true) {\n  console.log(`✅ [${sessionId}] Test request detected, returning success response`);\n  return {\n    json: {\n      success: true,\n      message: \"Webhook connection test successful\",\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      test: true,\n      workflowVersion: '2.0-optimized',\n      receivedAt: new Date().toISOString()\n    }\n  };\n}\n\n// Enhanced validation with detailed error messages for real requests\nif (!webhookData.accessToken) {\n  return {\n    json: {\n      error: \"Missing access token\",\n      message: \"Facebook access token is required but not provided in webhook\",\n      sessionId: sessionId,\n      receivedData: webhookData,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\nif (!webhookData.creativeId) {\n  return {\n    json: {\n      error: \"Missing creative ID\",\n      message: \"Creative ID is required but not provided in webhook\",\n      sessionId: sessionId,\n      receivedData: webhookData,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\nif (!webhookData.adAccountId) {\n  return {\n    json: {\n      error: \"Missing ad account ID\",\n      message: \"Ad account ID is required but not provided in webhook\",\n      sessionId: sessionId,\n      receivedData: webhookData,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Validate creative type for analysis\nif (webhookData.creativeType && webhookData.creativeType !== 'image') {\n  console.log(`⚠️ [${sessionId}] Warning: Creative type is ${webhookData.creativeType}, analysis may not work optimally`);\n}\n\n// Add session tracking and metadata\nconst enhancedData = {\n  ...webhookData,\n  sessionId: sessionId,\n  workflowVersion: '2.0-optimized',\n  receivedAt: new Date().toISOString(),\n  processingStartTime: Date.now()\n};\n\nconsole.log(`✅ [${sessionId}] Validation passed, proceeding with analysis`);\n\nreturn {\n  json: enhancedData\n};"
+      },
+      "id": "validate-webhook-data",
+      "name": "Validate Webhook Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1664,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookData = $json;\n\n// 🔑 ADD YOUR FACEBOOK ACCESS TOKEN HERE\nconst FACEBOOK_ACCESS_TOKEN = 'YOUR_FACEBOOK_ACCESS_TOKEN_HERE';\n\nconsole.log('🔍 DEBUG: Full webhook data received:');\nconsole.log(JSON.stringify(webhookData, null, 2));\nconsole.log('\\n🔍 DEBUG: Data type and structure:');\nconsole.log('Type:', typeof webhookData);\nconsole.log('Keys:', Object.keys(webhookData || {}));\nconsole.log('creativeId:', webhookData?.creativeId);\nconsole.log('adAccountId:', webhookData?.adAccountId);\nconsole.log('accessToken:', webhookData?.accessToken ? 'Present' : 'Missing');\n\n// Enhanced validation with fallback to hardcoded token\nlet accessTokenToUse = webhookData?.accessToken || FACEBOOK_ACCESS_TOKEN;\n\nif (!accessTokenToUse || accessTokenToUse === 'YOUR_FACEBOOK_ACCESS_TOKEN_HERE') {\n  throw new Error('Access token is missing from webhook data. Please add your Facebook access token in the n8n workflow.');\n}\n\nif (!webhookData?.creativeId) {\n  throw new Error(`Creative ID is missing from webhook data. Received data: ${JSON.stringify(webhookData)}`);\n}\n\nif (!webhookData?.adAccountId) {\n  throw new Error(`Ad account ID is missing from webhook data. Received data: ${JSON.stringify(webhookData)}`);\n}\n\n// Update the webhook data with the token\nwebhookData.accessToken = accessTokenToUse;\n\nconsole.log(`✅ HTTP request validation passed`);\nconsole.log(`🔑 Using access token: ${accessTokenToUse.substring(0, 10)}...`);\nconsole.log(`🎯 Creative ID: ${webhookData.creativeId}`);\nconsole.log(`🏢 Ad Account ID: ${webhookData.adAccountId}`);\n\nreturn {\n  json: webhookData\n};"
+      },
+      "id": "validate-http-request",
+      "name": "Validate HTTP Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1456,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://intrend-beta.vercel.app/api/facebook/creatives/{{ $json.creativeId }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"accessToken\": \"{{ $json.accessToken }}\",\n  \"adAccountId\": \"{{ $json.adAccountId }}\",\n  \"dateRange\": \"{{ $json.dateRange || 'last_30_days' }}\"\n}",
+        "options": {
+          "timeout": 30000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 3,
+            "waitBetweenInMilliseconds": 1000
+          }
+        }
+      },
+      "id": "fetch-creative-data",
+      "name": "Fetch Creative Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -1456,
+        848
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $json;\nconst webhookData = $('validate-webhook-data').first().json;\nconst sessionId = webhookData.sessionId;\n\nconsole.log(`🔍 [${sessionId}] Received data from Fetch Creative:`, JSON.stringify(item, null, 2));\n\n// Enhanced error handling with session tracking\nif (!item) {\n  return {\n    json: {\n      error: \"No response data received\",\n      message: \"Fetch Creative node returned no data\",\n      sessionId: sessionId,\n      creativeId: webhookData.creativeId || 'unknown',\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\nif (item.statusCode && item.statusCode >= 400) {\n  return {\n    json: {\n      error: `API call failed with status ${item.statusCode}`,\n      message: item.statusText || \"HTTP request failed\",\n      sessionId: sessionId,\n      creativeId: webhookData.creativeId || 'unknown',\n      response: item,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Enhanced creative data extraction with multiple fallback strategies\nlet creativeData = null;\nif (item.creative) {\n  creativeData = item.creative;\n} else if (item.data && item.data.creative) {\n  creativeData = item.data.creative;\n} else if (item.data) {\n  creativeData = item.data;\n} else if (item.json && item.json.creative) {\n  creativeData = item.json.creative;\n} else if (item.json) {\n  creativeData = item.json;\n} else {\n  creativeData = item;\n}\n\nconsole.log(`🔍 [${sessionId}] Extracted creative data:`, JSON.stringify(creativeData, null, 2));\n\nif (!creativeData || !creativeData.id) {\n  return {\n    json: {\n      error: \"No valid creative data found\",\n      message: \"Could not extract creative information from API response\",\n      sessionId: sessionId,\n      creativeId: webhookData.creativeId || 'unknown',\n      receivedData: item,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Enhanced image URL extraction with comprehensive fallback\nlet imageUrl = creativeData.image_url || \n               creativeData.picture || \n               creativeData.thumbnail_url ||\n               creativeData.object_story_spec?.link_data?.picture ||\n               creativeData.object_story_spec?.video_data?.image_url ||\n               creativeData.object_story_spec?.photo_data?.url ||\n               creativeData.object_story_spec?.link_data?.image_url ||\n               creativeData.object_story_spec?.link_data?.child_attachments?.[0]?.image_url ||\n               creativeData.object_story_spec?.link_data?.child_attachments?.[0]?.media?.image_url;\n\nconsole.log(`🔍 [${sessionId}] Extracted image URL:`, imageUrl);\n\nif (!imageUrl) {\n  return {\n    json: {\n      error: \"No image URL found\",\n      message: \"Creative has no image content for analysis\",\n      sessionId: sessionId,\n      creativeId: creativeData.id || 'unknown',\n      availableFields: Object.keys(creativeData),\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Enhanced creative data with comprehensive metadata\nconst enhancedCreativeData = {\n  id: creativeData.id,\n  name: creativeData.name || 'Unnamed Creative',\n  status: creativeData.status,\n  imageUrl: imageUrl,\n  image_hash: creativeData.image_hash || null,\n  body: creativeData.body || creativeData.object_story_spec?.link_data?.message || '',\n  title: creativeData.title || creativeData.object_story_spec?.link_data?.name || '',\n  callToAction: creativeData.call_to_action_type || creativeData.object_story_spec?.link_data?.call_to_action?.type || '',\n  creativeType: creativeData.creative_type || 'image',\n  analysisContext: {\n    adAccountId: webhookData.adAccountId,\n    accessToken: webhookData.accessToken,\n    creativeId: webhookData.creativeId,\n    sessionId: sessionId\n  },\n  metadata: {\n    originalData: creativeData,\n    extractedAt: new Date().toISOString()\n  }\n};\n\nconsole.log(`✅ [${sessionId}] Successfully processed creative data for analysis`);\n\nreturn {\n  json: enhancedCreativeData\n};"
+      },
+      "id": "extract-creative-data",
+      "name": "Extract Creative Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1264,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const creative = $json;\nconst sessionId = creative.analysisContext.sessionId;\n\nconsole.log(`🔍 [${sessionId}] Building tokenized URLs for creative:`, JSON.stringify(creative, null, 2));\n\nif (!creative || !creative.imageUrl) {\n  return {\n    json: {\n      error: \"Missing creative data or image URL\",\n      message: \"Cannot build tokenized URL without image URL\",\n      sessionId: sessionId,\n      receivedData: creative,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\nif (!creative.analysisContext || !creative.analysisContext.accessToken) {\n  return {\n    json: {\n      error: \"Missing access token\",\n      message: \"Cannot build tokenized URL without access token\",\n      sessionId: sessionId,\n      creative: creative,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Enhanced URL tokenization with comprehensive Facebook domain support\nfunction appendAccessTokenToImageUrl(imageUrl, accessToken) {\n  if (!imageUrl || !accessToken) return imageUrl;\n  \n  // Extended Facebook CDN domain detection\n  const facebookDomains = [\n    'fbcdn.net', 'fbsbx.com', 'facebook.com', 'fb.com',\n    'instagram.com', 'cdninstagram.com', 'igcdn.com'\n  ];\n  \n  const isFacebookCDN = facebookDomains.some(domain => imageUrl.includes(domain));\n  \n  if (!isFacebookCDN) {\n    console.log(`ℹ️ [${sessionId}] URL is not from Facebook CDN, skipping tokenization:`, imageUrl);\n    return imageUrl;\n  }\n  \n  if (imageUrl.includes('access_token=')) {\n    console.log(`ℹ️ [${sessionId}] URL already has access token, skipping tokenization`);\n    return imageUrl;\n  }\n  \n  const separator = imageUrl.includes('?') ? '&' : '?';\n  const tokenizedUrl = `${imageUrl}${separator}access_token=${accessToken}`;\n  \n  console.log(`✅ [${sessionId}] Successfully tokenized URL`);\n  return tokenizedUrl;\n}\n\nconst tokenizedImageUrl = appendAccessTokenToImageUrl(\n  creative.imageUrl, \n  creative.analysisContext.accessToken\n);\n\nconsole.log(`🔗 [${sessionId}] Built tokenized URL:`, tokenizedImageUrl);\n\n// Enhanced processing metadata\nconst processingMetadata = {\n  processingId: `${creative.id}_${Date.now()}`,\n  processingStartTime: Date.now(),\n  originalImageUrl: creative.imageUrl,\n  tokenizedImageUrl: tokenizedImageUrl,\n  tokenizationSuccess: tokenizedImageUrl !== creative.imageUrl,\n  facebookCDN: creative.imageUrl.includes('fbcdn.net') || creative.imageUrl.includes('facebook.com')\n};\n\nreturn {\n  json: {\n    ...creative,\n    ...processingMetadata,\n    enhancedData: {\n      tokenization: processingMetadata,\n      timestamp: new Date().toISOString()\n    }\n  }\n};"
+      },
+      "id": "build-tokenized-urls",
+      "name": "Build Tokenized URLs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1056,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 4000
+        },
+        "messages": {
+          "messageValues": [
+            {
+              "role": "system",
+              "content": "You are an expert advertising creative analyst and ad variation generator. Your task is to:\n\n1. ANALYZE the provided ad image for effectiveness\n2. SCORE the creative on multiple dimensions (0-100)\n3. GENERATE 3 new ad variations with specific improvements\n4. Provide actionable insights and recommendations\n\nRespond ONLY in valid JSON format with this exact structure:\n{\n  \"score\": {\n    \"overall\": 85,\n    \"dimensions\": {\n      \"clarity\": 90,\n      \"text_density\": 75,\n      \"brand\": 80,\n      \"value_prop\": 85,\n      \"cta\": 70,\n      \"contrast\": 85,\n      \"thumbnail\": 80\n    }\n  },\n  \"insights\": {\n    \"strengths\": [\"Clear value proposition\", \"Good visual hierarchy\"],\n    \"issues\": [\"CTA could be more prominent\", \"Text might be too small on mobile\"],\n    \"suggestions\": [\"Increase CTA button size\", \"Add more white space around text\"]\n  },\n  \"adVariations\": [\n    {\n      \"variation\": 1,\n      \"description\": \"Enhanced CTA with larger button and improved text contrast\",\n      \"keyChanges\": [\"Larger CTA button\", \"Higher text contrast\", \"More white space\"],\n      \"expectedImprovement\": \"15% higher click-through rate\"\n    },\n    {\n      \"variation\": 2,\n      \"description\": \"Simplified design with focused messaging\",\n      \"keyChanges\": [\"Reduced text elements\", \"Single clear message\", \"Bold headline\"],\n      \"expectedImprovement\": \"20% better message retention\"\n    },\n    {\n      \"variation\": 3,\n      \"description\": \"Mobile-optimized layout with improved readability\",\n      \"keyChanges\": [\"Larger mobile text\", \"Touch-friendly buttons\", \"Simplified layout\"],\n      \"expectedImprovement\": \"25% better mobile performance\"\n    }\n  ],\n  \"flags\": {\n    \"compliance\": [],\n    \"performance\": [\"high_potential\"],\n    \"optimization\": [\"cta_improvement\", \"mobile_optimization\"]\n  }\n}\n\nIMPORTANT: Always respond with valid JSON. Never include markdown, explanations, or additional text outside the JSON structure."
+            },
+            {
+              "role": "user",
+              "content": "Analyze this advertising creative image and provide a comprehensive analysis with ad variations. Focus on:\n\n1. Visual effectiveness and clarity\n2. Text readability and messaging\n3. Call-to-action prominence\n4. Brand consistency\n5. Mobile optimization potential\n6. Overall performance potential\n\nImage URL: {{ $json.tokenizedImageUrl }}\nCreative Name: {{ $json.name }}\nCreative Type: {{ $json.creativeType }}\nAd Copy: {{ $json.body }}\nTitle: {{ $json.title }}\nCall to Action: {{ $json.callToAction }}\n\nProvide your analysis in the exact JSON format specified above."
+            }
+          ]
+        }
+      },
+      "id": "npm run debug:webhookchatgpt-vision-analysis",
+      "name": "ChatGPT Vision Analysis",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        848
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "UdE5K8zwA7MiVCfW",
+          "name": "OpenAi account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const creative = $json;\nconst sessionId = creative.analysisContext?.sessionId || 'unknown';\nlet aiResponse;\n\nconsole.log(`🔍 [${sessionId}] Processing AI response for creative:`, JSON.stringify(creative, null, 2));\n\ntry {\n  // Enhanced response extraction with multiple fallback strategies\n  let responseText = '';\n  if (creative.choices && creative.choices[0]) {\n    responseText = creative.choices[0].message?.content || creative.choices[0].text || '';\n  } else if (creative.message?.content) {\n    responseText = creative.message.content;\n  } else if (typeof creative === 'string') {\n    responseText = creative;\n  } else if (creative.content) {\n    responseText = creative.content;\n  } else {\n    responseText = JSON.stringify(creative);\n  }\n  \n  console.log(`🔍 [${sessionId}] Raw AI response text:`, responseText);\n  \n  // Clean and parse the response\n  const cleanedText = responseText.trim().replace(/```json\\n?/g, '').replace(/```\\n?/g, '');\n  aiResponse = JSON.parse(cleanedText);\n  \n  console.log(`✅ [${sessionId}] Successfully parsed AI response:`, JSON.stringify(aiResponse, null, 2));\n  \n} catch (error) {\n  console.error(`❌ [${sessionId}] Failed to parse AI response:`, error);\n  console.log(`🔍 [${sessionId}] Raw response that failed to parse:`, responseText);\n  \n  // Enhanced fallback with comprehensive default structure\n  aiResponse = {\n    score: {\n      overall: 0,\n      dimensions: { \n        clarity: 0, \n        text_density: 0, \n        brand: 0, \n        value_prop: 0, \n        cta: 0, \n        contrast: 0, \n        thumbnail: 0 \n      }\n    },\n    insights: {\n      strengths: [\"AI analysis failed to process\"],\n      issues: [\"Response parsing error\"],\n      suggestions: [\"Retry analysis\", \"Check AI service status\"]\n    },\n    adVariations: [\n      {\n        variation: 1,\n        description: \"Default variation due to analysis failure\",\n        keyChanges: [\"Retry analysis\"],\n        expectedImprovement: \"Unknown\"\n      }\n    ],\n    flags: { \n      compliance: [\"analysis_error\"],\n      performance: [\"unknown\"],\n      optimization: [\"retry_needed\"]\n    }\n  };\n}\n\n// Enhanced score validation and normalization\nfunction clampScore(score) {\n  const numScore = Number(score) || 0;\n  return Math.max(0, Math.min(100, Math.round(numScore)));\n}\n\nconst dimensions = {\n  clarity: clampScore(aiResponse.score?.dimensions?.clarity),\n  text_density: clampScore(aiResponse.score?.dimensions?.text_density),\n  brand: clampScore(aiResponse.score?.dimensions?.brand),\n  value_prop: clampScore(aiResponse.score?.dimensions?.value_prop),\n  cta: clampScore(aiResponse.score?.dimensions?.cta),\n  contrast: clampScore(aiResponse.score?.dimensions?.contrast),\n  thumbnail: clampScore(aiResponse.score?.dimensions?.thumbnail)\n};\n\n// Enhanced scoring algorithm with industry best practices\nconst weights = { \n  clarity: 0.20, \n  text_density: 0.15, \n  brand: 0.15, \n  value_prop: 0.20, \n  cta: 0.15, \n  contrast: 0.10, \n  thumbnail: 0.05 \n};\n\nconst calculatedOverall = Math.round(\n  Object.entries(dimensions).reduce((sum, [key, score]) => {\n    return sum + (score * weights[key]);\n  }, 0)\n);\n\nconst overallScore = aiResponse.score?.overall ? \n  clampScore(aiResponse.score.overall) : \n  calculatedOverall;\n\n// Get original creative data for enhanced response\nconst originalCreative = $('build-tokenized-urls').first().json;\n\n// Enhanced response with comprehensive data\nconst enhancedResponse = {\n  creativeId: originalCreative.id,\n  adAccountId: originalCreative.analysisContext.adAccountId,\n  imageUrl: originalCreative.imageUrl,\n  imageHash: originalCreative.image_hash,\n  model: 'gpt-4o',\n  score: { \n    overall: overallScore, \n    dimensions,\n    calculated: calculatedOverall,\n    weights: weights\n  },\n  insights: {\n    strengths: Array.isArray(aiResponse.insights?.strengths) ? \n      aiResponse.insights.strengths : [],\n    issues: Array.isArray(aiResponse.insights?.issues) ? \n      aiResponse.insights.issues : [],\n    suggestions: Array.isArray(aiResponse.insights?.suggestions) ? \n      aiResponse.insights.suggestions : []\n  },\n  adVariations: Array.isArray(aiResponse.adVariations) ? \n    aiResponse.adVariations : [],\n  flags: {\n    compliance: Array.isArray(aiResponse.flags?.compliance) ? \n      aiResponse.flags.compliance : [],\n    performance: Array.isArray(aiResponse.flags?.performance) ? \n      aiResponse.flags.performance : [],\n    optimization: Array.isArray(aiResponse.flags?.optimization) ? \n      aiResponse.flags.optimization : []\n  },\n  metadata: {\n    creativeName: originalCreative.name,\n    processingTimeMs: Date.now() - originalCreative.processingStartTime,\n    analyzedAt: new Date().toISOString(),\n    sessionId: sessionId,\n    workflowVersion: '2.0-optimized',\n    aiModel: 'gpt-4o',\n    analysisQuality: aiResponse.score?.overall ? 'full' : 'fallback'\n  }\n};\n\nconsole.log(`✅ [${sessionId}] Successfully processed and enhanced AI response`);\n\nreturn {\n  json: enhancedResponse\n};"
+      },
+      "id": "process-ai-response",
+      "name": "Process AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        848
+      ]
+          },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "leftValue": "={{ $json.score.overall }}",
+                "rightValue": 60,
+                "operator": {
+                  "type": "number",
+                  "operation": "lt"
+                },
+                "id": "score-threshold"
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+      "id": "check-score-threshold",
+      "name": "Check Score Threshold",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const creative = $json;\nconst sessionId = creative.metadata?.sessionId || 'unknown';\n\nconsole.log(`⚠️ [${sessionId}] Low-scoring creative detected:`);\nconsole.log('Creative ID:', creative.creativeId);\nconsole.log('Score:', creative.score.overall + '/100');\nconsole.log('Issues:', creative.insights.issues.join(', '));\nconsole.log('Ad Variations Available:', creative.adVariations.length);\n\n// Enhanced low score handling with optimization suggestions\nconst enhancedLowScoreData = {\n  ...creative,\n  lowScoreAnalysis: {\n    threshold: 60,\n    scoreGap: 60 - creative.score.overall,\n    priority: creative.score.overall < 40 ? 'high' : 'medium',\n    immediateActions: [\n      \"Review ad variations for implementation\",\n      \"Focus on CTA optimization\",\n      \"Consider A/B testing with variations\",\n      \"Evaluate mobile optimization needs\"\n    ],\n    longTermActions: [\n      \"Implement feedback loop for continuous improvement\",\n      \"Track performance metrics post-optimization\",\n      \"Consider creative refresh strategy\"\n    ]\n  }\n};\n\nconsole.log(`📊 [${sessionId}] Enhanced low score analysis completed`);\n\nreturn {\n  json: enhancedLowScoreData\n};"
+      },
+      "id": "enhance-low-score",
+      "name": "Enhance Low Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const creative = $json;\nconst sessionId = creative.metadata?.sessionId || 'unknown';\n\nconsole.log(`✅ [${sessionId}] Preparing final response for creative:`, creative.creativeId);\n\n// Convert score to 1-10 scale for frontend compatibility\nconst scoreOutOf10 = Math.round(creative.score.overall / 10);\n\n// Enhanced final response with comprehensive data\nconst finalResponse = {\n  success: true,\n  score: scoreOutOf10,\n  aiScore: scoreOutOf10,\n  analysis: `Creative scored ${creative.score.overall}/100 with strengths in ${creative.insights.strengths.slice(0, 2).join(', ')}. Areas for improvement: ${creative.insights.issues.slice(0, 2).join(', ')}.`, \n  analysisText: `Creative scored ${creative.score.overall}/100 with strengths in ${creative.insights.strengths.slice(0, 2).join(', ')}. Areas for improvement: ${creative.insights.issues.slice(0, 2).join(', ')}.`, \n  recommendations: creative.insights.suggestions,\n  suggestions: creative.insights.suggestions,\n  confidence: creative.score.overall / 100,\n  confidenceScore: creative.score.overall / 100,\n  dimensions: creative.score.dimensions,\n  strengths: creative.insights.strengths,\n  issues: creative.insights.issues,\n  compliance: creative.flags.compliance,\n  metadata: creative.metadata,\n  processingTime: creative.metadata.processingTimeMs,\n  completedAt: creative.metadata.analyzedAt,\n  \n  // NEW: Ad variation generation data\n  adVariations: creative.adVariations,\n  variationCount: creative.adVariations.length,\n  optimizationFlags: creative.flags.optimization,\n  performanceFlags: creative.flags.performance,\n  \n  // Enhanced metadata for feedback loop\n  feedbackData: {\n    originalScore: creative.score.overall,\n    scoreBreakdown: creative.score.dimensions,\n    analysisQuality: creative.metadata.analysisQuality,\n    sessionId: sessionId,\n    workflowVersion: creative.metadata.workflowVersion,\n    timestamp: new Date().toISOString()\n  }\n};\n\nconsole.log(`🎯 [${sessionId}] Final response prepared with ${creative.adVariations.length} ad variations`);\nconsole.log(`📊 [${sessionId}] Score: ${scoreOutOf10}/10 (${creative.score.overall}/100)`);\nconsole.log(`🚀 [${sessionId}] Optimization opportunities: ${creative.flags.optimization.join(', ')}`);\n\nreturn {\n  json: finalResponse\n};"
+      },
+      "id": "prepare-final-response",
+      "name": "Prepare Final Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "GET, POST, PUT, DELETE, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization, X-Requested-With"
+              },
+              {
+                "name": "Access-Control-Allow-Credentials",
+                "value": "true"
+              },
+              {
+                "name": "X-Workflow-Version",
+                "value": "2.0-optimized"
+              }
+            ]
+          }
+        }
+      },
+      "id": "webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        144,
+        848
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Check If Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Test": {
+      "main": [
+        [
+          {
+            "node": "Test Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validate Webhook Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Webhook Data": {
+      "main": [
+        [
+          {
+            "node": "Validate HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Fetch Creative Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Creative Data": {
+      "main": [
+        [
+          {
+            "node": "Extract Creative Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Creative Data": {
+      "main": [
+        [
+          {
+            "node": "Build Tokenized URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Tokenized URLs": {
+      "main": [
+        [
+          {
+            "node": "ChatGPT Vision Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ChatGPT Vision Analysis": {
+      "main": [
+        [
+          {
+            "node": "Process AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process AI Response": {
+      "main": [
+        [
+          {
+            "node": "Check Score Threshold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Score Threshold": {
+      "main": [
+        [
+          {
+            "node": "Enhance Low Score",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhance Low Score": {
+      "main": [
+        [
+          {
+            "node": "Prepare Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Final Response": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "optimized-v2-0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "optimized-workflow-v2"
+  },
+  "id": "optimized-ai-creative-analysis",
+  "tags": [
+    {
+      "createdAt": "2025-01-27T00:00:00.000Z",
+      "updatedAt": "2025-01-27T00:00:00.000Z",
+      "id": "optimized-tag",
+      "name": "AI Analysis - Optimized v2.0"
+    }
+  ]
+}

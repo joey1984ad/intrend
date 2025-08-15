@@ -355,12 +355,12 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
       // 📦 PAYLOAD PREPARATION PHASE
       logCreativeAnalysis(sessionId, 'info', '📦 Starting payload preparation phase');
       
-      // Get Facebook access token from environment or context
-      const facebookAccessToken = process.env.NEXT_PUBLIC_FACEBOOK_ACCESS_TOKEN || 
-                                 localStorage.getItem('facebook_access_token') ||
-                                 sessionStorage.getItem('facebook_access_token');
+      // Get Facebook access token from props or fallback to storage
+      const tokenToUse = facebookAccessToken || 
+                         localStorage.getItem('facebook_access_token') ||
+                         sessionStorage.getItem('facebook_access_token');
       
-      if (!facebookAccessToken) {
+      if (!tokenToUse) {
         logCreativeAnalysis(sessionId, 'error', '❌ Facebook access token not found', {
           message: 'Facebook access token is required for AI analysis'
         });
@@ -371,10 +371,11 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
       const webhookPayload = {
         creativeId: creative.id.toString(),
         adAccountId: adAccountId,
-        accessToken: facebookAccessToken, // ✅ ADDED: Facebook access token
+        accessToken: tokenToUse, // ✅ ADDED: Facebook access token
         imageUrl: creative.imageUrl || creative.thumbnailUrl,
         creativeName: creative.name,
         creativeType: creative.creativeType,
+        dateRange: 'last_30_days', // ✅ ADDED: Date range for Facebook API
         timestamp: new Date().toISOString(),
         sessionId: sessionId,
         userAgent: navigator.userAgent,

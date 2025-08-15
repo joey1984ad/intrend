@@ -241,9 +241,11 @@ const MetaDashboardRefactored: React.FC = () => {
           const webhookPayload = {
             creativeId: creative.id.toString(),
             adAccountId: selectedAdAccount,
+            accessToken: facebookAccessToken, // ✅ ADDED: Facebook access token
             imageUrl: creative.imageUrl || creative.thumbnailUrl,
             creativeName: creative.name,
             creativeType: creative.creativeType,
+            dateRange: selectedDateRange, // ✅ ADDED: Date range for Facebook API
             timestamp: new Date().toISOString()
           };
           

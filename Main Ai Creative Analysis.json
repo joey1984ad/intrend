@@ -40,6 +40,7 @@
       ],
       "webhookId": "ai-creative-analyzer-optimized"
     },
+
     {
       "parameters": {
         "conditions": {
@@ -76,7 +77,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"Webhook test successful\",\n  \"connected\": true,\n  \"timestamp\": \"{{ $now.toISO() }}\",\n  \"version\": \"2.0-optimized\"\n}",
+        "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"Webhook test successful\",\n  \"connected\": true,\n  \"timestamp\": \"{{ $now.toISO() }}\",\n  \"version\": \"2.0-optimized\",\n  \"webhookUrl\": \"{{ $json.webhookUrl }}\",\n  \"executionMode\": \"{{ $json.executionMode || 'production' }}\"\n}",
         "options": {
           "responseCode": 200,
           "responseHeaders": {
@@ -100,19 +101,6 @@
       "position": [
         -1456,
         640
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "const webhookData = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Debug: Webhook data received:`);\nconsole.log('Full webhook data:', JSON.stringify(webhookData, null, 2));\nconsole.log('Creative ID:', webhookData.creativeId);\nconsole.log('Access Token:', webhookData.accessToken ? 'Present (' + webhookData.accessToken.substring(0, 10) + '...)' : 'MISSING');\nconsole.log('Ad Account ID:', webhookData.adAccountId);\nconsole.log('Creative Type:', webhookData.creativeType);\nconsole.log('Image URL:', webhookData.imageUrl ? 'Present' : 'Missing');\nconsole.log('Is Test Request:', webhookData.test === true);\n\n// Handle test requests separately\nif (webhookData.test === true) {\n  console.log(`✅ [${sessionId}] Test request detected, returning success response`);\n  return {\n    json: {\n      success: true,\n      message: \"Webhook connection test successful\",\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      test: true,\n      workflowVersion: '2.0-optimized',\n      receivedAt: new Date().toISOString()\n    }\n  };\n}\n\n// Enhanced validation with detailed error messages for real requests\nif (!webhookData.accessToken) {\n  return {\n    json: {\n      error: \"Missing access token\",\n      message: \"Facebook access token is required but not provided in webhook\",\n      sessionId: sessionId,\n      receivedData: webhookData,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\nif (!webhookData.creativeId) {\n  return {\n    json: {\n      error: \"Missing creative ID\",\n      message: \"Creative ID is required but not provided in webhook\",\n      sessionId: sessionId,\n      receivedData: webhookData,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\nif (!webhookData.adAccountId) {\n  return {\n    json: {\n      error: \"Missing ad account ID\",\n      message: \"Ad account ID is required but not provided in webhook\",\n      sessionId: sessionId,\n      receivedData: webhookData,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Validate creative type for analysis\nif (webhookData.creativeType && webhookData.creativeType !== 'image') {\n  console.log(`⚠️ [${sessionId}] Warning: Creative type is ${webhookData.creativeType}, analysis may not work optimally`);\n}\n\n// Add session tracking and metadata\nconst enhancedData = {\n  ...webhookData,\n  sessionId: sessionId,\n  workflowVersion: '2.0-optimized',\n  receivedAt: new Date().toISOString(),\n  processingStartTime: Date.now()\n};\n\nconsole.log(`✅ [${sessionId}] Validation passed, proceeding with analysis`);\n\nreturn {\n  json: enhancedData\n};"
-      },
-      "id": "validate-webhook-data",
-      "name": "Validate Webhook Data",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -1664,
-        848
       ]
     },
     {

@@ -1,6 +1,6 @@
 {
-  "name": "AI Analysis - Step 3.6: Minimal Flow Test",
-  "description": "Testing AI analysis step by step - Step 3.6: Minimal Flow Test",
+  "name": "AI Analysis - Step 3.7: Node Type Test",
+  "description": "Testing AI analysis step by step - Step 3.7: Node Type Test",
   "nodes": [
     {
       "parameters": {
@@ -16,11 +16,11 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [0, 0],
-      "webhookId": "ai-analysis-step-3-6"
+      "webhookId": "ai-analysis-step-3-7"
     },
     {
       "parameters": {
-        "jsCode": "// Simple data pass-through for testing\nconst data = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Simple data pass-through:`, JSON.stringify(data, null, 2));\n\n// Just add a session ID and pass through\nconst enhancedData = {\n  ...data,\n  sessionId: sessionId,\n  workflowVersion: 'step-3-6-minimal-flow',\n  timestamp: new Date().toISOString(),\n  note: 'Simple pass-through test'\n};\n\nconsole.log(`✅ [${sessionId}] Data passed through successfully`);\n\nreturn {\n  json: enhancedData\n};"
+        "jsCode": "// Simple data pass-through for testing\nconst data = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Simple data pass-through:`, JSON.stringify(data, null, 2));\n\n// Just add a session ID and pass through\nconst enhancedData = {\n  ...data,\n  sessionId: sessionId,\n  workflowVersion: 'step-3-7-node-type-test',\n  timestamp: new Date().toISOString(),\n  note: 'Simple pass-through test'\n};\n\nconsole.log(`✅ [${sessionId}] Data passed through successfully`);\n\nreturn {\n  json: enhancedData\n};"
       },
       "id": "simple-processor",
       "name": "Simple Processor",
@@ -30,8 +30,18 @@
     },
     {
       "parameters": {
+        "jsCode": "// Test creative data extraction logic\nconst webhookData = $json;\nconst sessionId = webhookData.sessionId;\n\nconsole.log(`🔍 [${sessionId}] Testing creative data extraction:`, JSON.stringify(webhookData, null, 2));\n\n// Extract image URL for AI analysis\nlet imageUrl = webhookData.imageUrl || webhookData.thumbnailUrl;\n\nif (!imageUrl) {\n  return {\n    json: {\n      error: \"No image URL found\",\n      message: \"Creative has no image content for AI analysis\",\n      sessionId: sessionId,\n      creativeId: webhookData.creativeId || 'unknown',\n      availableFields: Object.keys(webhookData),\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Prepare data for AI analysis using frontend data\nconst aiAnalysisData = {\n  id: webhookData.creativeId,\n  name: webhookData.creativeName || 'Unnamed Creative',\n  status: 'active',\n  imageUrl: imageUrl,\n  image_hash: null,\n  body: webhookData.creativeName || '',\n  title: webhookData.creativeName || '',\n  callToAction: 'learn_more',\n  creativeType: webhookData.creativeType || 'image',\n  analysisContext: {\n    adAccountId: webhookData.adAccountId,\n    accessToken: webhookData.accessToken,\n    creativeId: webhookData.creativeId,\n    sessionId: sessionId\n  },\n  metadata: {\n    originalData: webhookData,\n    extractedAt: new Date().toISOString(),\n    processingMethod: 'direct_frontend_data'\n  }\n};\n\nconsole.log(`✅ [${sessionId}] Successfully prepared data for AI analysis`);\n\nreturn {\n  json: aiAnalysisData\n};"
+      },
+      "id": "extract-creative-data",
+      "name": "Extract Creative Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 0]
+    },
+    {
+      "parameters": {
         "respondWith": "json",
-        "responseBody": "{\"status\":\"success\",\"message\":\"Minimal flow test completed\",\"timestamp\":\"{{ $now.toISO() }}\",\"processedData\":\"{{ JSON.stringify($json) }}\",\"workflowVersion\":\"step-3-6-minimal-flow\"}",
+        "responseBody": "{\"status\":\"success\",\"message\":\"Node type test completed\",\"timestamp\":\"{{ $now.toISO() }}\",\"extractedData\":\"{{ JSON.stringify($json) }}\",\"workflowVersion\":\"step-3-7-node-type-test\"}",
         "options": {
           "responseCode": 200,
           "responseHeaders": {
@@ -48,7 +58,7 @@
       "name": "Webhook Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [400, 0]
+      "position": [600, 0]
     }
   ],
   "connections": {
@@ -67,6 +77,17 @@
       "main": [
         [
           {
+            "node": "Extract Creative Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Creative Data": {
+      "main": [
+        [
+          {
             "node": "Webhook Response",
             "type": "main",
             "index": 0
@@ -79,9 +100,9 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "step-3-6-minimal-flow",
+  "versionId": "step-3-7-node-type-test",
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "id": "ai-analysis-step-3-6"
+  "id": "ai-analysis-step-3-7"
 }

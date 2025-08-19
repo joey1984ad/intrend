@@ -1,6 +1,6 @@
 {
-  "name": "AI Analysis - Step 3.5: ChatGPT Test",
-  "description": "Testing AI analysis step by step - Step 3.5: ChatGPT Test with Debugging",
+  "name": "AI Analysis - Step 3.6: Minimal Flow Test",
+  "description": "Testing AI analysis step by step - Step 3.6: Minimal Flow Test",
   "nodes": [
     {
       "parameters": {
@@ -16,52 +16,22 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [0, 0],
-      "webhookId": "ai-analysis-step-3-5"
+      "webhookId": "ai-analysis-step-3-6"
     },
     {
       "parameters": {
-        "jsCode": "// Enhanced validation and data preparation for AI analysis\nconst data = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Processing AI analysis request:`, JSON.stringify(data, null, 2));\n\n// Enhanced validation with detailed error messages\nif (!data.accessToken) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Access token is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\nif (!data.creativeId) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Creative ID is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\nif (!data.adAccountId) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Ad account ID is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\n// Prepare enhanced data for AI analysis\nconst enhancedData = {\n  ...data,\n  sessionId: sessionId,\n  workflowVersion: 'step-3-5-chatgpt-test',\n  receivedAt: new Date().toISOString(),\n  processingStartTime: Date.now(),\n  analysisType: 'ai_creative_analysis'\n};\n\nconsole.log(`✅ [${sessionId}] Validation passed, proceeding with AI analysis`);\nconsole.log(`🔑 Access token: ${enhancedData.accessToken.substring(0, 10)}...`);\nconsole.log(`🎯 Creative ID: ${enhancedData.creativeId}`);\nconsole.log(`🏢 Ad Account ID: ${enhancedData.adAccountId}`);\n\nreturn {\n  json: enhancedData\n};"
+        "jsCode": "// Simple data pass-through for testing\nconst data = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Simple data pass-through:`, JSON.stringify(data, null, 2));\n\n// Just add a session ID and pass through\nconst enhancedData = {\n  ...data,\n  sessionId: sessionId,\n  workflowVersion: 'step-3-6-minimal-flow',\n  timestamp: new Date().toISOString(),\n  note: 'Simple pass-through test'\n};\n\nconsole.log(`✅ [${sessionId}] Data passed through successfully`);\n\nreturn {\n  json: enhancedData\n};"
       },
-      "id": "ai-validation",
-      "name": "AI Validation",
+      "id": "simple-processor",
+      "name": "Simple Processor",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [200, 0]
     },
     {
       "parameters": {
-        "jsCode": "// Process creative data directly from frontend without external API calls\nconst webhookData = $json;\nconst sessionId = webhookData.sessionId;\n\nconsole.log(`🔍 [${sessionId}] Processing creative data directly:`, JSON.stringify(webhookData, null, 2));\n\n// Extract image URL for AI analysis\nlet imageUrl = webhookData.imageUrl || webhookData.thumbnailUrl;\n\nif (!imageUrl) {\n  return {\n    json: {\n      error: \"No image URL found\",\n      message: \"Creative has no image content for AI analysis\",\n      sessionId: sessionId,\n      creativeId: webhookData.creativeId || 'unknown',\n      availableFields: Object.keys(webhookData),\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Prepare data for AI analysis using frontend data\nconst aiAnalysisData = {\n  id: webhookData.creativeId,\n  name: webhookData.creativeName || 'Unnamed Creative',\n  status: 'active',\n  imageUrl: imageUrl,\n  image_hash: null,\n  body: webhookData.creativeName || '',\n  title: webhookData.creativeName || '',\n  callToAction: 'learn_more',\n  creativeType: webhookData.creativeType || 'image',\n  analysisContext: {\n    adAccountId: webhookData.adAccountId,\n    accessToken: webhookData.accessToken,\n    creativeId: webhookData.creativeId,\n    sessionId: sessionId\n  },\n  metadata: {\n    originalData: webhookData,\n    extractedAt: new Date().toISOString(),\n    processingMethod: 'direct_frontend_data'\n  }\n};\n\nconsole.log(`✅ [${sessionId}] Successfully prepared data for AI analysis`);\n\nreturn {\n  json: aiAnalysisData\n};"
-      },
-      "id": "extract-creative-data",
-      "name": "Extract Creative Data",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [400, 0]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Build tokenized URL for AI analysis\nconst creative = $json;\nconst sessionId = creative.analysisContext.sessionId;\n\nconsole.log(`🔍 [${sessionId}] Building tokenized URL for AI analysis:`, JSON.stringify(creative, null, 2));\n\nif (!creative || !creative.imageUrl) {\n  return {\n    json: {\n      error: \"Missing creative data or image URL\",\n      message: \"Cannot build tokenized URL without image URL\",\n      sessionId: sessionId,\n      receivedData: creative,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\nif (!creative.analysisContext || !creative.analysisContext.accessToken) {\n  return {\n    json: {\n      error: \"Missing access token\",\n      message: \"Cannot build tokenized URL without access token\",\n      sessionId: sessionId,\n      creative: creative,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Enhanced URL tokenization for Facebook CDN\nfunction appendAccessTokenToImageUrl(imageUrl, accessToken) {\n  if (!imageUrl || !accessToken) return imageUrl;\n  \n  const facebookDomains = [\n    'fbcdn.net', 'fbsbx.com', 'facebook.com', 'fb.com',\n    'instagram.com', 'cdninstagram.com', 'igcdn.com'\n  ];\n  \n  const isFacebookCDN = facebookDomains.some(domain => imageUrl.includes(domain));\n  \n  if (!isFacebookCDN) {\n    console.log(`ℹ️ [${sessionId}] URL is not from Facebook CDN, skipping tokenization:`, imageUrl);\n    return imageUrl;\n  }\n  \n  if (imageUrl.includes('access_token=')) {\n    console.log(`ℹ️ [${sessionId}] URL already has access token, skipping tokenization`);\n    return imageUrl;\n  }\n  \n  const separator = imageUrl.includes('?') ? '&' : '?';\n  const tokenizedUrl = `${imageUrl}${separator}access_token=${accessToken}`;\n  \n  console.log(`✅ [${sessionId}] Successfully tokenized URL for AI analysis`);\n  return tokenizedUrl;\n}\n\nconst tokenizedImageUrl = appendAccessTokenToImageUrl(\n  creative.imageUrl, \n  creative.analysisContext.accessToken\n);\n\n// Enhanced data for AI analysis\nconst enhancedData = {\n  ...creative,\n  tokenizedImageUrl: tokenizedImageUrl,\n  processingMetadata: {\n    processingId: `${creative.id}_${Date.now()}`,\n    processingStartTime: Date.now(),\n    originalImageUrl: creative.imageUrl,\n    tokenizedImageUrl: tokenizedImageUrl,\n    tokenizationSuccess: tokenizedImageUrl !== creative.imageUrl,\n    facebookCDN: creative.imageUrl.includes('fbcdn.net') || creative.imageUrl.includes('facebook.com')\n  }\n};\n\nconsole.log(`🔗 [${sessionId}] Built tokenized URL:`, tokenizedImageUrl);\nreturn {\n  json: enhancedData\n};"
-      },
-      "id": "build-tokenized-urls",
-      "name": "Build Tokenized URLs",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [600, 0]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Test ChatGPT functionality with fallback response\nconst creative = $json;\nconst sessionId = creative.analysisContext.sessionId;\n\nconsole.log(`🔍 [${sessionId}] Testing ChatGPT functionality for creative:`, creative.id);\n\n// Simulate ChatGPT analysis response for testing\nconst mockAiResponse = {\n  score: {\n    overall: 85,\n    dimensions: {\n      clarity: 90,\n      text_density: 75,\n      brand: 80,\n      value_prop: 85,\n      cta: 70,\n      contrast: 85,\n      thumbnail: 80\n    }\n  },\n  insights: {\n    strengths: [\"Clear value proposition\", \"Good visual hierarchy\", \"Professional appearance\"],\n    issues: [\"CTA could be more prominent\", \"Text might be too small on mobile\"],\n    suggestions: [\"Increase CTA button size\", \"Add more white space around text\", \"Optimize for mobile viewing\"]\n  },\n  adVariations: [\n    {\n      variation: 1,\n      description: \"Enhanced CTA with larger button and improved text contrast\",\n      keyChanges: [\"Larger CTA button\", \"Higher text contrast\", \"More white space\"],\n      expectedImprovement: \"15% higher click-through rate\"\n    },\n    {\n      variation: 2,\n      description: \"Simplified design with focused messaging\",\n      keyChanges: [\"Reduced text elements\", \"Single clear message\", \"Bold headline\"],\n      expectedImprovement: \"20% better message retention\"\n    },\n    {\n      variation: 3,\n      description: \"Mobile-optimized layout with improved readability\",\n      keyChanges: [\"Larger mobile text\", \"Touch-friendly buttons\", \"Simplified layout\"],\n      expectedImprovement: \"25% better mobile performance\"\n    }\n  ],\n  flags: {\n    compliance: [],\n    performance: [\"high_potential\"],\n    optimization: [\"cta_improvement\", \"mobile_optimization\"]\n  }\n};\n\nconsole.log(`✅ [${sessionId}] Generated mock AI response for testing`);\n\n// Return the mock response for now\nreturn {\n  json: {\n    ...creative,\n    aiAnalysis: mockAiResponse,\n    analysisType: 'mock_ai_response',\n    note: 'This is a mock response for testing ChatGPT functionality'\n  }\n};"
-      },
-      "id": "mock-chatgpt-analysis",
-      "name": "Mock ChatGPT Analysis",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [800, 0]
-    },
-    {
-      "parameters": {
         "respondWith": "json",
-        "responseBody": "{\"status\":\"success\",\"message\":\"Mock ChatGPT Analysis completed\",\"timestamp\":\"{{ $now.toISO() }}\",\"mockAiResponse\":\"{{ JSON.stringify($json) }}\",\"workflowVersion\":\"step-3-5-chatgpt-test\"}",
+        "responseBody": "{\"status\":\"success\",\"message\":\"Minimal flow test completed\",\"timestamp\":\"{{ $now.toISO() }}\",\"processedData\":\"{{ JSON.stringify($json) }}\",\"workflowVersion\":\"step-3-6-minimal-flow\"}",
         "options": {
           "responseCode": 200,
           "responseHeaders": {
@@ -78,7 +48,7 @@
       "name": "Webhook Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1000, 0]
+      "position": [400, 0]
     }
   ],
   "connections": {
@@ -86,47 +56,14 @@
       "main": [
         [
           {
-            "node": "AI Validation",
+            "node": "Simple Processor",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "AI Validation": {
-      "main": [
-        [
-          {
-            "node": "Extract Creative Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract Creative Data": {
-      "main": [
-        [
-          {
-            "node": "Build Tokenized URLs",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Tokenized URLs": {
-      "main": [
-        [
-          {
-            "node": "Mock ChatGPT Analysis",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Mock ChatGPT Analysis": {
+    "Simple Processor": {
       "main": [
         [
           {
@@ -142,9 +79,9 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "step-3-5-chatgpt-test",
+  "versionId": "step-3-6-minimal-flow",
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "id": "ai-analysis-step-3-5"
+  "id": "ai-analysis-step-3-6"
 }

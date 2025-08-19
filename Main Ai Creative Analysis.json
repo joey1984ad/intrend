@@ -1,6 +1,6 @@
 {
-  "name": "AI Analysis - Step 3.7: Node Type Test",
-  "description": "Testing AI analysis step by step - Step 3.7: Node Type Test",
+  "name": "AI Analysis - Step 3.8: Extended Chain Test",
+  "description": "Testing AI analysis step by step - Step 3.8: Extended Chain Test",
   "nodes": [
     {
       "parameters": {
@@ -16,11 +16,11 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [0, 0],
-      "webhookId": "ai-analysis-step-3-7"
+      "webhookId": "ai-analysis-step-3-8"
     },
     {
       "parameters": {
-        "jsCode": "// Simple data pass-through for testing\nconst data = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Simple data pass-through:`, JSON.stringify(data, null, 2));\n\n// Just add a session ID and pass through\nconst enhancedData = {\n  ...data,\n  sessionId: sessionId,\n  workflowVersion: 'step-3-7-node-type-test',\n  timestamp: new Date().toISOString(),\n  note: 'Simple pass-through test'\n};\n\nconsole.log(`✅ [${sessionId}] Data passed through successfully`);\n\nreturn {\n  json: enhancedData\n};"
+        "jsCode": "// Simple data pass-through for testing\nconst data = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Simple data pass-through:`, JSON.stringify(data, null, 2));\n\n// Just add a session ID and pass through\nconst enhancedData = {\n  ...data,\n  sessionId: sessionId,\n  workflowVersion: 'step-3-8-extended-chain',\n  timestamp: new Date().toISOString(),\n  note: 'Simple pass-through test'\n};\n\nconsole.log(`✅ [${sessionId}] Data passed through successfully`);\n\nreturn {\n  json: enhancedData\n};"
       },
       "id": "simple-processor",
       "name": "Simple Processor",
@@ -40,8 +40,18 @@
     },
     {
       "parameters": {
+        "jsCode": "// Test URL tokenization logic\nconst creative = $json;\nconst sessionId = creative.analysisContext.sessionId;\n\nconsole.log(`🔍 [${sessionId}] Testing URL tokenization:`, JSON.stringify(creative, null, 2));\n\nif (!creative || !creative.imageUrl) {\n  return {\n    json: {\n      error: \"Missing creative data or image URL\",\n      message: \"Cannot build tokenized URL without image URL\",\n      sessionId: sessionId,\n      receivedData: creative,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\nif (!creative.analysisContext || !creative.analysisContext.accessToken) {\n  return {\n    json: {\n      error: \"Missing access token\",\n      message: \"Cannot build tokenized URL without access token\",\n      sessionId: sessionId,\n      creative: creative,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Simple URL tokenization for testing\nfunction appendAccessTokenToImageUrl(imageUrl, accessToken) {\n  if (!imageUrl || !accessToken) return imageUrl;\n  \n  if (imageUrl.includes('access_token=')) {\n    console.log(`ℹ️ [${sessionId}] URL already has access token, skipping tokenization`);\n    return imageUrl;\n  }\n  \n  const separator = imageUrl.includes('?') ? '&' : '?';\n  const tokenizedUrl = `${imageUrl}${separator}access_token=${accessToken}`;\n  \n  console.log(`✅ [${sessionId}] Successfully tokenized URL for AI analysis`);\n  return tokenizedUrl;\n}\n\nconst tokenizedImageUrl = appendAccessTokenToImageUrl(\n  creative.imageUrl, \n  creative.analysisContext.accessToken\n);\n\n// Enhanced data for AI analysis\nconst enhancedData = {\n  ...creative,\n  tokenizedImageUrl: tokenizedImageUrl,\n  processingMetadata: {\n    processingId: `${creative.id}_${Date.now()}`,\n    processingStartTime: Date.now(),\n    originalImageUrl: creative.imageUrl,\n    tokenizedImageUrl: tokenizedImageUrl,\n    tokenizationSuccess: tokenizedImageUrl !== creative.imageUrl\n  }\n};\n\nconsole.log(`🔗 [${sessionId}] Built tokenized URL:`, tokenizedImageUrl);\nreturn {\n  json: enhancedData\n};"
+      },
+      "id": "build-tokenized-urls",
+      "name": "Build Tokenized URLs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 0]
+    },
+    {
+      "parameters": {
         "respondWith": "json",
-        "responseBody": "{\"status\":\"success\",\"message\":\"Node type test completed\",\"timestamp\":\"{{ $now.toISO() }}\",\"extractedData\":\"{{ JSON.stringify($json) }}\",\"workflowVersion\":\"step-3-7-node-type-test\"}",
+        "responseBody": "{\"status\":\"success\",\"message\":\"Extended chain test completed\",\"timestamp\":\"{{ $now.toISO() }}\",\"finalData\":\"{{ JSON.stringify($json) }}\",\"workflowVersion\":\"step-3-8-extended-chain\"}",
         "options": {
           "responseCode": 200,
           "responseHeaders": {
@@ -58,7 +68,7 @@
       "name": "Webhook Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [600, 0]
+      "position": [800, 0]
     }
   ],
   "connections": {
@@ -88,6 +98,17 @@
       "main": [
         [
           {
+            "node": "Build Tokenized URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Tokenized URLs": {
+      "main": [
+        [
+          {
             "node": "Webhook Response",
             "type": "main",
             "index": 0
@@ -100,9 +121,9 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "step-3-7-node-type-test",
+  "versionId": "step-3-8-extended-chain",
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "id": "ai-analysis-step-3-7"
+  "id": "ai-analysis-step-3-8"
 }

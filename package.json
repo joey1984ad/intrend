@@ -16,7 +16,8 @@
     "test:ai": "node scripts/test-ai-analysis.js",
     "test:webhook": "node scripts/test-webhook-access-token.js",
     "test:variations": "node scripts/test-webhook-ad-variations.js",
-    "debug:webhook": "node scripts/debug-webhook-data.js"
+    "debug:webhook": "node scripts/debug-webhook-data.js",
+    "test:enhanced-ai": "node scripts/test-enhanced-ai-workflow.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",

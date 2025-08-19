@@ -52,6 +52,33 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
     confidence: number | null;
     processingTime: number | null;
     completedAt: string | null;
+    // NEW: Enhanced fields from N8N workflow
+    chatgptAnalysis?: {
+      success: boolean;
+      analysis: string;
+      model: string;
+      usage?: any;
+      error?: string;
+      fallback?: string;
+    } | null;
+    imageAnalysis?: {
+      originalUrl: string;
+      processedUrl: string;
+      analysisStatus: string;
+      analysisTimestamp: string;
+      modelUsed: string;
+      processingTime: number;
+    } | null;
+    tokenizedImageUrl?: string | null;
+    processingMetadata?: {
+      processingId: string;
+      processingStartTime: number;
+      originalImageUrl: string;
+      tokenizedImageUrl: string;
+      tokenizationSuccess: boolean;
+      facebookCDN: boolean;
+      chatgptIntegration: boolean;
+    } | null;
   } | null>(null);
   
   // Debug panel state
@@ -510,7 +537,12 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
           generatedImage: parsedResult.generatedImage || parsedResult.imageUrl || null,
           confidence: parsedResult.confidence || parsedResult.confidenceScore || null,
           processingTime: totalTime,
-          completedAt: new Date().toISOString()
+          completedAt: new Date().toISOString(),
+          // NEW: Enhanced fields from N8N workflow
+          chatgptAnalysis: parsedResult.chatgptAnalysis || null,
+          imageAnalysis: parsedResult.imageAnalysis || null,
+          tokenizedImageUrl: parsedResult.tokenizedImageUrl || null,
+          processingMetadata: parsedResult.processingMetadata || null
         };
 
         // Update local state with comprehensive AI analysis results
@@ -1087,7 +1119,182 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                         </div>
                       </div>
                       
-                      {/* Generated Image Display */}
+                      {/* NEW: Enhanced Image Display Section */}
+                      <div className="mt-6 pt-4 border-t border-green-200">
+                        <h5 className="font-medium text-green-900 mb-4">🖼️ Image Analysis & Processing</h5>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Original Image */}
+                          <div className="bg-white rounded-lg p-3 border border-green-200">
+                            <h6 className="font-medium text-green-900 mb-2">Original Image</h6>
+                            <div className="relative">
+                              <img 
+                                src={creative.imageUrl || creative.thumbnailUrl} 
+                                alt="Original Creative" 
+                                className="w-full h-auto rounded-lg shadow-sm"
+                                onError={(e) => {
+                                  const target = e.currentTarget as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const nextElement = target.nextElementSibling as HTMLElement;
+                                  if (nextElement) nextElement.style.display = 'block';
+                                }}
+                              />
+                              <div className="hidden text-sm text-gray-500 text-center py-4">
+                                Original image failed to load
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-600 mt-2">
+                              Source: {creative.imageUrl || creative.thumbnailUrl}
+                            </p>
+                          </div>
+                          
+                          {/* Processed/Tokenized Image */}
+                          <div className="bg-white rounded-lg p-3 border border-green-200">
+                            <h6 className="font-medium text-green-900 mb-2">Processed Image (Tokenized)</h6>
+                            <div className="relative">
+                              <img 
+                                src={aiAnalysis.tokenizedImageUrl || aiAnalysis.generatedImage || creative.imageUrl || creative.thumbnailUrl} 
+                                alt="Processed Creative" 
+                                className="w-full h-auto rounded-lg shadow-sm"
+                                onError={(e) => {
+                                  const target = e.currentTarget as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const nextElement = target.nextElementSibling as HTMLElement;
+                                  if (nextElement) nextElement.style.display = 'block';
+                                }}
+                              />
+                              <div className="hidden text-sm text-gray-500 text-center py-4">
+                                Processed image failed to load
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-600 mt-2">
+                              Status: {aiAnalysis.tokenizedImageUrl ? '✅ Tokenized & Processed' : aiAnalysis.generatedImage ? '✅ Processed' : '❌ Using Original'}
+                            </p>
+                            {aiAnalysis.tokenizedImageUrl && (
+                              <p className="text-xs text-blue-600 mt-1">
+                                🔗 Tokenized URL with Facebook access token
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Image Processing Details */}
+                        <div className="mt-4 bg-white rounded-lg p-3 border border-green-200">
+                          <h6 className="font-medium text-green-900 mb-2">📊 Processing Details</h6>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                            <div>
+                              <span className="text-gray-600">Processing Method:</span>
+                              <p className="font-medium">Enhanced 3-Node Workflow</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Image Source:</span>
+                              <p className="font-medium">{creative.creativeType || 'Unknown'}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Tokenization:</span>
+                              <p className="font-medium">{aiAnalysis.generatedImage ? '✅ Success' : '❌ Not Applied'}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">AI Model:</span>
+                              <p className="font-medium">GPT-4o Vision</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* NEW: ChatGPT Analysis Results */}
+                        {aiAnalysis.chatgptAnalysis && (
+                          <div className="mt-4 bg-white rounded-lg p-3 border border-green-200">
+                            <h6 className="font-medium text-green-900 mb-2">🤖 ChatGPT Analysis Results</h6>
+                            <div className="space-y-3">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-gray-600">Status:</span>
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                  aiAnalysis.chatgptAnalysis.success 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {aiAnalysis.chatgptAnalysis.success ? '✅ Success' : '❌ Failed'}
+                                </span>
+                              </div>
+                              
+                              {aiAnalysis.chatgptAnalysis.success && (
+                                <>
+                                  <div>
+                                    <span className="text-gray-600">Model Used:</span>
+                                    <p className="font-medium">{aiAnalysis.chatgptAnalysis.model}</p>
+                                  </div>
+                                  
+                                  <div>
+                                    <span className="text-gray-600">Analysis:</span>
+                                    <p className="text-sm text-gray-700 mt-1 leading-relaxed">
+                                      {aiAnalysis.chatgptAnalysis.analysis}
+                                    </p>
+                                  </div>
+                                  
+                                  {aiAnalysis.chatgptAnalysis.usage && (
+                                    <div className="text-xs text-gray-500">
+                                      <span>Tokens: {aiAnalysis.chatgptAnalysis.usage.total_tokens || 'N/A'}</span>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                              
+                              {!aiAnalysis.chatgptAnalysis.success && (
+                                <div>
+                                  <span className="text-gray-600">Error:</span>
+                                  <p className="text-sm text-red-600 mt-1">{aiAnalysis.chatgptAnalysis.error}</p>
+                                  {aiAnalysis.chatgptAnalysis.fallback && (
+                                    <p className="text-sm text-gray-600 mt-1">{aiAnalysis.chatgptAnalysis.fallback}</p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* NEW: Enhanced Processing Metadata */}
+                        {aiAnalysis.processingMetadata && (
+                          <div className="mt-4 bg-white rounded-lg p-3 border border-green-200">
+                            <h6 className="font-medium text-green-900 mb-2">🔧 Technical Details</h6>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                              <div>
+                                <span className="text-gray-600">Processing ID:</span>
+                                <p className="font-medium font-mono text-xs">{aiAnalysis.processingMetadata.processingId}</p>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Tokenization:</span>
+                                <p className="font-medium">
+                                  {aiAnalysis.processingMetadata.tokenizationSuccess ? '✅ Success' : '❌ Failed'}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Facebook CDN:</span>
+                                <p className="font-medium">
+                                  {aiAnalysis.processingMetadata.facebookCDN ? '✅ Yes' : '❌ No'}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">ChatGPT Integration:</span>
+                                <p className="font-medium">
+                                  {aiAnalysis.processingMetadata.chatgptIntegration ? '✅ Active' : '❌ Inactive'}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Start Time:</span>
+                                <p className="font-medium text-xs">
+                                  {new Date(aiAnalysis.processingMetadata.processingStartTime).toLocaleTimeString()}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-gray-600">Workflow Version:</span>
+                                <p className="font-medium text-xs">Enhanced 3-Node</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Generated Image Display (Legacy - keeping for compatibility) */}
                       {aiAnalysis.generatedImage && (
                         <div className="mt-4 pt-4 border-t border-green-200">
                           <h5 className="font-medium text-green-900 mb-2">Generated Image</h5>

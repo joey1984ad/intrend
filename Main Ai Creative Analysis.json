@@ -1,6 +1,6 @@
 {
-  "name": "AI Analysis - 3-Node Solution",
-  "description": "Complete AI analysis workflow optimized for 3 nodes to avoid execution issues",
+  "name": "AI Analysis - Enhanced 3-Node Solution with ChatGPT Integration",
+  "description": "Complete AI analysis workflow with ChatGPT Vision API integration, optimized for 3 nodes to avoid execution issues",
   "nodes": [
     {
       "parameters": {
@@ -16,14 +16,14 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [0, 0],
-      "webhookId": "ai-analysis-3-node-solution"
+      "webhookId": "ai-analysis-enhanced-3-node-solution"
     },
     {
       "parameters": {
-        "jsCode": "// Complete AI analysis processing in a single node\nconst data = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Processing complete AI analysis:`, JSON.stringify(data, null, 2));\n\n// Enhanced validation with detailed error messages\nif (!data.accessToken) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Access token is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\nif (!data.creativeId) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Creative ID is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\nif (!data.adAccountId) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Ad account ID is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\n// Extract and process creative data\nlet imageUrl = data.imageUrl || data.thumbnailUrl;\n\nif (!imageUrl) {\n  return {\n    json: {\n      error: \"No image URL found\",\n      message: \"Creative has no image content for AI analysis\",\n      sessionId: sessionId,\n      creativeId: data.creativeId || 'unknown',\n      availableFields: Object.keys(data),\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Build tokenized URL for AI analysis\nfunction appendAccessTokenToImageUrl(imageUrl, accessToken) {\n  if (!imageUrl || !accessToken) return imageUrl;\n  \n  const facebookDomains = [\n    'fbcdn.net', 'fbsbx.com', 'facebook.com', 'fb.com',\n    'instagram.com', 'cdninstagram.com', 'igcdn.com'\n  ];\n  \n  const isFacebookCDN = facebookDomains.some(domain => imageUrl.includes(domain));\n  \n  if (!isFacebookCDN) {\n    console.log(`ℹ️ [${sessionId}] URL is not from Facebook CDN, skipping tokenization:`, imageUrl);\n    return imageUrl;\n  }\n  \n  if (imageUrl.includes('access_token=')) {\n    console.log(`ℹ️ [${sessionId}] URL already has access token, skipping tokenization`);\n    return imageUrl;\n  }\n  \n  const separator = imageUrl.includes('?') ? '&' : '?';\n  const tokenizedUrl = `${imageUrl}${separator}access_token=${accessToken}`;\n  \n  console.log(`✅ [${sessionId}] Successfully tokenized URL for AI analysis`);\n  return tokenizedUrl;\n}\n\nconst tokenizedImageUrl = appendAccessTokenToImageUrl(imageUrl, data.accessToken);\n\n// Prepare complete data for AI analysis\nconst completeData = {\n  id: data.creativeId,\n  name: data.creativeName || 'Unnamed Creative',\n  status: 'active',\n  imageUrl: imageUrl,\n  tokenizedImageUrl: tokenizedImageUrl,\n  image_hash: null,\n  body: data.creativeName || '',\n  title: data.creativeName || '',\n  callToAction: 'learn_more',\n  creativeType: data.creativeType || 'image',\n  analysisContext: {\n    adAccountId: data.adAccountId,\n    accessToken: data.accessToken,\n    creativeId: data.creativeId,\n    sessionId: sessionId\n  },\n  metadata: {\n    originalData: data,\n    extractedAt: new Date().toISOString(),\n    processingMethod: 'complete_3_node_workflow',\n    workflowVersion: '3-node-solution'\n  },\n  processingMetadata: {\n    processingId: `${data.creativeId}_${Date.now()}`,\n    processingStartTime: Date.now(),\n    originalImageUrl: imageUrl,\n    tokenizedImageUrl: tokenizedImageUrl,\n    tokenizationSuccess: tokenizedImageUrl !== imageUrl,\n    facebookCDN: imageUrl.includes('fbcdn.net') || imageUrl.includes('facebook.com')\n  }\n};\n\nconsole.log(`✅ [${sessionId}] Complete AI analysis data prepared successfully`);\nconsole.log(`🔗 [${sessionId}] Tokenized URL:`, tokenizedImageUrl);\n\nreturn {\n  json: completeData\n};"
+        "jsCode": "// Enhanced AI analysis processing with ChatGPT integration\nconst data = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Processing enhanced AI analysis:`, JSON.stringify(data, null, 2));\n\n// Enhanced validation with detailed error messages\nif (!data.accessToken) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Access token is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\nif (!data.creativeId) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Creative ID is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\nif (!data.adAccountId) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Ad account ID is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\n// Extract and process creative data\nlet imageUrl = data.imageUrl || data.thumbnailUrl;\n\nif (!imageUrl) {\n  return {\n    json: {\n      error: \"No image URL found\",\n      message: \"Creative has no image content for AI analysis\",\n      sessionId: sessionId,\n      creativeId: data.creativeId || 'unknown',\n      availableFields: Object.keys(data),\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Build tokenized URL for AI analysis\nfunction appendAccessTokenToImageUrl(imageUrl, accessToken) {\n  if (!imageUrl || !accessToken) return imageUrl;\n  \n  const facebookDomains = [\n    'fbcdn.net', 'fbsbx.com', 'facebook.com', 'fb.com',\n    'instagram.com', 'cdninstagram.com', 'igcdn.com'\n  ];\n  \n  const isFacebookCDN = facebookDomains.some(domain => imageUrl.includes(domain));\n  \n  if (!isFacebookCDN) {\n    console.log(`ℹ️ [${sessionId}] URL is not from Facebook CDN, skipping tokenization:`, imageUrl);\n    return imageUrl;\n  }\n  \n  if (imageUrl.includes('access_token=')) {\n    console.log(`ℹ️ [${sessionId}] URL already has access token, skipping tokenization`);\n    return imageUrl;\n  }\n  \n  const separator = imageUrl.includes('?') ? '&' : '?';\n  const tokenizedUrl = `${imageUrl}${separator}access_token=${accessToken}`;\n  \n  console.log(`✅ [${sessionId}] Successfully tokenized URL for AI analysis`);\n  return tokenizedUrl;\n}\n\nconst tokenizedImageUrl = appendAccessTokenToImageUrl(imageUrl, data.accessToken);\n\n// NEW: Call ChatGPT Vision API to analyze the image\nasync function analyzeImageWithChatGPT(imageUrl, sessionId) {\n  try {\n    console.log(`🤖 [${sessionId}] Calling ChatGPT Vision API for image analysis...`);\n    \n    // You'll need to add your OpenAI API key to n8n credentials\n    const openaiApiKey = $credentials.openai.apiKey;\n    \n    const response = await fetch('https://api.openai.com/v1/chat/completions', {\n      method: 'POST',\n      headers: {\n        'Authorization': `Bearer ${openaiApiKey}`,\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify({\n        model: 'gpt-4o',\n        messages: [\n          {\n            role: 'system',\n            content: 'You are an expert marketing analyst. Analyze this ad creative and provide: 1) Overall score (1-10), 2) Detailed analysis, 3) Improvement suggestions, 4) Performance insights.'\n          },\n          {\n            role: 'user',\n            content: [\n              {\n                type: 'text',\n                text: 'Please analyze this ad creative image and provide comprehensive marketing insights.'\n              },\n              {\n                type: 'image_url',\n                image_url: {\n                  url: imageUrl,\n                  detail: 'high'\n                }\n              }\n            ]\n          }\n        ],\n        max_tokens: 2000,\n        temperature: 0.7\n      })\n    });\n\n    if (!response.ok) {\n      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);\n    }\n\n    const result = await response.json();\n    console.log(`✅ [${sessionId}] ChatGPT analysis completed successfully`);\n    \n    return {\n      success: true,\n      analysis: result.choices[0].message.content,\n      model: result.model,\n      usage: result.usage\n    };\n    \n  } catch (error) {\n    console.error(`❌ [${sessionId}] ChatGPT API error:`, error.message);\n    return {\n      success: false,\n      error: error.message,\n      fallback: 'Image analysis failed, using fallback processing'\n    };\n  }\n}\n\n// Execute ChatGPT analysis\nconst chatgptResult = await analyzeImageWithChatGPT(tokenizedImageUrl, sessionId);\n\n// Prepare complete data for AI analysis\nconst completeData = {\n  id: data.creativeId,\n  name: data.creativeName || 'Unnamed Creative',\n  status: 'active',\n  imageUrl: imageUrl,\n  tokenizedImageUrl: tokenizedImageUrl,\n  image_hash: null,\n  body: data.creativeName || '',\n  title: data.creativeName || '',\n  callToAction: 'learn_more',\n  creativeType: data.creativeType || 'image',\n  \n  // NEW: ChatGPT Analysis Results\n  chatgptAnalysis: chatgptResult,\n  \n  // NEW: Enhanced Image Data\n  imageAnalysis: {\n    originalUrl: imageUrl,\n    processedUrl: tokenizedImageUrl,\n    analysisStatus: chatgptResult.success ? 'completed' : 'failed',\n    analysisTimestamp: new Date().toISOString(),\n    modelUsed: chatgptResult.model || 'gpt-4o',\n    processingTime: Date.now() - parseInt(sessionId.split('_')[1])\n  },\n  \n  analysisContext: {\n    adAccountId: data.adAccountId,\n    accessToken: data.accessToken,\n    creativeId: data.creativeId,\n    sessionId: sessionId\n  },\n  \n  metadata: {\n    originalData: data,\n    extractedAt: new Date().toISOString(),\n    processingMethod: 'enhanced_3_node_workflow',\n    workflowVersion: '3-node-solution-with-image-retrieval'\n  },\n  \n  processingMetadata: {\n    processingId: `${data.creativeId}_${Date.now()}`,\n    processingStartTime: Date.now(),\n    originalImageUrl: imageUrl,\n    tokenizedImageUrl: tokenizedImageUrl,\n    tokenizationSuccess: tokenizedImageUrl !== imageUrl,\n    facebookCDN: imageUrl.includes('fbcdn.net') || imageUrl.includes('facebook.com'),\n    chatgptIntegration: true\n  }\n};\n\nconsole.log(`✅ [${sessionId}] Enhanced AI analysis data prepared successfully`);\nconsole.log(`🔗 [${sessionId}] Tokenized URL:`, tokenizedImageUrl);\nconsole.log(`🤖 [${sessionId}] ChatGPT Analysis:`, chatgptResult.success ? 'Success' : 'Failed');\n\nreturn {\n  json: completeData\n};"
       },
       "id": "complete-ai-processor",
-      "name": "Complete AI Processor",
+      "name": "Enhanced AI Processor with ChatGPT",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [200, 0]
@@ -31,7 +31,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "{\"status\":\"success\",\"message\":\"Complete AI analysis completed\",\"timestamp\":\"{{ $now.toISO() }}\",\"aiAnalysisData\":\"{{ JSON.stringify($json) }}\",\"workflowVersion\":\"3-node-solution\"}",
+        "responseBody": "{\"status\":\"success\",\"message\":\"Enhanced AI analysis completed with ChatGPT integration\",\"timestamp\":\"{{ $now.toISO() }}\",\"aiAnalysisData\":\"{{ JSON.stringify($json) }}\",\"workflowVersion\":\"3-node-solution-with-image-retrieval\",\"chatgptIntegration\":true}",
         "options": {
           "responseCode": 200,
           "responseHeaders": {
@@ -39,13 +39,17 @@
               {
                 "name": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "name": "X-Workflow-Version",
+                "value": "enhanced-3-node-chatgpt"
               }
             ]
           }
         }
       },
       "id": "webhook-response",
-      "name": "Webhook Response",
+      "name": "Enhanced Webhook Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [400, 0]
@@ -56,18 +60,18 @@
       "main": [
         [
           {
-            "node": "Complete AI Processor",
+            "node": "Enhanced AI Processor with ChatGPT",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Complete AI Processor": {
+    "Enhanced AI Processor with ChatGPT": {
       "main": [
         [
           {
-            "node": "Webhook Response",
+            "node": "Enhanced Webhook Response",
             "type": "main",
             "index": 0
           }
@@ -79,9 +83,9 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "3-node-solution",
+  "versionId": "enhanced-3-node-chatgpt",
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "id": "ai-analysis-3-node-solution"
+  "id": "ai-analysis-enhanced-3-node-solution"
 }

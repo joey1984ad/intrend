@@ -1,50 +1,38 @@
 const https = require('https');
-const http = require('http');
 
-// Test the webhook URL from your .env.local
-const webhookUrl = 'https://n8n-meh7.onrender.com/webhook-test/analyze-creatives';
+console.log('🔍 Testing n8n webhook connectivity...\n');
 
-console.log('🔍 Testing webhook connectivity...');
-console.log(`📡 URL: ${webhookUrl}`);
-
-// Parse the URL to determine protocol
-const url = new URL(webhookUrl);
-const isHttps = url.protocol === 'https:';
-
-// Create test payload similar to what the app sends
+const webhookUrl = 'https://n8n-meh7.onrender.com/webhook/analyze-creatives';
 const testPayload = {
-  creativeId: 'test_123',
-  adAccountId: 'test_account',
-  imageUrl: 'https://example.com/test-image.jpg',
-  creativeName: 'Test Creative',
-  creativeType: 'image',
+  test: true,
   timestamp: new Date().toISOString(),
-  sessionId: 'test_session',
-  userAgent: 'Test Script',
-  pageUrl: 'http://localhost:3000'
+  message: 'Webhook connection test',
+  webhookUrl: webhookUrl,
+  executionMode: 'production'
 };
+
+console.log(`📡 Testing webhook: ${webhookUrl}`);
+console.log(`📦 Test payload:`, JSON.stringify(testPayload, null, 2));
 
 const postData = JSON.stringify(testPayload);
 
-// Set up request options
 const options = {
-  hostname: url.hostname,
-  port: url.port || (isHttps ? 443 : 80),
-  path: url.pathname,
+  hostname: 'n8n-meh7.onrender.com',
+  port: 443,
+  path: '/webhook/analyze-creatives',
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'Content-Length': Buffer.byteLength(postData)
+    'Content-Length': Buffer.byteLength(postData),
+    'User-Agent': 'n8n-test-script/1.0'
   },
-  timeout: 10000 // 10 second timeout
+  timeout: 15000
 };
 
-console.log('📤 Sending test request...');
+console.log('\n🚀 Sending test request...');
 
-// Make the request
-const client = isHttps ? https : http;
-const req = client.request(options, (res) => {
-  console.log(`✅ Response received: ${res.statusCode} ${res.statusMessage}`);
+const req = https.request(options, (res) => {
+  console.log(`✅ Status: ${res.statusCode} ${res.statusMessage}`);
   console.log(`📊 Headers:`, res.headers);
   
   let data = '';
@@ -53,23 +41,41 @@ const req = client.request(options, (res) => {
   });
   
   res.on('end', () => {
-    console.log(`📄 Response body:`, data);
-    console.log('✅ Webhook test completed successfully');
+    console.log(`📄 Response body: ${data}`);
+    
+    if (res.statusCode === 200) {
+      console.log('\n🎉 SUCCESS! Remote webhook is working');
+      try {
+        const responseData = JSON.parse(data);
+        console.log('📋 Parsed response:', responseData);
+        
+        if (responseData.test) {
+          console.log('✅ Test request was properly handled');
+        }
+      } catch (e) {
+        console.log('📝 Response is not JSON, but webhook is responding');
+      }
+    } else {
+      console.log(`❌ Unexpected response status: ${res.statusCode}`);
+    }
   });
 });
 
 req.on('error', (err) => {
-  console.error(`❌ Request error:`, err.message);
-  console.error(`🔍 Error details:`, err);
+  console.error(`❌ Request error: ${err.message}`);
+  console.log('\n🔧 Troubleshooting tips:');
+  console.log('1. Check if n8n service is running on render.com');
+  console.log('2. Verify the webhook path is correct');
+  console.log('3. Check if the service is accessible from your location');
 });
 
 req.on('timeout', () => {
-  console.error('⏰ Request timed out after 10 seconds');
+  console.error('⏰ Request timed out');
   req.destroy();
 });
 
 req.write(postData);
 req.end();
 
-console.log('⏳ Waiting for response...');
+console.log('\n⏳ Waiting for response...');
 

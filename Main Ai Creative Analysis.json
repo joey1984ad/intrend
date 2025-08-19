@@ -1,6 +1,6 @@
 {
-  "name": "Ultra-Simple Test - GUARANTEED RESPONSE",
-  "description": "Ultra-simple workflow with guaranteed response for debugging",
+  "name": "AI Analysis - Step 1: Validation",
+  "description": "Testing AI analysis step by step - Step 1: Validation",
   "nodes": [
     {
       "parameters": {
@@ -16,12 +16,22 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [0, 0],
-      "webhookId": "ultra-simple-test"
+      "webhookId": "ai-analysis-step-1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Enhanced validation and data preparation for AI analysis\nconst data = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Processing AI analysis request:`, JSON.stringify(data, null, 2));\n\n// Enhanced validation with detailed error messages\nif (!data.accessToken) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Access token is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\nif (!data.creativeId) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Creative ID is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\nif (!data.adAccountId) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Ad account ID is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\n// Prepare enhanced data for AI analysis\nconst enhancedData = {\n  ...data,\n  sessionId: sessionId,\n  workflowVersion: 'step-1-validation',\n  receivedAt: new Date().toISOString(),\n  processingStartTime: Date.now(),\n  analysisType: 'ai_creative_analysis'\n};\n\nconsole.log(`✅ [${sessionId}] Validation passed, proceeding with AI analysis`);\nconsole.log(`🔑 Access token: ${enhancedData.accessToken.substring(0, 10)}...`);\nconsole.log(`🎯 Creative ID: ${enhancedData.creativeId}`);\nconsole.log(`🏢 Ad Account ID: ${enhancedData.adAccountId}`);\n\nreturn {\n  json: enhancedData\n};"
+      },
+      "id": "ai-validation",
+      "name": "AI Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [200, 0]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "{\"status\":\"success\",\"message\":\"Ultra-simple test working\",\"timestamp\":\"{{ $now.toISO() }}\",\"receivedData\":\"{{ JSON.stringify($json) }}\",\"workflowVersion\":\"ultra-simple\"}",
+        "responseBody": "{\"status\":\"success\",\"message\":\"AI Validation completed\",\"timestamp\":\"{{ $now.toISO() }}\",\"receivedData\":\"{{ JSON.stringify($json) }}\",\"workflowVersion\":\"step-1-validation\"}",
         "options": {
           "responseCode": 200,
           "responseHeaders": {
@@ -38,11 +48,22 @@
       "name": "Webhook Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [200, 0]
+      "position": [400, 0]
     }
   ],
   "connections": {
     "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Validation": {
       "main": [
         [
           {
@@ -58,9 +79,9 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "ultra-simple",
+  "versionId": "step-1-validation",
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "id": "ultra-simple-test-workflow"
+  "id": "ai-analysis-step-1"
 }

@@ -48,7 +48,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"Test request successful\",\n  \"timestamp\": \"{{ $now.toISO() }}\",\n  \"workflowVersion\": \"complete-v1.0\"\n}",
+        "responseBody": "{\"status\":\"success\",\"message\":\"Test request successful\",\"timestamp\":\"{{ $now.toISO() }}\",\"workflowVersion\":\"complete-v1.0\"}",
         "options": {
           "responseCode": 200,
           "responseHeaders": {
@@ -142,8 +142,8 @@
       },
       "id": "chatgpt-vision-analysis",
       "name": "ChatGPT Vision Analysis",
-      "type": "n8n-nodes-base.openAi",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [1200, 100],
       "credentials": {
         "openAiApi": {
@@ -175,18 +175,8 @@
     },
     {
       "parameters": {
-        "jsCode": "// Safety node - ensures webhook always gets valid data\nconst data = $json;\nconst sessionId = data?.metadata?.sessionId || data?.sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] SAFETY CHECK: Final data before webhook response:`);\nconsole.log('Data type:', typeof data);\nconsole.log('Data keys:', Object.keys(data || {}));\nconsole.log('Full data:', JSON.stringify(data, null, 2));\n\n// ALWAYS return valid JSON - never empty\nif (!data || Object.keys(data).length === 0) {\n  console.error(`❌ [${sessionId}] No data received - returning fallback response`);\n  return {\n    json: {\n      status: 'success',\n      message: 'Workflow executed successfully',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      workflowVersion: 'complete-v1.0',\n      debugInfo: 'Safety node provided fallback response',\n      note: 'This is a fallback response - the main workflow may have failed',\n      fallback: true\n    }\n  };\n}\n\n// If we have data, enhance it with safety metadata\nconst enhancedData = {\n  ...data,\n  _safetyMetadata: {\n    processedBy: 'Safety Node',\n    timestamp: new Date().toISOString(),\n    sessionId: sessionId,\n    safetyCheck: 'passed'\n  }\n};\n\nconsole.log(`✅ [${sessionId}] Safety check passed, proceeding to webhook response`);\nreturn {\n  json: enhancedData\n};"
-      },
-      "id": "safety-check",
-      "name": "Safety Check",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1700, 100]
-    },
-    {
-      "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ (() => { try { if ($json && Object.keys($json).length > 0) { return JSON.stringify($json); } else { return JSON.stringify({ status: 'success', message: 'Workflow executed but no data returned', timestamp: new Date().toISOString(), workflowVersion: 'complete-v1.0', debugInfo: 'Webhook response node fallback activated' }); } } catch (error) { return JSON.stringify({ status: 'error', message: 'JSON serialization failed', error: error.message, timestamp: new Date().toISOString(), workflowVersion: 'complete-v1.0' }); } })() }}",
+        "responseBody": "={{ JSON.stringify($json) }}",
         "options": {
           "responseCode": 200,
           "responseHeaders": {
@@ -203,7 +193,7 @@
       "name": "Webhook Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1900, 100]
+      "position": [1800, 100]
     }
   ],
   "connections": {
@@ -303,17 +293,6 @@
       ]
     },
     "Prepare Final Response": {
-      "main": [
-        [
-          {
-            "node": "Safety Check",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Safety Check": {
       "main": [
         [
           {

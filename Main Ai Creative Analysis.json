@@ -111,7 +111,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const webhookData = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Debug: Webhook data received:`);\nconsole.log('Full webhook data:', JSON.stringify(webhookData, null, 2));\nconsole.log('Creative ID:', webhookData.creativeId);\nconsole.log('Access Token:', webhookData.accessToken ? 'Present (' + webhookData.accessToken.substring(0, 10) + '...)' : 'MISSING');\nconsole.log('Ad Account ID:', webhookData.adAccountId);\nconsole.log('Creative Type:', webhookData.creativeType);\nconsole.log('Image URL:', webhookData.imageUrl ? 'Present' : 'Missing');\nconsole.log('Is Test Request:', webhookData.test === true);\n\n// IMPORTANT: Test requests should have been handled by the Check If Test node\n// If we reach this point, it means this is NOT a test request\nif (webhookData.test === true) {\n  console.log(`⚠️ [${sessionId}] Test request reached validation node - this should not happen`);\n  return {\n    json: {\n      error: \"Test request routing error\",\n      message: \"Test request should have been handled by test routing node\",\n      sessionId: sessionId,\n      receivedData: webhookData,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Enhanced validation with detailed error messages for real requests\nif (!webhookData.accessToken) {\n  console.error(`❌ [${sessionId}] Access token missing from webhook data`);\n  console.error(`❌ [${sessionId}] Available keys:`, Object.keys(webhookData));\n  return {\n    json: {\n      error: \"Missing access token\",\n      message: \"Facebook access token is required but not provided in webhook\",\n      sessionId: sessionId,\n      receivedData: webhookData,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\nif (!webhookData.creativeId) {\n  return {\n    json: {\n      error: \"Missing creative ID\",\n      message: \"Creative ID is required but not provided in webhook\",\n      sessionId: sessionId,\n      receivedData: webhookData,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\nif (!webhookData.adAccountId) {\n  return {\n    json: {\n      error: \"Missing ad account ID\",\n      message: \"Ad account ID is required but not provided in webhook\",\n      sessionId: sessionId,\n      receivedData: webhookData,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Validate creative type for analysis\nif (webhookData.creativeType && webhookData.creativeType !== 'image') {\n  console.log(`⚠️ [${sessionId}] Warning: Creative type is ${webhookData.creativeType}, analysis may not work optimally`);\n}\n\n// Add session tracking and metadata while preserving ALL original data\nconst enhancedData = {\n  ...webhookData, // ✅ PRESERVE ALL ORIGINAL DATA\n  sessionId: sessionId,\n  workflowVersion: '2.0-optimized',\n  receivedAt: new Date().toISOString(),\n  processingStartTime: Date.now()\n};\n\nconsole.log(`✅ [${sessionId}] Validation passed, proceeding with analysis`);\nconsole.log(`✅ [${sessionId}] Enhanced data keys:`, Object.keys(enhancedData));\nconsole.log(`✅ [${sessionId}] Access token preserved:`, enhancedData.accessToken ? 'Yes' : 'No');\n\nreturn {\n  json: enhancedData\n};"
+        "jsCode": "try {\n  const webhookData = $json;\n  const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\n  console.log(`🔍 [${sessionId}] Debug: Webhook data received:`);\n  console.log('Full webhook data:', JSON.stringify(webhookData, null, 2));\n  console.log('Creative ID:', webhookData.creativeId);\n  console.log('Access Token:', webhookData.accessToken ? 'Present (' + webhookData.accessToken.substring(0, 10) + '...)' : 'MISSING');\n  console.log('Ad Account ID:', webhookData.adAccountId);\n  console.log('Creative Type:', webhookData.creativeType);\n  console.log('Image URL:', webhookData.imageUrl ? 'Present' : 'Missing');\n  console.log('Is Test Request:', webhookData.test === true);\n\n  // IMPORTANT: Test requests should have been handled by the Check If Test node\n  // If we reach this point, it means this is NOT a test request\n  if (webhookData.test === true) {\n    console.log(`⚠️ [${sessionId}] Test request reached validation node - this should not happen`);\n    return {\n      json: {\n        error: \"Test request routing error\",\n        message: \"Test request should have been handled by test routing node\",\n        sessionId: sessionId,\n        receivedData: webhookData,\n        timestamp: new Date().toISOString()\n      }\n    };\n  }\n\n  // Enhanced validation with detailed error messages for real requests\n  if (!webhookData.accessToken) {\n    console.error(`❌ [${sessionId}] Access token missing from webhook data`);\n    console.error(`❌ [${sessionId}] Available keys:`, Object.keys(webhookData));\n    return {\n      json: {\n        error: \"Missing access token\",\n        message: \"Facebook access token is required but not provided in webhook\",\n        sessionId: sessionId,\n        receivedData: webhookData,\n        timestamp: new Date().toISOString()\n      }\n    };\n  }\n\n  if (!webhookData.creativeId) {\n    return {\n      json: {\n        error: \"Missing creative ID\",\n        message: \"Creative ID is required but not provided in webhook\",\n        sessionId: sessionId,\n        receivedData: webhookData,\n        timestamp: new Date().toISOString()\n      }\n    };\n  }\n\n  if (!webhookData.adAccountId) {\n    return {\n      json: {\n        error: \"Missing ad account ID\",\n        message: \"Ad account ID is required but not provided in webhook\",\n        sessionId: sessionId,\n        receivedData: webhookData,\n        timestamp: new Date().toISOString()\n      }\n    };\n  }\n\n  // Validate creative type for analysis\n  if (webhookData.creativeType && webhookData.creativeType !== 'image') {\n    console.log(`⚠️ [${sessionId}] Warning: Creative type is ${webhookData.creativeType}, analysis may not work optimally`);\n  }\n\n  // Add session tracking and metadata while preserving ALL original data\n  const enhancedData = {\n    ...webhookData, // ✅ PRESERVE ALL ORIGINAL DATA\n    sessionId: sessionId,\n    workflowVersion: '2.0-optimized',\n    receivedAt: new Date().toISOString(),\n    processingStartTime: Date.now()\n  };\n\n  console.log(`✅ [${sessionId}] Validation passed, proceeding with analysis`);\n  console.log(`✅ [${sessionId}] Enhanced data keys:`, Object.keys(enhancedData));\n  console.log(`✅ [${sessionId}] Access token preserved:`, enhancedData.accessToken ? 'Yes' : 'No');\n\n  return {\n    json: enhancedData\n  };\n} catch (error) {\n  console.error('❌ CRITICAL ERROR in Validate Webhook Data:', error);\n  return {\n    json: {\n      error: \"Workflow validation failed\",\n      message: error.message,\n      stack: error.stack,\n      timestamp: new Date().toISOString(),\n      workflowVersion: '2.0-optimized',\n      status: \"critical_error\"\n    }\n  };\n}"
       },
       "id": "validate-webhook-data",
       "name": "Validate Webhook Data",
@@ -297,8 +297,21 @@
     },
     {
       "parameters": {
+        "jsCode": "// Debug node to troubleshoot empty webhook response\nconst data = $json;\nconst sessionId = data?.metadata?.sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] DEBUG: Final data before webhook response:`);\nconsole.log('Data type:', typeof data);\nconsole.log('Data keys:', Object.keys(data || {}));\nconsole.log('Full data:', JSON.stringify(data, null, 2));\n\n// Ensure we have valid data to return\nif (!data || Object.keys(data).length === 0) {\n  console.error(`❌ [${sessionId}] No data received for webhook response`);\n  // Return a fallback response instead of empty data\n  return {\n    json: {\n      error: \"Workflow execution failed\",\n      message: \"No data received from workflow execution\",\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      workflowVersion: '2.0-optimized',\n      status: \"failed\",\n      debugInfo: \"Debug Final Data node detected empty response and provided fallback\"\n    }\n  };\n}\n\nconsole.log(`✅ [${sessionId}] Data validated, proceeding to webhook response`);\n\n// Pass through the data unchanged\nreturn {\n  json: data\n};"
+      },
+      "id": "debug-final-data",
+      "name": "Debug Final Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        848
+      ]
+    },
+    {
+      "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ $json }}",
+        "responseBody": "={{ $json ? JSON.stringify($json) : JSON.stringify({error: 'No data received', timestamp: new Date().toISOString(), status: 'empty_response'}) }}",
         "options": {
           "responseCode": 200,
           "responseHeaders": {
@@ -479,6 +492,17 @@
       ]
     },
     "Prepare Final Response": {
+      "main": [
+        [
+          {
+            "node": "debug-final-data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debug Final Data": {
       "main": [
         [
           {

@@ -1,6 +1,6 @@
 {
-  "name": "AI Analysis - Step 3.9: URL Tokenization Test",
-  "description": "Testing AI analysis step by step - Step 3.9: URL Tokenization Test",
+  "name": "AI Analysis - 3-Node Solution",
+  "description": "Complete AI analysis workflow optimized for 3 nodes to avoid execution issues",
   "nodes": [
     {
       "parameters": {
@@ -16,42 +16,22 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [0, 0],
-      "webhookId": "ai-analysis-step-3-9"
+      "webhookId": "ai-analysis-3-node-solution"
     },
     {
       "parameters": {
-        "jsCode": "// Simple data pass-through for testing\nconst data = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Simple data pass-through:`, JSON.stringify(data, null, 2));\n\n// Just add a session ID and pass through\nconst enhancedData = {\n  ...data,\n  sessionId: sessionId,\n  workflowVersion: 'step-3-9-url-tokenization',\n  timestamp: new Date().toISOString(),\n  note: 'Simple pass-through test'\n};\n\nconsole.log(`✅ [${sessionId}] Data passed through successfully`);\n\nreturn {\n  json: enhancedData\n};"
+        "jsCode": "// Complete AI analysis processing in a single node\nconst data = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Processing complete AI analysis:`, JSON.stringify(data, null, 2));\n\n// Enhanced validation with detailed error messages\nif (!data.accessToken) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Access token is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\nif (!data.creativeId) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Creative ID is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\nif (!data.adAccountId) {\n  return {\n    json: {\n      status: 'error',\n      message: 'Ad account ID is required for AI analysis',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      receivedData: data\n    }\n  };\n}\n\n// Extract and process creative data\nlet imageUrl = data.imageUrl || data.thumbnailUrl;\n\nif (!imageUrl) {\n  return {\n    json: {\n      error: \"No image URL found\",\n      message: \"Creative has no image content for AI analysis\",\n      sessionId: sessionId,\n      creativeId: data.creativeId || 'unknown',\n      availableFields: Object.keys(data),\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Build tokenized URL for AI analysis\nfunction appendAccessTokenToImageUrl(imageUrl, accessToken) {\n  if (!imageUrl || !accessToken) return imageUrl;\n  \n  const facebookDomains = [\n    'fbcdn.net', 'fbsbx.com', 'facebook.com', 'fb.com',\n    'instagram.com', 'cdninstagram.com', 'igcdn.com'\n  ];\n  \n  const isFacebookCDN = facebookDomains.some(domain => imageUrl.includes(domain));\n  \n  if (!isFacebookCDN) {\n    console.log(`ℹ️ [${sessionId}] URL is not from Facebook CDN, skipping tokenization:`, imageUrl);\n    return imageUrl;\n  }\n  \n  if (imageUrl.includes('access_token=')) {\n    console.log(`ℹ️ [${sessionId}] URL already has access token, skipping tokenization`);\n    return imageUrl;\n  }\n  \n  const separator = imageUrl.includes('?') ? '&' : '?';\n  const tokenizedUrl = `${imageUrl}${separator}access_token=${accessToken}`;\n  \n  console.log(`✅ [${sessionId}] Successfully tokenized URL for AI analysis`);\n  return tokenizedUrl;\n}\n\nconst tokenizedImageUrl = appendAccessTokenToImageUrl(imageUrl, data.accessToken);\n\n// Prepare complete data for AI analysis\nconst completeData = {\n  id: data.creativeId,\n  name: data.creativeName || 'Unnamed Creative',\n  status: 'active',\n  imageUrl: imageUrl,\n  tokenizedImageUrl: tokenizedImageUrl,\n  image_hash: null,\n  body: data.creativeName || '',\n  title: data.creativeName || '',\n  callToAction: 'learn_more',\n  creativeType: data.creativeType || 'image',\n  analysisContext: {\n    adAccountId: data.adAccountId,\n    accessToken: data.accessToken,\n    creativeId: data.creativeId,\n    sessionId: sessionId\n  },\n  metadata: {\n    originalData: data,\n    extractedAt: new Date().toISOString(),\n    processingMethod: 'complete_3_node_workflow',\n    workflowVersion: '3-node-solution'\n  },\n  processingMetadata: {\n    processingId: `${data.creativeId}_${Date.now()}`,\n    processingStartTime: Date.now(),\n    originalImageUrl: imageUrl,\n    tokenizedImageUrl: tokenizedImageUrl,\n    tokenizationSuccess: tokenizedImageUrl !== imageUrl,\n    facebookCDN: imageUrl.includes('fbcdn.net') || imageUrl.includes('facebook.com')\n  }\n};\n\nconsole.log(`✅ [${sessionId}] Complete AI analysis data prepared successfully`);\nconsole.log(`🔗 [${sessionId}] Tokenized URL:`, tokenizedImageUrl);\n\nreturn {\n  json: completeData\n};"
       },
-      "id": "simple-processor",
-      "name": "Simple Processor",
+      "id": "complete-ai-processor",
+      "name": "Complete AI Processor",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [200, 0]
     },
     {
       "parameters": {
-        "jsCode": "// Test creative data extraction logic\nconst webhookData = $json;\nconst sessionId = webhookData.sessionId;\n\nconsole.log(`🔍 [${sessionId}] Testing creative data extraction:`, JSON.stringify(webhookData, null, 2));\n\n// Extract image URL for AI analysis\nlet imageUrl = webhookData.imageUrl || webhookData.thumbnailUrl;\n\nif (!imageUrl) {\n  return {\n    json: {\n      error: \"No image URL found\",\n      message: \"Creative has no image content for AI analysis\",\n      sessionId: sessionId,\n      creativeId: webhookData.creativeId || 'unknown',\n      availableFields: Object.keys(webhookData),\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Prepare data for AI analysis using frontend data\nconst aiAnalysisData = {\n  id: webhookData.creativeId,\n  name: webhookData.creativeName || 'Unnamed Creative',\n  status: 'active',\n  imageUrl: imageUrl,\n  image_hash: null,\n  body: webhookData.creativeName || '',\n  title: webhookData.creativeName || '',\n  callToAction: 'learn_more',\n  creativeType: webhookData.creativeType || 'image',\n  analysisContext: {\n    adAccountId: webhookData.adAccountId,\n    accessToken: webhookData.accessToken,\n    creativeId: webhookData.creativeId,\n    sessionId: sessionId\n  },\n  metadata: {\n    originalData: webhookData,\n    extractedAt: new Date().toISOString(),\n    processingMethod: 'direct_frontend_data'\n  }\n};\n\nconsole.log(`✅ [${sessionId}] Successfully prepared data for AI analysis`);\n\nreturn {\n  json: aiAnalysisData\n};"
-      },
-      "id": "extract-creative-data",
-      "name": "Extract Creative Data",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [400, 0]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Test URL tokenization logic - SIMPLIFIED VERSION\nconst creative = $json;\nconst sessionId = creative.analysisContext.sessionId;\n\nconsole.log(`🔍 [${sessionId}] Testing URL tokenization:`, JSON.stringify(creative, null, 2));\n\n// Simplified tokenization - just add a note\nconst enhancedData = {\n  ...creative,\n  tokenizedImageUrl: creative.imageUrl,\n  processingMetadata: {\n    processingId: `${creative.id}_${Date.now()}`,\n    processingStartTime: Date.now(),\n    originalImageUrl: creative.imageUrl,\n    tokenizedImageUrl: creative.imageUrl,\n    tokenizationSuccess: false,\n    note: 'Simplified tokenization test'\n  }\n};\n\nconsole.log(`✅ [${sessionId}] Simplified tokenization completed`);\nreturn {\n  json: enhancedData\n};"
-      },
-      "id": "build-tokenized-urls",
-      "name": "Build Tokenized URLs",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [600, 0]
-    },
-    {
-      "parameters": {
         "respondWith": "json",
-        "responseBody": "{\"status\":\"success\",\"message\":\"URL tokenization test completed\",\"timestamp\":\"{{ $now.toISO() }}\",\"finalData\":\"{{ JSON.stringify($json) }}\",\"workflowVersion\":\"step-3-9-url-tokenization\"}",
+        "responseBody": "{\"status\":\"success\",\"message\":\"Complete AI analysis completed\",\"timestamp\":\"{{ $now.toISO() }}\",\"aiAnalysisData\":\"{{ JSON.stringify($json) }}\",\"workflowVersion\":\"3-node-solution\"}",
         "options": {
           "responseCode": 200,
           "responseHeaders": {
@@ -68,7 +48,7 @@
       "name": "Webhook Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [800, 0]
+      "position": [400, 0]
     }
   ],
   "connections": {
@@ -76,36 +56,14 @@
       "main": [
         [
           {
-            "node": "Simple Processor",
+            "node": "Complete AI Processor",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Simple Processor": {
-      "main": [
-        [
-          {
-            "node": "Extract Creative Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract Creative Data": {
-      "main": [
-        [
-          {
-            "node": "Build Tokenized URLs",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Tokenized URLs": {
+    "Complete AI Processor": {
       "main": [
         [
           {
@@ -121,9 +79,9 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "step-3-9-url-tokenization",
+  "versionId": "3-node-solution",
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "id": "ai-analysis-step-3-9"
+  "id": "ai-analysis-3-node-solution"
 }

@@ -19,6 +19,7 @@ interface FacebookImageProps {
 /**
  * Component for displaying Facebook images with automatic access token handling
  * Automatically appends access tokens to Facebook CDN URLs when needed
+ * Bypasses CORS restrictions using blob-based image loading
  */
 export const FacebookImage: React.FC<FacebookImageProps> = ({
   src,
@@ -36,10 +37,15 @@ export const FacebookImage: React.FC<FacebookImageProps> = ({
   ...props
 }) => {
   const { processedUrl, optimizedUrl, isFacebookCDN, needsAccessToken, hasAccessToken } = useFacebookImageUrl(src, accessToken, contentType);
+  
+  // State for blob-based image loading
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [isLoadingBlob, setIsLoadingBlob] = useState(false);
+  const [blobLoadError, setBlobLoadError] = useState(false);
 
-  // Robust fallback chain: optimized → token-appended → original → provided fallback
+  // Robust fallback chain: blob → optimized → token-appended → original → provided fallback
   const candidateUrls = useMemo(() => {
-    const urls: Array<string | null | undefined> = [optimizedUrl, processedUrl, src, fallbackSrc];
+    const urls: Array<string | null | undefined> = [blobUrl, optimizedUrl, processedUrl, src, fallbackSrc];
     const seen = new Set<string>();
     return urls.filter((u): u is string => {
       if (!u) return false;
@@ -47,18 +53,76 @@ export const FacebookImage: React.FC<FacebookImageProps> = ({
       seen.add(u);
       return true;
     });
-  }, [optimizedUrl, processedUrl, src, fallbackSrc]);
+  }, [blobUrl, optimizedUrl, processedUrl, src, fallbackSrc]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // Reset index when URLs change
   useEffect(() => {
     setCurrentIndex(0);
+    setBlobLoadError(false);
   }, [candidateUrls.length, src, accessToken, contentType]);
 
+  // Load image as blob to bypass CORS restrictions
+  const loadImageAsBlob = async (imageUrl: string) => {
+    if (!isFacebookCDN || !accessToken) return null;
+    
+    try {
+      setIsLoadingBlob(true);
+      setBlobLoadError(false);
+      
+      console.log(`🔄 Loading Facebook image as blob:`, imageUrl);
+      
+      const response = await fetch(imageUrl, {
+        mode: 'cors',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      
+      console.log(`✅ Facebook image loaded as blob successfully`);
+      setBlobUrl(url);
+      return url;
+      
+    } catch (error) {
+      console.warn(`⚠️ Failed to load Facebook image as blob:`, error);
+      setBlobLoadError(true);
+      return null;
+    } finally {
+      setIsLoadingBlob(false);
+    }
+  };
+
+  // Try to load Facebook images as blob when component mounts
+  useEffect(() => {
+    if (isFacebookCDN && accessToken && processedUrl && !blobUrl && !blobLoadError) {
+      loadImageAsBlob(processedUrl);
+    }
+  }, [isFacebookCDN, accessToken, processedUrl, blobUrl, blobLoadError]);
+
+  // Cleanup blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [blobUrl]);
+
   const handleError = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const currentUrl = candidateUrls[currentIndex];
     console.warn('FacebookImage error:', {
+      currentUrl,
       originalUrl: src,
       processedUrl,
+      blobUrl,
       isFacebookCDN,
       needsAccessToken,
       hasAccessToken,
@@ -80,6 +144,7 @@ export const FacebookImage: React.FC<FacebookImageProps> = ({
   };
 
   const handleLoad = () => {
+    console.log(`✅ FacebookImage loaded successfully:`, candidateUrls[currentIndex]);
     if (onLoad) {
       onLoad();
     }
@@ -98,6 +163,22 @@ export const FacebookImage: React.FC<FacebookImageProps> = ({
     );
   }
 
+  // Show loading state while trying to load blob
+  if (isLoadingBlob && isFacebookCDN && accessToken) {
+    return (
+      <div 
+        className={`bg-gray-100 flex items-center justify-center ${className}`}
+        style={{ width, height, ...style }}
+        {...props}
+      >
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <span className="text-gray-500 text-sm">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <img
       src={candidateUrls[currentIndex]}
@@ -109,6 +190,7 @@ export const FacebookImage: React.FC<FacebookImageProps> = ({
       style={style}
       onError={handleError}
       onLoad={handleLoad}
+      crossOrigin={isFacebookCDN ? "anonymous" : undefined}
       {...props}
     />
   );

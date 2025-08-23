@@ -4,16 +4,38 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const error = searchParams.get('error');
+  const state = searchParams.get('state');
+
+  console.log('🔐 Google OAuth Callback - Code:', code ? 'Present' : 'Missing', 'Error:', error, 'State:', state);
 
   if (error) {
+    console.error('❌ Google OAuth error:', error);
     return NextResponse.redirect(new URL('/signup?error=google_auth_failed', request.url));
   }
 
   if (!code) {
+    console.error('❌ No authorization code received');
     return NextResponse.redirect(new URL('/signup?error=no_auth_code', request.url));
   }
 
   try {
+    // Validate environment variables
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const nextAuthUrl = process.env.NEXTAUTH_URL;
+
+    if (!clientId || clientId === 'your_google_client_id_here') {
+      console.error('❌ GOOGLE_CLIENT_ID not configured');
+      return NextResponse.redirect(new URL('/signup?error=oauth_not_configured', request.url));
+    }
+
+    if (!clientSecret || clientSecret === 'your_google_client_secret_here') {
+      console.error('❌ GOOGLE_CLIENT_SECRET not configured');
+      return NextResponse.redirect(new URL('/signup?error=oauth_not_configured', request.url));
+    }
+
+    console.log('🔐 Exchanging authorization code for access token...');
+    
     // Exchange authorization code for access token
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -22,9 +44,9 @@ export async function GET(request: NextRequest) {
       },
       body: new URLSearchParams({
         code,
-        client_id: process.env.GOOGLE_CLIENT_ID!,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-        redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/google/callback`,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: `${nextAuthUrl || 'http://localhost:3000'}/api/auth/google/callback`,
         grant_type: 'authorization_code',
       }),
     });

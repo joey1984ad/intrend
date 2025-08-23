@@ -39,14 +39,34 @@ const LoginPage: React.FC = () => {
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
     
-    // Simulate Google OAuth
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    console.log('Google login initiated');
-    setIsGoogleLoading(false);
-    
-    // Redirect to dashboard after successful Google login
-    window.location.href = '/dashboard';
+    try {
+      // Real Google OAuth implementation
+      const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+      
+      if (!googleClientId || googleClientId === 'your_google_client_id_here') {
+        throw new Error('Google OAuth not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID in your environment variables.');
+      }
+      
+      // Build Google OAuth URL
+      const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+      googleAuthUrl.searchParams.set('client_id', googleClientId);
+      googleAuthUrl.searchParams.set('redirect_uri', `${window.location.origin}/api/auth/google/callback`);
+      googleAuthUrl.searchParams.set('response_type', 'code');
+      googleAuthUrl.searchParams.set('scope', 'openid email profile');
+      googleAuthUrl.searchParams.set('access_type', 'offline');
+      googleAuthUrl.searchParams.set('prompt', 'consent');
+      
+      console.log('Redirecting to Google OAuth:', googleAuthUrl.toString());
+      
+      // Redirect to Google OAuth
+      window.location.href = googleAuthUrl.toString();
+      
+    } catch (error) {
+      console.error('Google OAuth error:', error);
+      setIsGoogleLoading(false);
+      // Show error to user
+      alert('Google OAuth not configured. Please contact support.');
+    }
   };
 
   const isFormValid = formData.email && formData.password;

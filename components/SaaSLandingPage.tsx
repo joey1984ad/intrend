@@ -53,8 +53,8 @@ const SaaSLandingPage: React.FC = () => {
   const pricingPlans = [
     {
       name: 'Starter',
-      price: '$49',
-      period: '/month',
+      price: 'FREE',
+      period: '',
       description: 'Perfect for small agencies and businesses',
       features: [
         'Up to 3 ad accounts',
@@ -68,7 +68,7 @@ const SaaSLandingPage: React.FC = () => {
     },
     {
       name: 'Professional',
-      price: '$99',
+      price: '$10',
       period: '/month',
       description: 'Ideal for growing agencies and businesses',
       features: [
@@ -84,7 +84,7 @@ const SaaSLandingPage: React.FC = () => {
     },
     {
       name: 'Enterprise',
-      price: '$249',
+      price: '$20',
       period: '/month',
       description: 'For large agencies and enterprise clients',
       features: [
@@ -290,12 +290,12 @@ const SaaSLandingPage: React.FC = () => {
               Choose the plan that fits your agency needs. All plans include a 14-day free trial.
             </p>
           </div>
-          <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-y-6 sm:mt-20 lg:max-w-4xl lg:grid-cols-3">
+          <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-y-6 gap-x-8 sm:mt-20 lg:max-w-6xl lg:grid-cols-3">
             {pricingPlans.map((plan) => (
               <div
                 key={plan.name}
-                className={`flex flex-col justify-between rounded-3xl bg-white p-8 ring-1 ring-gray-200 xl:p-10 ${
-                  plan.popular ? 'ring-2 ring-indigo-600' : ''
+                className={`flex flex-col justify-between rounded-3xl bg-white p-8 ring-1 ring-gray-200 xl:p-10 mx-2 shadow-lg hover:shadow-xl transition-all duration-300 ${
+                  plan.popular ? 'ring-2 ring-indigo-600 scale-105' : ''
                 }`}
               >
                 {plan.popular && (
@@ -306,10 +306,10 @@ const SaaSLandingPage: React.FC = () => {
                   </div>
                 )}
                 <div>
-                  <div className="flex items-center gap-x-4">
+                  <div className="flex items-center gap-x-4 mb-4">
                     <h3 className="text-lg font-semibold leading-8 text-black">{plan.name}</h3>
                   </div>
-                  <p className="mt-4 text-sm leading-6 text-gray-600">{plan.description}</p>
+                  <p className="text-sm leading-6 text-gray-600">{plan.description}</p>
                   <p className="mt-6 flex items-baseline gap-x-1">
                     <span className="text-4xl font-bold tracking-tight text-black">{plan.price}</span>
                     <span className="text-sm font-semibold leading-6 text-gray-600">{plan.period}</span>

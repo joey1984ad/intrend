@@ -60,6 +60,9 @@ const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-6">
               <div className="flex items-center">
+                <a href="/" className="text-blue-300 hover:text-blue-200 text-sm underline">← Back to Landing</a>
+              </div>
+              <div className="flex items-center">
                 <div className="w-6 h-6 bg-blue-600 rounded mr-2"></div>
                 <span className="font-semibold">Facebook Ads</span>
               </div>

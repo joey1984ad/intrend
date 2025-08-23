@@ -17,9 +17,11 @@
     "test:webhook": "node scripts/test-webhook-access-token.js",
     "test:variations": "node scripts/test-webhook-ad-variations.js",
     "debug:webhook": "node scripts/debug-webhook-data.js",
-    "test:enhanced-ai": "node scripts/test-enhanced-ai-workflow.js"
+    "test:enhanced-ai": "node scripts/test-enhanced-ai-workflow.js",
+    "test:image-proxy": "node scripts/test-image-proxy.js"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@neondatabase/serverless": "^1.0.1",
     "@vercel/blob": "^1.1.1",
     "autoprefixer": "^10.4.16",

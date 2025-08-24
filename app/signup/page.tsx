@@ -1,5 +1,10 @@
+import { Suspense } from 'react'
 import SignupPage from '../../components/SignupPage'
 
 export default function SignupPageRoute() {
-  return <SignupPage />
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignupPage />
+    </Suspense>
+  )
 }

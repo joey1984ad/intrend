@@ -10,6 +10,7 @@ import CampaignsTab from './CampaignsTab';
 import AdsetsTab from './AdsetsTab';
 import AdsTab from './AdsTab';
 import DemographicsTab from './DemographicsTab';
+import AdsLibraryTab from './AdsLibraryTab';
 import Modals from './Modals';
 import InsightsGraph from './InsightsGraph';
 import { ConnectedAccount, Notification, Metric, Campaign, CreativeData } from './types';
@@ -30,6 +31,7 @@ const MetaDashboardRefactored: React.FC = () => {
   const [adsSearchTerm, setAdsSearchTerm] = useState('');
   const [demographicsSearchTerm, setDemographicsSearchTerm] = useState('');
   const [creativesSearchTerm, setCreativesSearchTerm] = useState('');
+  const [adsLibrarySearchTerm, setAdsLibrarySearchTerm] = useState('facebook ads');
   
   const [sortField, setSortField] = useState('campaign');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -174,6 +176,10 @@ const MetaDashboardRefactored: React.FC = () => {
             console.log(`📊 useEffect: Tab changed to creatives, loading creative data`);
             fetchCreativeData();
           }
+          break;
+        case 'ads-library':
+          // Ads Library data is loaded via the component itself
+          console.log(`📊 useEffect: Tab changed to ads-library`);
           break;
       }
     }
@@ -774,6 +780,17 @@ const MetaDashboardRefactored: React.FC = () => {
             selectedItems={selectedCampaigns}
             handleSelectItem={handleSelectCampaign}
             handleBulkAction={handleBulkAction}
+          />
+        )}
+
+        {activeTab === 'ads-library' && (
+          <AdsLibraryTab
+            searchTerm={adsLibrarySearchTerm}
+            setSearchTerm={setAdsLibrarySearchTerm}
+            facebookAccessToken={facebookAccessToken}
+            adAccountId={selectedAdAccount}
+            dateRange={selectedDateRange}
+            selectedAdAccounts={facebookAdAccounts}
           />
         )}
       </div>

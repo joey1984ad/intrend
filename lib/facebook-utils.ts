@@ -479,3 +479,228 @@ export async function safeFacebookAPI(
     throw new Error('Facebook API method not available');
   }
 } 
+
+// Facebook API Configuration
+export const FACEBOOK_API_VERSION = 'v18.0';
+export const ADS_LIBRARY_ENDPOINT = `https://graph.facebook.com/${FACEBOOK_API_VERSION}/ads_archive`;
+
+// Required permissions for Ads Library access
+export const ADS_LIBRARY_PERMISSIONS = [
+  'ads_read',
+  'read_insights',
+  'pages_read_engagement'
+];
+
+// Rate limiting configuration
+export const ADS_LIBRARY_RATE_LIMIT = {
+  windowMs: 60 * 1000, // 1 minute
+  max: 200, // Facebook allows 200 requests per minute for Ads Library
+  standardHeaders: true,
+  legacyHeaders: false,
+};
+
+// Default search parameters
+export const DEFAULT_SEARCH_PARAMS = {
+  limit: 20,
+  offset: 0,
+  search_terms: '',
+  ad_reached_countries: ['US'],
+};
+
+// Media type mappings
+export const MEDIA_TYPE_MAPPINGS = {
+  image: 'IMAGE',
+  video: 'VIDEO',
+  carousel: 'CAROUSEL_ALBUM',
+  dynamic: 'DYNAMIC',
+};
+
+// Ad type mappings
+export const AD_TYPE_MAPPINGS = {
+  political: 'POLITICAL_AND_ISSUE_AD',
+  issue: 'ISSUE_AD',
+  election: 'ELECTION_AD',
+  commercial: 'REGULAR_AD',
+};
+
+// Platform mappings
+export const PLATFORM_MAPPINGS = {
+  facebook: 'FACEBOOK',
+  instagram: 'INSTAGRAM',
+  messenger: 'MESSENGER',
+  audience_network: 'AUDIENCE_NETWORK',
+};
+
+// Date range calculations
+export const getDateRange = (range: string) => {
+  const now = new Date();
+  let startDate = new Date();
+  
+  switch (range) {
+    case 'last_7d':
+      startDate.setDate(now.getDate() - 7);
+      break;
+    case 'last_30d':
+      startDate.setDate(now.getDate() - 30);
+      break;
+    case 'last_90d':
+      startDate.setDate(now.getDate() - 90);
+      break;
+    case 'last_12m':
+      startDate.setFullYear(now.getFullYear() - 1);
+      break;
+    default:
+      return null;
+  }
+  
+  return {
+    start: startDate.toISOString().split('T')[0],
+    end: now.toISOString().split('T')[0],
+  };
+};
+
+// Currency formatting
+export const formatCurrency = (amount: string | number, currency: string = 'USD') => {
+  const num = typeof amount === 'string' ? parseInt(amount) : amount;
+  if (isNaN(num)) return '$0';
+  
+  if (num >= 1000000) {
+    return `${currency === 'USD' ? '$' : currency}${(num / 1000000).toFixed(1)}M`;
+  } else if (num >= 1000) {
+    return `${currency === 'USD' ? '$' : currency}${(num / 1000).toFixed(1)}K`;
+  }
+  return `${currency === 'USD' ? '$' : currency}${num.toLocaleString()}`;
+};
+
+// Impressions formatting
+export const formatImpressions = (amount: string | number) => {
+  const num = typeof amount === 'string' ? parseInt(amount) : amount;
+  if (isNaN(num)) return '0';
+  
+  if (num >= 1000000) {
+    return `${(num / 1000000).toFixed(1)}M`;
+  } else if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}K`;
+  }
+  return num.toLocaleString();
+};
+
+// Date formatting
+export const formatDate = (dateString: string, format: 'short' | 'long' = 'short') => {
+  const date = new Date(dateString);
+  
+  if (format === 'long') {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  }
+  
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
+// Platform icon mapping
+export const getPlatformIcon = (platform: string) => {
+  const normalizedPlatform = platform.toLowerCase();
+  
+  switch (normalizedPlatform) {
+    case 'facebook':
+      return '📘';
+    case 'instagram':
+      return '📷';
+    case 'messenger':
+      return '💬';
+    case 'audience_network':
+      return '🌐';
+    default:
+      return '📱';
+  }
+};
+
+// Status color mapping
+export const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'ACTIVE':
+      return 'bg-green-100 text-green-800';
+    case 'PAUSED':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'DELETED':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
+// Media type icon mapping
+export const getMediaIcon = (mediaType: string) => {
+  switch (mediaType.toLowerCase()) {
+    case 'video':
+      return '🎥';
+    case 'image':
+      return '🖼️';
+    case 'carousel':
+      return '🔄';
+    case 'dynamic':
+      return '⚡';
+    default:
+      return '📄';
+  }
+};
+
+// Validation functions
+export const validateAccessToken = (token: string) => {
+  return token && token.length > 0;
+};
+
+export const validateSearchQuery = (query: string) => {
+  return query && query.trim().length > 0;
+};
+
+export const validateFilters = (filters: any) => {
+  if (!filters) return true;
+  
+  // Add validation logic as needed
+  return true;
+};
+
+// Error handling
+export const handleFacebookAPIError = (error: any, status: number) => {
+  if (status === 401) {
+    return 'Invalid or expired access token. Please reconnect your Facebook account.';
+  }
+  
+  if (status === 429) {
+    return 'Rate limit exceeded. Please try again later.';
+  }
+  
+  if (status === 403) {
+    return 'Access denied. Please check your Facebook permissions.';
+  }
+  
+  if (error?.error?.message) {
+    return `Facebook API error: ${error.error.message}`;
+  }
+  
+  return 'An unexpected error occurred while communicating with Facebook.';
+};
+
+// Cache configuration
+export const CACHE_CONFIG = {
+  TTL: 3600, // 1 hour in seconds
+  MAX_SIZE: 100, // Maximum number of cached items
+  STALE_WHILE_REVALIDATE: 300, // 5 minutes in seconds
+};
+
+// Export configuration
+export const EXPORT_CONFIG = {
+  MAX_RESULTS: 1000,
+  SUPPORTED_FORMATS: ['csv', 'json'],
+  CSV_DELIMITER: ',',
+  CSV_QUOTE_CHAR: '"',
+}; 

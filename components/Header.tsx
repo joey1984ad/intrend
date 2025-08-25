@@ -122,6 +122,14 @@ const Header: React.FC<HeaderProps> = ({
                     )}
                   </span>
                 </button>
+                <button 
+                  onClick={() => setActiveTab('ads-library')}
+                  className={`pb-2 ${activeTab === 'ads-library' ? 'text-blue-300 border-b-2 border-blue-300' : 'text-white hover:text-gray-200'}`}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    Ads Library
+                  </span>
+                </button>
               </nav>
             </div>
             <div className="flex items-center space-x-4">

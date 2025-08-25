@@ -15,7 +15,7 @@
       },
       {
         "parameters": {
-          "jsCode": "// Validate incoming webhook data\nconst webhookData = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\n// Check required fields\nif (!webhookData.accessToken) {\n  throw new Error('Missing access token');\n}\n\nif (!webhookData.creativeId) {\n  throw new Error('Missing creative ID');\n}\n\nif (!webhookData.adAccountId) {\n  throw new Error('Missing ad account ID');\n}\n\n// Add session tracking\nreturn {\n  ...webhookData,\n  sessionId: sessionId,\n  workflowVersion: '2.0',\n  receivedAt: new Date().toISOString()\n};"
+          "jsCode": "// Validate incoming webhook data\nconst webhookData = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\n// Check required fields - all are mandatory\nif (!webhookData.accessToken) {\n  throw new Error('Missing access token');\n}\n\nif (!webhookData.creativeId) {\n  throw new Error('Missing creative ID');\n}\n\nif (!webhookData.adAccountId) {\n  throw new Error('Missing ad account ID');\n}\n\n// Add session tracking\nreturn {\n  ...webhookData,\n  sessionId: sessionId,\n  workflowVersion: '2.0',\n  receivedAt: new Date().toISOString()\n};"
         },
         "id": "validate-data",
         "name": "Validate Data",
@@ -25,7 +25,7 @@
       },
       {
         "parameters": {
-          "url": "https://localhost:3000/api/analyze-creatives",
+          "url": "http://localhost:3000/api/analyze-creatives",
           "method": "POST",
           "sendHeaders": true,
           "headerParameters": {

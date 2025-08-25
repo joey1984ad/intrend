@@ -21,61 +21,53 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Validate required fields
+    // Enhanced validation with better error messages
+    const validationErrors = [];
+    
     if (!webhookData.accessToken) {
-      console.error(`❌ [${sessionId}] Access token missing`);
-      return NextResponse.json({
-        error: "Missing access token",
-        message: "Facebook access token is required but not provided in webhook",
-        sessionId: sessionId,
-        receivedData: webhookData,
-        availableKeys: Object.keys(webhookData),
-        timestamp: new Date().toISOString()
-      }, { status: 400 });
+      validationErrors.push('Missing access token');
     }
-
+    
     if (!webhookData.creativeId) {
-      console.error(`❌ [${sessionId}] Creative ID missing`);
-      return NextResponse.json({
-        error: "Missing creative ID",
-        message: "Creative ID is required but not provided in webhook",
-        sessionId: sessionId,
-        receivedData: webhookData,
-        availableKeys: Object.keys(webhookData),
-        timestamp: new Date().toISOString()
-      }, { status: 400 });
+      validationErrors.push('Missing creative ID');
     }
-
+    
     if (!webhookData.adAccountId) {
-      console.error(`❌ [${sessionId}] Ad account ID missing`);
-      return NextResponse.json({
-        error: "Missing ad account ID",
-        message: "Ad account ID is required but not provided in webhook",
-        sessionId: sessionId,
-        receivedData: webhookData,
-        availableKeys: Object.keys(webhookData),
-        timestamp: new Date().toISOString()
-      }, { status: 400 });
+      validationErrors.push('Missing ad account ID');
     }
 
-    // Extract image URL
-    const imageUrl = webhookData.imageUrl || webhookData.thumbnailUrl || webhookData.creativeUrl;
+    // Extract image URL from multiple possible field names
+    const imageUrl = webhookData.imageUrl || 
+                     webhookData.thumbnailUrl || 
+                     webhookData.creativeUrl || 
+                     webhookData.url ||
+                     webhookData.image ||
+                     webhookData.thumbnail;
     
     if (!imageUrl) {
-      console.error(`❌ [${sessionId}] No image URL found`);
+      validationErrors.push('Missing image URL (tried: imageUrl, thumbnailUrl, creativeUrl, url, image, thumbnail)');
+    }
+
+    // If there are validation errors, return them all at once
+    if (validationErrors.length > 0) {
+      console.error(`❌ [${sessionId}] Validation errors:`, validationErrors);
       return NextResponse.json({
-        error: "Missing image URL",
-        message: "Image URL is required for analysis",
+        error: "Validation failed",
+        message: `Multiple validation errors: ${validationErrors.join(', ')}`,
         sessionId: sessionId,
         receivedData: webhookData,
         availableKeys: Object.keys(webhookData),
+        validationErrors: validationErrors,
         timestamp: new Date().toISOString()
       }, { status: 400 });
     }
 
     console.log(`🔗 [${sessionId}] Processing image: ${imageUrl}`);
+    console.log(`🔑 [${sessionId}] Access token: ${webhookData.accessToken ? 'Present' : 'Missing'}`);
+    console.log(`🆔 [${sessionId}] Creative ID: ${webhookData.creativeId}`);
+    console.log(`📊 [${sessionId}] Ad Account ID: ${webhookData.adAccountId}`);
 
-    // Tokenization logic
+    // Enhanced tokenization logic with better debugging
     const isFacebookUrl = imageUrl.includes('fbcdn.net') || 
                           imageUrl.includes('facebook.com') || 
                           imageUrl.includes('instagram.com') ||
@@ -83,7 +75,9 @@ export async function POST(request: NextRequest) {
                           imageUrl.includes('scontent.xx.fbcdn.net') ||
                           imageUrl.includes('scontent.cdninstagram.com');
 
-    let tokenizedUrl = imageUrl;
+    console.log(`🌐 [${sessionId}] URL type: ${isFacebookUrl ? 'Facebook/Instagram CDN' : 'Other'}`);
+
+    let tokenizedUrl = imageUrl; // Always start with the original URL
     let tokenizationApplied = false;
     let tokenizationMethod = 'none';
     let tokenizationReason = 'No tokenization needed';
@@ -99,43 +93,56 @@ export async function POST(request: NextRequest) {
         tokenizationReason = 'Facebook CDN URL tokenized with access token';
         
         console.log(`✅ [${sessionId}] Access token added to Facebook URL`);
+        console.log(`🔗 [${sessionId}] Original URL: ${imageUrl}`);
+        console.log(`🔗 [${sessionId}] Tokenized URL: ${tokenizedUrl.substring(0, 100)}...`);
       } else {
         console.log(`ℹ️ [${sessionId}] URL already contains access token`);
         tokenizationMethod = 'already_tokenized';
         tokenizationReason = 'URL already contains access token';
+        // Keep the original URL as tokenizedUrl
       }
     } else if (isFacebookUrl && !webhookData.accessToken) {
       console.warn(`⚠️ [${sessionId}] Facebook URL detected but no access token provided`);
       tokenizationMethod = 'facebook_no_token';
       tokenizationReason = 'Facebook URL detected but no access token available';
+      // Keep the original URL as tokenizedUrl
     } else {
       console.log(`ℹ️ [${sessionId}] Non-Facebook URL, no tokenization needed`);
       tokenizationMethod = 'non_facebook';
       tokenizationReason = 'Non-Facebook URL, no tokenization required';
+      // Keep the original URL as tokenizedUrl
     }
+
+    // Verify tokenizedUrl is never null or undefined
+    if (!tokenizedUrl) {
+      console.error(`❌ [${sessionId}] CRITICAL ERROR: tokenizedUrl is ${tokenizedUrl}`);
+      tokenizedUrl = imageUrl; // Fallback to original URL
+    }
+
+    console.log(`🔍 [${sessionId}] Final tokenizedUrl: ${tokenizedUrl}`);
 
     // Simulate AI optimization (replace with real AI service call)
     const optimizationScore = Math.floor(Math.random() * 30) + 70; // 70-100
     const optimizedImageUrl = `https://ai-optimized-images.example.com/optimized_${Date.now()}.jpg`;
 
-    // Prepare response
+    // Prepare response with guaranteed non-null values
     const response = {
       success: true,
       score: Math.round(optimizationScore / 10), // Convert to 1-10 scale
       aiScore: Math.round(optimizationScore / 10),
       
-      // Image URLs
+      // Image URLs - guaranteed to have values
       imageUrl: optimizedImageUrl,
       originalImageUrl: imageUrl,
       optimizedImageUrl: optimizedImageUrl,
       hasOptimizedImage: true,
       
-      // Tokenization details
+      // Tokenization details - guaranteed to have values
       tokenizationStatus: tokenizationApplied ? 'success' : 'skipped',
       tokenizationMethod: tokenizationMethod,
       tokenizationApplied: tokenizationApplied,
       tokenizationReason: tokenizationReason,
-      tokenizedUrl: tokenizedUrl,
+      tokenizedUrl: tokenizedUrl, // This should NEVER be null
       
       // Analysis data
       analysis: `Creative optimized with AI scoring ${optimizationScore}/100. Enhanced visual appeal and improved engagement potential.`,
@@ -207,23 +214,36 @@ export async function POST(request: NextRequest) {
         model: 'simulated'
       },
       
-      // Tokenization details
+      // Enhanced tokenization details with debugging info
       tokenizationDetails: {
         applied: tokenizationApplied,
         method: tokenizationMethod,
         reason: tokenizationReason,
         originalUrl: imageUrl,
-        tokenizedUrl: tokenizedUrl,
+        tokenizedUrl: tokenizedUrl, // This should NEVER be null
         isFacebookUrl: isFacebookUrl,
         hasAccessToken: !!webhookData.accessToken,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        debug: {
+          urlType: isFacebookUrl ? 'facebook' : 'other',
+          accessTokenPresent: !!webhookData.accessToken,
+          alreadyTokenized: imageUrl.includes('access_token='),
+          separatorUsed: imageUrl.includes('?') ? '&' : '?'
+        }
       }
     };
+
+    // Final verification that tokenizedUrl is not null
+    if (response.tokenizedUrl === null || response.tokenizedUrl === undefined) {
+      console.error(`❌ [${sessionId}] CRITICAL ERROR: tokenizedUrl is still null/undefined in response!`);
+      response.tokenizedUrl = imageUrl; // Force fallback
+    }
 
     console.log(`✅ [${sessionId}] Analysis completed successfully`);
     console.log(`🎯 [${sessionId}] Score: ${response.score}/10 (${optimizationScore}/100)`);
     console.log(`🖼️ [${sessionId}] Has optimized image: ${response.hasOptimizedImage}`);
     console.log(`🔗 [${sessionId}] Tokenization: ${response.tokenizationStatus}`);
+    console.log(`🔗 [${sessionId}] Final tokenizedUrl: ${response.tokenizedUrl}`);
 
     return NextResponse.json(response);
 

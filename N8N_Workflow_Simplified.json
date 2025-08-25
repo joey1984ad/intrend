@@ -1,0 +1,162 @@
+{
+  "name": "AI Creative Analysis - Simplified",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "analyze-creatives",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        640
+      ],
+      "webhookId": "ai-creative-analyzer-optimized"
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const webhookData = $json;\n  const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\n  console.log(`🔍 [${sessionId}] Debug: Webhook data received:`);\n  console.log('Full webhook data:', JSON.stringify(webhookData, null, 2));\n\n  // Enhanced validation with detailed error messages for real requests\n  if (!webhookData.accessToken) {\n    console.error(`❌ [${sessionId}] Access token missing from webhook data`);\n    return {\n      json: {\n        error: \"Missing access token\",\n        message: \"Facebook access token is required but not provided in webhook\",\n        sessionId: sessionId,\n        receivedData: webhookData,\n        availableKeys: Object.keys(webhookData),\n        timestamp: new Date().toISOString()\n      }\n    };\n  }\n\n  if (!webhookData.creativeId) {\n    console.error(`❌ [${sessionId}] Creative ID missing from webhook data`);\n    return {\n      json: {\n        error: \"Missing creative ID\",\n        message: \"Creative ID is required but not provided in webhook\",\n        sessionId: sessionId,\n        receivedData: webhookData,\n        availableKeys: Object.keys(webhookData),\n        timestamp: new Date().toISOString()\n      }\n    };\n  }\n\n  if (!webhookData.adAccountId) {\n    console.error(`❌ [${sessionId}] Ad account ID missing from webhook data`);\n    return {\n      json: {\n        error: \"Missing ad account ID\",\n        message: \"Ad account ID is required but not provided in webhook\",\n        sessionId: sessionId,\n        receivedData: webhookData,\n        availableKeys: Object.keys(webhookData),\n        timestamp: new Date().toISOString()\n      }\n    };\n  }\n\n  // Add session tracking and metadata while preserving ALL original data\n  const enhancedData = {\n    ...webhookData,\n    sessionId: sessionId,\n    workflowVersion: '2.0-optimized',\n    receivedAt: new Date().toISOString(),\n    processingStartTime: Date.now()\n  };\n\n  console.log(`✅ [${sessionId}] Validation passed, proceeding with analysis`);\n\n  return {\n    json: enhancedData\n  };\n} catch (error) {\n  console.error('❌ CRITICAL ERROR in Validate Webhook Data:', error);\n  return {\n    json: {\n      error: \"Workflow validation failed\",\n      message: error.message,\n      timestamp: new Date().toISOString(),\n      workflowVersion: '2.0-optimized'\n    }\n  };\n}"
+      },
+      "id": "validate-webhook-data",
+      "name": "Validate Webhook Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://localhost:3000/api/analyze-creatives",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "entries": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "entries": [
+            {
+              "name": "imageUrl",
+              "value": "={{ $json.imageUrl || $json.thumbnailUrl || $json.creativeUrl }}"
+            },
+            {
+              "name": "creativeId",
+              "value": "={{ $json.creativeId }}"
+            },
+            {
+              "name": "adAccountId",
+              "value": "={{ $json.adAccountId }}"
+            },
+            {
+              "name": "accessToken",
+              "value": "={{ $json.accessToken }}"
+            }
+          ]
+        }
+      },
+      "id": "call-ai-analysis-api",
+      "name": "Call AI Analysis API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        400,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Always Respond node - handles API response\nconst data = $json;\nconst sessionId = data?.sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Processing API response:`);\nconsole.log('Response type:', typeof data);\nconsole.log('Response keys:', Object.keys(data || {}));\n\n// Check if the API call was successful\nif (data && data.success) {\n  console.log(`✅ [${sessionId}] API call successful`);\n  console.log(`🎯 [${sessionId}] Score: ${data.score}/10`);\n  console.log(`🖼️ [${sessionId}] Has optimized image: ${data.hasOptimizedImage}`);\n  console.log(`🔗 [${sessionId}] Tokenized URL: ${data.tokenizedUrl}`);\n  \n  return {\n    json: data\n  };\n} else {\n  console.error(`❌ [${sessionId}] API call failed:`, data);\n  \n  // Return error response\n  return {\n    json: {\n      success: false,\n      error: data?.error || 'Unknown API error',\n      message: data?.message || 'API call failed',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      workflowVersion: '2.0-optimized'\n    }\n  };\n}"
+      },
+      "id": "always-respond",
+      "name": "Always Respond",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "respond-to-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        880,
+        736
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate Webhook Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Webhook Data": {
+      "main": [
+        [
+          {
+            "node": "Call AI Analysis API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call AI Analysis API": {
+      "main": [
+        [
+          {
+            "node": "Always Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Always Respond": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "01dc96cc-8db6-4b7d-b75b-f0c5fd173523",
+  "meta": {
+    "instanceId": "559131971b6b5956e80536bcc13e3409f5f32630d8afe8743f62433c6570d4fb"
+  },
+  "id": "ai-creative-analysis-simplified",
+  "tags": []
+}

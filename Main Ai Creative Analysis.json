@@ -1,95 +1,27 @@
 {
-    "name": "My workflow 27",
+    "name": "AI Creative Analysis - Compatible",
     "nodes": [
       {
         "parameters": {
           "httpMethod": "POST",
           "path": "analyze-creatives",
-          "responseMode": "responseNode",
-          "options": {
-            "allowedOrigins": "http://localhost:3000,https://intrend-pswh1dg2q-josephs-projects-4c670f3b.vercel.app,https://intrend-beta.vercel.app"
-          }
+          "responseMode": "responseNode"
         },
-        "id": "e5580fbf-35fc-489c-a777-544b82ab4a7f",
+        "id": "webhook-trigger",
         "name": "Webhook Trigger",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 1,
-        "position": [
-          -240,
-          640
-        ],
-        "webhookId": "ai-creative-analyzer-optimized"
+        "position": [240, 640]
       },
       {
         "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "strict",
-              "version": 1
-            },
-            "conditions": [
-              {
-                "leftValue": "={{ $json.test }}",
-                "rightValue": true,
-                "operator": {
-                  "type": "boolean",
-                  "operation": "equals"
-                },
-                "id": "143c8f1d-d6f4-4514-a149-10469fd7672a"
-              }
-            ],
-            "combinator": "and"
-          },
-          "options": {}
+          "jsCode": "// Validate incoming webhook data\nconst webhookData = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\n// Check required fields\nif (!webhookData.accessToken) {\n  throw new Error('Missing access token');\n}\n\nif (!webhookData.creativeId) {\n  throw new Error('Missing creative ID');\n}\n\nif (!webhookData.adAccountId) {\n  throw new Error('Missing ad account ID');\n}\n\n// Add session tracking\nreturn {\n  ...webhookData,\n  sessionId: sessionId,\n  workflowVersion: '2.0',\n  receivedAt: new Date().toISOString()\n};"
         },
-        "id": "9f8acbeb-4c4c-448c-a881-21b344a14bee",
-        "name": "Check If Test",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2,
-        "position": [
-          -32,
-          640
-        ]
-      },
-      {
-        "parameters": {
-          "respondWith": "json",
-          "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"Webhook test successful\",\n  \"connected\": true,\n  \"timestamp\": \"{{ $now.toISO() }}\",\n  \"version\": \"2.0-optimized\",\n  \"webhookUrl\": \"{{ $json.webhookUrl }}\",\n  \"executionMode\": \"{{ $json.executionMode || 'production' }}\"\n}",
-          "options": {
-            "responseCode": 200,
-            "responseHeaders": {
-              "entries": [
-                {
-                  "name": "Content-Type",
-                  "value": "application/json"
-                }
-              ]
-            }
-          }
-        },
-        "id": "fea42225-9cf6-44da-859c-e106520b2503",
-        "name": "Test Response",
-        "type": "n8n-nodes-base.respondToWebhook",
-        "typeVersion": 1,
-        "position": [
-          160,
-          544
-        ]
-      },
-      {
-        "parameters": {
-          "jsCode": "try {\n  const webhookData = $json;\n  const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\n  console.log(`🔍 [${sessionId}] Debug: Webhook data received:`);\n  console.log('Full webhook data:', JSON.stringify(webhookData, null, 2));\n  console.log('Creative ID:', webhookData.creativeId);\n  console.log('Access Token:', webhookData.accessToken ? 'Present (' + webhookData.accessToken.substring(0, 10) + '...)' : 'MISSING');\n  console.log('Ad Account ID:', webhookData.adAccountId);\n  console.log('Creative Type:', webhookData.creativeType);\n  console.log('Image URL:', webhookData.imageUrl ? 'Present' : 'Missing');\n  console.log('Is Test Request:', webhookData.test === true);\n\n  // IMPORTANT: Test requests should have been handled by the Check If Test node\n  // If we reach this point, it means this is NOT a test request\n  if (webhookData.test === true) {\n    console.log(`⚠️ [${sessionId}] Test request reached validation node - this should not happen`);\n    return {\n      json: {\n        error: \"Test request routing error\",\n        message: \"Test request should have been handled by test routing node\",\n        sessionId: sessionId,\n        receivedData: webhookData,\n        timestamp: new Date().toISOString()\n      }\n    };\n  }\n\n  // Enhanced validation with detailed error messages for real requests\n  if (!webhookData.accessToken) {\n    console.error(`❌ [${sessionId}] Access token missing from webhook data`);\n    console.error(`❌ [${sessionId}] Available keys:`, Object.keys(webhookData));\n    console.error(`❌ [${sessionId}] Payload size:`, JSON.stringify(webhookData).length, 'characters');\n    console.error(`❌ [${sessionId}] Payload preview:`, JSON.stringify(webhookData).substring(0, 200) + '...');\n    \n    // Enhanced error response with debugging information\n    return {\n      json: {\n        error: \"Missing access token\",\n        message: \"Facebook access token is required but not provided in webhook\",\n        sessionId: sessionId,\n        receivedData: webhookData,\n        availableKeys: Object.keys(webhookData),\n        payloadSize: JSON.stringify(webhookData).length,\n        payloadPreview: JSON.stringify(webhookData).substring(0, 200),\n        timestamp: new Date().toISOString(),\n        debugInfo: {\n          dataType: typeof webhookData,\n          isArray: Array.isArray(webhookData),\n          isNull: webhookData === null,\n          isUndefined: webhookData === undefined\n        }\n      }\n    };\n  }\n\n  // Enhanced access token format validation\n  if (webhookData.accessToken && !webhookData.accessToken.startsWith('EAA')) {\n    console.warn(`⚠️ [${sessionId}] Access token format may be invalid - should start with 'EAA'`);\n    console.warn(`⚠️ [${sessionId}] Token preview: ${webhookData.accessToken.substring(0, 20)}...`);\n  }\n\n  if (!webhookData.creativeId) {\n    console.error(`❌ [${sessionId}] Creative ID missing from webhook data`);\n    console.error(`❌ [${sessionId}] Available keys:`, Object.keys(webhookData));\n    console.error(`❌ [${sessionId}] Payload size:`, JSON.stringify(webhookData).length, 'characters');\n    \n    return {\n      json: {\n        error: \"Missing creative ID\",\n        message: \"Creative ID is required but not provided in webhook\",\n        sessionId: sessionId,\n        receivedData: webhookData,\n        availableKeys: Object.keys(webhookData),\n        payloadSize: JSON.stringify(webhookData).length,\n        timestamp: new Date().toISOString()\n      }\n    };\n  }\n\n  if (!webhookData.adAccountId) {\n    console.error(`❌ [${sessionId}] Ad account ID missing from webhook data`);\n    console.error(`❌ [${sessionId}] Available keys:`, Object.keys(webhookData));\n    console.error(`❌ [${sessionId}] Payload size:`, JSON.stringify(webhookData).length, 'characters');\n    \n    return {\n      json: {\n        error: \"Missing ad account ID\",\n        message: \"Ad account ID is required but not provided in webhook\",\n        sessionId: sessionId,\n        receivedData: webhookData,\n        availableKeys: Object.keys(webhookData),\n        payloadSize: JSON.stringify(webhookData).length,\n        timestamp: new Date().toISOString()\n      }\n    };\n  }\n\n  // Validate creative type for analysis\n  if (webhookData.creativeType && webhookData.creativeType !== 'image') {\n    console.log(`⚠️ [${sessionId}] Warning: Creative type is ${webhookData.creativeType}, analysis may not work optimally`);\n  }\n\n  // Enhanced data validation with payload analysis\n  const payloadSize = JSON.stringify(webhookData).length;\n  const hasImageUrl = !!webhookData.imageUrl;\n  const hasCreativeType = !!webhookData.creativeType;\n  \n  console.log(`📊 [${sessionId}] Payload analysis:`);\n  console.log(`   - Payload size: ${payloadSize} characters`);\n  console.log(`   - Has image URL: ${hasImageUrl}`);\n  console.log(`   - Has creative type: ${hasCreativeType}`);\n  console.log(`   - Total fields: ${Object.keys(webhookData).length}`);\n\n  // Add session tracking and metadata while preserving ALL original data\n  const enhancedData = {\n    ...webhookData, // ✅ PRESERVE ALL ORIGINAL DATA\n    sessionId: sessionId,\n    workflowVersion: '2.0-optimized',\n    receivedAt: new Date().toISOString(),\n    processingStartTime: Date.now(),\n    validationMetadata: {\n      validatedAt: new Date().toISOString(),\n      payloadSize: payloadSize,\n      fieldCount: Object.keys(webhookData).length,\n      hasImageUrl: hasImageUrl,\n      hasCreativeType: hasCreativeType,\n      validationVersion: '2.1-enhanced'\n    }\n  };\n\n  console.log(`✅ [${sessionId}] Validation passed, proceeding with analysis`);\n  console.log(`✅ [${sessionId}] Enhanced data keys:`, Object.keys(enhancedData));\n  console.log(`✅ [${sessionId}] Access token preserved:`, enhancedData.accessToken ? 'Yes' : 'No');\n  console.log(`✅ [${sessionId}] Validation metadata added:`, enhancedData.validationMetadata);\n\n  return {\n    json: enhancedData\n  };\n} catch (error) {\n  console.error('❌ CRITICAL ERROR in Validate Webhook Data:', error);\n  console.error('❌ Error details:', {\n    name: error.name,\n    message: error.message,\n    stack: error.stack,\n    timestamp: new Date().toISOString()\n  });\n  \n  return {\n    json: {\n      error: \"Workflow validation failed\",\n      message: error.message,\n      stack: error.stack,\n      timestamp: new Date().toISOString(),\n      workflowVersion: '2.0-optimized',\n      status: \"critical_error\",\n      errorDetails: {\n        name: error.name,\n        type: error.constructor.name,\n        occurredAt: new Date().toISOString()\n      }\n    }\n  };\n}"
-        },
-        "id": "ddc845dc-2dc0-458b-bc80-2c928ebb3d95",
-        "name": "Validate Webhook Data",
+        "id": "validate-data",
+        "name": "Validate Data",
         "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          160,
-          736
-        ]
+        "typeVersion": 1,
+        "position": [460, 640]
       },
       {
         "parameters": {
@@ -97,7 +29,7 @@
           "method": "POST",
           "sendHeaders": true,
           "headerParameters": {
-            "entries": [
+            "parameters": [
               {
                 "name": "Content-Type",
                 "value": "application/json"
@@ -105,148 +37,53 @@
             ]
           },
           "sendBody": true,
-          "bodyParameters": {
-            "entries": [
-              {
-                "name": "imageUrl",
-                "value": "={{ $json.imageUrl || $json.thumbnailUrl || $json.creativeUrl }}"
-              },
-              {
-                "name": "creativeId",
-                "value": "={{ $json.creativeId }}"
-              },
-              {
-                "name": "adAccountId",
-                "value": "={{ $json.adAccountId }}"
-              },
-              {
-                "name": "accessToken",
-                "value": "={{ $json.accessToken }}"
-              }
-            ]
-          }
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json) }}"
         },
-        "id": "call-ai-analysis-api",
-        "name": "Call AI Analysis API",
+        "id": "api-call",
+        "name": "Call API",
         "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.1,
-        "position": [
-          400,
-          736
-        ]
+        "typeVersion": 3,
+        "position": [680, 640]
       },
       {
         "parameters": {
-          "jsCode": "// Always Respond node - handles API response\nconst data = $json;\nconst sessionId = data?.metadata?.sessionId || data?.sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Processing API response:`);\nconsole.log('Response type:', typeof data);\nconsole.log('Response keys:', Object.keys(data || {}));\n\n// Check if the API call was successful\nif (data && data.success) {\n  console.log(`✅ [${sessionId}] API call successful`);\n  console.log(`🎯 [${sessionId}] Score: ${data.score}/10`);\n  console.log(`🖼️ [${sessionId}] Has optimized image: ${data.hasOptimizedImage}`);\n  console.log(`🔗 [${sessionId}] Tokenized URL: ${data.tokenizedUrl}`);\n  \n  return {\n    json: data\n  };\n} else {\n  console.error(`❌ [${sessionId}] API call failed:`, data);\n  \n  // Return error response\n  return {\n    json: {\n      success: false,\n      error: data?.error || 'Unknown API error',\n      message: data?.message || 'API call failed',\n      sessionId: sessionId,\n      timestamp: new Date().toISOString(),\n      workflowVersion: '2.0-optimized'\n    }\n  };\n}"
+          "jsCode": "// Process API response\nconst data = $json;\nconst sessionId = data?.sessionId || 'unknown';\n\nif (data && data.success) {\n  console.log(`Success: Score ${data.score}/10`);\n  return data;\n} else {\n  return {\n    success: false,\n    error: data?.error || 'API call failed',\n    sessionId: sessionId,\n    timestamp: new Date().toISOString()\n  };\n}"
         },
-        "id": "b52437fe-ad0b-4514-bb49-b544c9a76d71",
-        "name": "Always Respond",
+        "id": "process-response",
+        "name": "Process Response",
         "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          640,
-          736
-        ]
+        "typeVersion": 1,
+        "position": [900, 640]
       },
       {
         "parameters": {
           "respondWith": "json",
-          "responseBody": "={{ JSON.stringify($json) }}",
-          "options": {
-            "responseCode": 200,
-            "responseHeaders": {
-              "entries": [
-                {
-                  "name": "Content-Type",
-                  "value": "application/json"
-                }
-              ]
-            }
-          }
+          "responseBody": "={{ JSON.stringify($json) }}"
         },
-        "id": "final-webhook-response",
-        "name": "Respond to Webhook",
+        "id": "webhook-response",
+        "name": "Webhook Response",
         "type": "n8n-nodes-base.respondToWebhook",
         "typeVersion": 1,
-        "position": [
-          880,
-          736
-        ]
+        "position": [1120, 640]
       }
     ],
-    "pinData": {},
     "connections": {
       "Webhook Trigger": {
-        "main": [
-          [
-            {
-              "node": "Check If Test",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
+        "main": [[{"node": "Validate Data", "type": "main", "index": 0}]]
       },
-      "Check If Test": {
-        "main": [
-          [
-            {
-              "node": "Test Response",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Validate Webhook Data",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
+      "Validate Data": {
+        "main": [[{"node": "Call API", "type": "main", "index": 0}]]
       },
-      "Validate Webhook Data": {
-        "main": [
-          [
-            {
-              "node": "Call AI Analysis API",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
+      "Call API": {
+        "main": [[{"node": "Process Response", "type": "main", "index": 0}]]
       },
-      "Call AI Analysis API": {
-        "main": [
-          [
-            {
-              "node": "Always Respond",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Always Respond": {
-        "main": [
-          [
-            {
-              "node": "Respond to Webhook",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
+      "Process Response": {
+        "main": [[{"node": "Webhook Response", "type": "main", "index": 0}]]
       }
     },
-    "active": true,
+    "active": false,
     "settings": {
       "executionOrder": "v1"
-    },
-    "versionId": "01dc96cc-8db6-4b7d-b75b-f0c5fd173523",
-    "meta": {
-      "instanceId": "559131971b6b5956e80536bcc13e3409f5f32630d8afe8743f62433c6570d4fb"
-    },
-    "id": "2VPDfcjsdxwuZYMs",
-    "tags": []
+    }
   }

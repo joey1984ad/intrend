@@ -61,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({
       {/* Header */}
       <div className={`shadow-sm border-b transition-colors duration-300 ${
         theme === 'white' 
-          ? 'bg-white border-gray-200' 
+          ? 'bg-theme border-gray-200' 
           : 'bg-slate-800 border-slate-700'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

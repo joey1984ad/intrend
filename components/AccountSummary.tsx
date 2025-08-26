@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
 interface AccountSummaryProps {
   currentAccountInfo: any;
@@ -42,36 +43,53 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
   setCacheTtlHours,
   onRefreshNow
 }) => {
+  const { theme } = useDashboardTheme();
   return (
     <div className="mb-8">
       {/* Dashboard Title Section */}
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-3">
+        <h1 className={`text-4xl font-bold mb-3 transition-colors duration-300 ${
+          theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+        }`}>
           Facebook Ads Dashboard
         </h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+        <p className={`text-lg max-w-2xl mx-auto transition-colors duration-300 ${
+          theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+        }`}>
           Comprehensive analytics and management for your Facebook advertising campaigns
         </p>
       </div>
 
       {/* Account Info Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <div className={`rounded-xl shadow-sm border p-6 mb-6 transition-colors duration-300 ${
+        theme === 'white' 
+          ? 'bg-white border-gray-200' 
+          : 'bg-slate-800 border-slate-700'
+      }`}>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <h2 className={`text-xl font-semibold mb-2 transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+            }`}>
               {currentAccountInfo?.name || currentAccount?.name || 'Facebook Ad Account'}
             </h2>
             
             {/* Facebook Ad Account Selection */}
             {facebookAccessToken && facebookAdAccounts.length > 0 && setSelectedAdAccount && (
               <div className="mb-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                  theme === 'white' ? 'text-gray-700' : 'text-gray-200'
+                }`}>
                   Select Ad Account:
                 </label>
                 <select
                   value={selectedAdAccount}
                   onChange={(e) => setSelectedAdAccount(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full max-w-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  className={`border rounded-lg px-3 py-2 text-sm w-full max-w-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                    theme === 'white' 
+                      ? 'border-gray-300 bg-white text-gray-900' 
+                      : 'border-slate-600 bg-slate-700 text-gray-100'
+                  }`}
                 >
                   {facebookAdAccounts.map((account: any) => (
                     <option key={account.id} value={account.id}>
@@ -82,7 +100,9 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
               </div>
             )}
             
-            <p className="text-sm text-gray-600">
+            <p className={`text-sm transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+            }`}>
               {currentAccountInfo?.activeCampaigns || currentAccount?.campaigns || 0} active campaigns • Last updated {currentAccountInfo?.lastSync || currentAccount?.lastSync || 'Never'}
             </p>
             

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import GoogleSignInTest from './GoogleSignInTest';
 import { useSearchParams } from 'next/navigation';
 
-const SignupPage: React.FC = () => {
+  const SignupPage: React.FC = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -105,7 +105,7 @@ const SignupPage: React.FC = () => {
                      formData.password && formData.agreeToTerms;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
@@ -113,10 +113,10 @@ const SignupPage: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-white">
+          <h2 className="mt-6 text-3xl font-extrabold text-slate-900">
             Create your account
           </h2>
-          <p className="mt-2 text-sm text-blue-200">
+          <p className="mt-2 text-sm text-slate-600">
             Start your free trial with Intrend
           </p>
         </div>

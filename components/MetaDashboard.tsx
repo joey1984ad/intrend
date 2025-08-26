@@ -13,9 +13,14 @@ import DemographicsTab from './DemographicsTab';
 import AdsLibraryTab from './AdsLibraryTab';
 import Modals from './Modals';
 import InsightsGraph from './InsightsGraph';
+import DashboardThemeToggle from './DashboardThemeToggle';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 import { ConnectedAccount, Notification, Metric, Campaign, CreativeData } from './types';
 
 const MetaDashboardRefactored: React.FC = () => {
+  // Theme management
+  const { theme } = useDashboardTheme();
+  
   // State management
   const [dateRange, setDateRange] = useState('Last 30 Days');
   const [selectedAccount, setSelectedAccount] = useState('acme-auto');
@@ -637,7 +642,16 @@ const MetaDashboardRefactored: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className={`min-h-screen transition-colors duration-300 ${
+      theme === 'white' 
+        ? 'bg-gradient-to-br from-blue-50 via-white to-indigo-50' 
+        : 'bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900'
+    }`}>
+      {/* Theme Toggle Button */}
+      <div className="fixed top-4 right-4 z-50">
+        <DashboardThemeToggle />
+      </div>
+      
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -660,7 +674,9 @@ const MetaDashboardRefactored: React.FC = () => {
       />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-colors duration-300 ${
+        theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+      }`}>
         <AccountSummary
           currentAccountInfo={currentAccountInfo}
           currentAccount={null}
@@ -683,7 +699,11 @@ const MetaDashboardRefactored: React.FC = () => {
 
         {/* Tab Content */}
         {activeTab === 'creatives' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+            theme === 'white' 
+              ? 'bg-white border-gray-200' 
+              : 'bg-slate-800 border-slate-700'
+          }`}>
             <CreativesTab
               searchTerm={creativesSearchTerm}
               setSearchTerm={setCreativesSearchTerm}
@@ -702,7 +722,11 @@ const MetaDashboardRefactored: React.FC = () => {
         {/* Campaigns Tab */}
         {activeTab === 'campaigns' && (
           <>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div className={`rounded-xl shadow-sm border p-6 mb-6 transition-colors duration-300 ${
+              theme === 'white' 
+                ? 'bg-white border-gray-200' 
+                : 'bg-slate-800 border-slate-700'
+            }`}>
               <ChartsSection
                 clicksData={clicksData}
                 campaignClicks={campaignClicks}
@@ -716,7 +740,11 @@ const MetaDashboardRefactored: React.FC = () => {
             <MetricsGrid metrics={metrics} />
 
             {/* Performance Insights Graph */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div className={`rounded-xl shadow-sm border p-6 mb-6 transition-colors duration-300 ${
+              theme === 'white' 
+                ? 'bg-white border-gray-200' 
+                : 'bg-slate-800 border-slate-700'
+            }`}>
               <InsightsGraph
                 accessToken={facebookAccessToken}
                 adAccountId={selectedAdAccount}
@@ -726,7 +754,11 @@ const MetaDashboardRefactored: React.FC = () => {
               />
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+              theme === 'white' 
+                ? 'bg-white border-gray-200' 
+                : 'bg-slate-800 border-slate-700'
+            }`}>
               <CampaignsTab
                 campaigns={campaignsData}
                 isLoading={isLoadingFacebookData}
@@ -745,7 +777,11 @@ const MetaDashboardRefactored: React.FC = () => {
         )}
 
         {activeTab === 'adsets' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+            theme === 'white' 
+              ? 'bg-white border-gray-200' 
+              : 'bg-slate-800 border-slate-700'
+          }`}>
             <AdsetsTab
               adsetsData={adsetsData}
               isLoading={isLoadingAdsets}
@@ -762,7 +798,11 @@ const MetaDashboardRefactored: React.FC = () => {
         )}
 
         {activeTab === 'ads' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+            theme === 'white' 
+              ? 'bg-white border-gray-200' 
+              : 'bg-slate-800 border-slate-700'
+          }`}>
             <AdsTab
               adsData={adsData}
               isLoading={isLoadingAds}
@@ -779,7 +819,11 @@ const MetaDashboardRefactored: React.FC = () => {
         )}
 
         {activeTab === 'demographics' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+            theme === 'white' 
+              ? 'bg-white border-gray-200' 
+              : 'bg-slate-800 border-slate-700'
+          }`}>
             <DemographicsTab
               demographicsData={demographicsData}
               isLoading={isLoadingDemographics}
@@ -796,7 +840,11 @@ const MetaDashboardRefactored: React.FC = () => {
         )}
 
         {activeTab === 'ads-library' && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+            theme === 'white' 
+              ? 'bg-white border-gray-200' 
+              : 'bg-slate-800 border-slate-700'
+          }`}>
             <AdsLibraryTab
               searchTerm={adsLibrarySearchTerm}
               setSearchTerm={setAdsLibrarySearchTerm}

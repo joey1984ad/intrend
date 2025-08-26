@@ -12,6 +12,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { Settings, TrendingUp, TrendingDown, Loader2, AlertCircle } from 'lucide-react';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
 interface InsightsData {
   date: string;
@@ -56,6 +57,7 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
   isVisible,
   compareMode
 }) => {
+  const { theme } = useDashboardTheme();
   const [data, setData] = useState<{ current: InsightsData[]; previous: InsightsData[] | null }>({ current: [], previous: null });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -185,8 +187,14 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-medium text-gray-900 mb-2">{label}</p>
+        <div className={`p-3 border rounded-lg shadow-lg transition-colors duration-300 ${
+          theme === 'white' 
+            ? 'bg-white border-gray-200' 
+            : 'bg-slate-800 border-slate-600'
+        }`}>
+          <p className={`font-medium mb-2 transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+          }`}>{label}</p>
           {payload.map((entry: any, index: number) => {
             const metric = metrics.find(m => m.key === entry.dataKey?.replace('_current', '').replace('_previous', ''));
             if (!metric?.enabled) return null;
@@ -232,12 +240,18 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm">
+    <div className={`p-6 rounded-lg shadow-sm transition-colors duration-300 ${
+      theme === 'white' ? 'bg-white' : 'bg-slate-800'
+    }`}>
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">Performance Data</h3>
+        <h3 className={`text-lg font-semibold transition-colors duration-300 ${
+          theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+        }`}>Performance Data</h3>
         <div className="flex items-center space-x-2">
           {loading && (
-              <div className="flex items-center text-sm">
+              <div className={`flex items-center text-sm transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+              }`}>
                 <Loader2 className="w-4 h-4 animate-spin mr-2 loader-light" />
               Loading data...
             </div>
@@ -254,7 +268,9 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin loader-light mx-auto mb-4" />
-            <p className="text-gray-600">Loading performance data...</p>
+            <p className={`transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+            }`}>Loading performance data...</p>
           </div>
         </div>
       ) : error ? (
@@ -263,15 +279,21 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
             <div className="text-red-600 mb-4">
               <AlertCircle className="w-8 h-8 mx-auto" />
             </div>
-            <p className="text-gray-600">Failed to load performance data</p>
+            <p className={`transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+            }`}>Failed to load performance data</p>
             <p className="text-sm text-red-600 mt-2">{error}</p>
           </div>
         </div>
       ) : data.current.length === 0 ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <p className="text-gray-600">No performance data available</p>
-            <p className="text-sm text-gray-500 mt-2">Connect your Facebook account to view data</p>
+            <p className={`transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+            }`}>No performance data available</p>
+            <p className={`text-sm mt-2 transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+            }`}>Connect your Facebook account to view data</p>
           </div>
         </div>
       ) : (
@@ -284,8 +306,12 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
                 onClick={() => toggleMetric(metric.key)}
                 className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                   metric.enabled
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? theme === 'white' 
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-blue-900/20 text-blue-300'
+                    : theme === 'white'
+                      ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
                 }`}
               >
                 {metric.label}
@@ -302,13 +328,13 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
                   dataKey="date" 
                   axisLine={false} 
                   tickLine={false}
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 12, fill: theme === 'white' ? '#6B7280' : '#9CA3AF' }}
                 />
                 <YAxis 
                   yAxisId="left"
                   axisLine={false} 
                   tickLine={false}
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 12, fill: theme === 'white' ? '#6B7280' : '#9CA3AF' }}
                   tickFormatter={(value) => `$${value.toLocaleString()}`}
                 />
                 <YAxis 
@@ -316,7 +342,7 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
                   orientation="right"
                   axisLine={false} 
                   tickLine={false}
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 12, fill: theme === 'white' ? '#6B7280' : '#9CA3AF' }}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
@@ -354,8 +380,12 @@ const InsightsGraph: React.FC<InsightsGraphProps> = ({
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
               {Object.entries(summaryStats).map(([key, stats]) => (
                 <div key={key} className="text-center">
-                  <p className="text-sm text-gray-600 capitalize">{key}</p>
-                  <p className="text-lg font-semibold">
+                  <p className={`text-sm capitalize transition-colors duration-300 ${
+                    theme === 'white' ? 'text-gray-600' : 'text-gray-400'
+                  }`}>{key}</p>
+                  <p className={`text-lg font-semibold transition-colors duration-300 ${
+                    theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                  }`}>
                     {formatValue(stats.current, key)}
                   </p>
                   <p className={`text-sm ${stats.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>

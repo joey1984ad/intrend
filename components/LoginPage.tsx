@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
-const LoginPage: React.FC = () => {
+  const LoginPage: React.FC = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -72,18 +72,31 @@ const LoginPage: React.FC = () => {
   const isFormValid = formData.email && formData.password;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className={`min-h-screen transition-colors duration-200 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 ${
+      theme === 'dark' 
+        ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900' 
+        : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'
+    }`}>
+      {/* Theme Toggle */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
             <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 5v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+              <path strokeLinecap="round" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 5v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
             </svg>
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-white">
+          <h2 className={`mt-6 text-3xl font-extrabold ${
+            theme === 'dark' ? 'text-white' : 'text-slate-900'
+          }`}>
             Sign in to your account
           </h2>
-          <p className="mt-2 text-sm text-blue-200">
+          <p className={`mt-2 text-sm ${
+            theme === 'dark' ? 'text-blue-200' : 'text-slate-600'
+          }`}>
             Welcome back to Intrend
           </p>
         </div>

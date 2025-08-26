@@ -1,207 +1,93 @@
 @tailwind base;
 @tailwind components;
-@tailwind utilities; 
+@tailwind utilities;
 
-/* Light theme default for inline-flex in main content */
-.max-w-7xl .inline-flex {
-  color: #000 !important;
-}
-
-/* Loading icon helper: black in light, white in dark */
-.max-w-7xl .loader-light { color: #000 !important; }
-.theme-dark .max-w-7xl .loader-light { color: #fff !important; }
-
-/* Inline-flex default and hover/highlight styles within main content (dark theme only) */
-.theme-dark .max-w-7xl .inline-flex {
-  color: #fff !important;
-}
-
-/* Ensure bold labels render white within main content (dark theme only) */
-.theme-dark .max-w-7xl .font-semibold {
-  color: #fff !important;
-}
-
-/* Dark theme overrides for main content container */
-.theme-dark .max-w-7xl {
-  background-color: #0b0b0b !important; /* near-black */
-  color: #f5f5f5 !important; /* light text */
-}
-
-/* Surface backgrounds inside content */
-.theme-dark .max-w-7xl .bg-gray-50,
-.theme-dark .max-w-7xl .bg-gray-100,
-.theme-dark .max-w-7xl .bg-gray-200 {
-  background-color: #111827 !important; /* slate-900-ish */
-  color: #f5f5f5 !important;
-}
-
-/* In dark theme, force any bg-white to true black */
-.theme-dark .bg-white,
-.theme-dark .max-w-7xl .bg-white {
-  background-color: #000 !important;
-  color: #f5f5f5 !important;
-}
-
-/* Text tones */
-.theme-dark .max-w-7xl .text-gray-900 { color: #ffffff !important; }
-.theme-dark .max-w-7xl .text-gray-700,
-.theme-dark .max-w-7xl .text-gray-600,
-.theme-dark .max-w-7xl .text-gray-500 { color: #d1d5db !important; }
-
-/* Borders and dividers */
-.theme-dark .max-w-7xl .border-gray-200,
-.theme-dark .max-w-7xl .border-gray-300 { border-color: #374151 !important; }
-.theme-dark .max-w-7xl .divide-gray-200 { border-color: #374151 !important; }
-
-/* Tables */
-.theme-dark .max-w-7xl thead { background-color: #0f172a !important; }
-.theme-dark .max-w-7xl tbody { background-color: #111827 !important; }
-.theme-dark .max-w-7xl tr:hover { background-color: #1f2937 !important; }
-
-/* Form controls */
-.theme-dark .max-w-7xl input,
-.theme-dark .max-w-7xl select,
-.theme-dark .max-w-7xl textarea {
-  background-color: #0f172a !important;
-  color: #f5f5f5 !important;
-  border-color: #374151 !important;
-}
-
-/* Buttons with light defaults */
-.theme-dark .max-w-7xl button.bg-white {
-  background-color: #111827 !important;
-  color: #f5f5f5 !important;
-  border-color: #374151 !important;
-}
-
-/* Tailwind hover utility override */
-.theme-dark .max-w-7xl .hover\:bg-gray-50:hover { background-color: #1f2937 !important; }
-
-/* Dark theme: full screen background */
-.theme-dark .min-h-screen {
-  background-color: #000 !important;
-}
-
-/* Dark theme: any element sized w-6 gets blue background */
-.theme-dark .w-6 {
-  background-color: #2563eb !important; /* Tailwind blue-600 */
-}
-
-/* Light theme: any element sized w-6 gets blue background */
-body:not(.theme-dark) .w-6 {
-  background-color: #2563eb !important; /* Tailwind blue-600 */
-}
-
-/* Buttons using width utility w-6 should appear navy blue with white text */
-body:not(.theme-dark) button.w-6 {
-  background-color: #1e3a8a !important; /* Tailwind blue-800 (navy-ish) */
-  color: #ffffff !important;
-}
-.theme-dark button.w-6 {
-  background-color: #1e3a8a !important;
-  color: #ffffff !important;
-}
-
-/* Light theme: turn Tailwind blue buttons to blue (ensure consistency) */
-body:not(.theme-dark) .bg-blue-600 {
-  background-color: #2563eb !important;
-  color: #fff !important;
-  border-color: #2563eb !important;
-}
-body:not(.theme-dark) .hover\:bg-blue-700:hover {
-  background-color: #1d4ed8 !important;
-}
-
-/* Modern UI Enhancements */
 @layer base {
+  /* Base styles - White theme only */
   body {
-    @apply antialiased;
+    @apply bg-white text-slate-900;
   }
-  
-  /* Smooth scrolling */
-  html {
-    scroll-behavior: smooth;
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-100;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-blue-500 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-blue-600;
   }
 }
 
 @layer components {
-  .card {
-    @apply rounded-xl shadow-lg ring-1 ring-black/5 bg-white;
-  }
-  
-  .theme-dark .card {
-    @apply bg-white/5 backdrop-blur ring-white/10;
-  }
-  
-  .btn {
-    @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-all duration-200;
-  }
-  
-  /* Modern button variants */
+  /* Button styles - Theme-aware */
   .btn-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+    @apply bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors;
   }
-  
-  .btn-secondary {
-    @apply bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
-  }
-  
-  /* Enhanced form controls */
-  .form-input {
-    @apply border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200;
-  }
-  
-  .form-select {
-    @apply border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none;
-  }
-  
-  /* Modern shadows and borders */
-  .shadow-modern {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-  
-  .shadow-elevated {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  }
-  
-  /* Gradient backgrounds */
-  .bg-gradient-modern {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  }
-  
-  /* Hover effects */
-  .hover-lift {
-    @apply transition-all duration-200 hover:-translate-y-1 hover:shadow-elevated;
-  }
-  
-  /* Focus states */
-  .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
-  }
-}
 
-/* Custom scrollbar */
-@layer utilities {
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: #cbd5e0 #f7fafc;
+  .btn-secondary {
+    @apply px-4 py-2 rounded-lg font-medium transition-colors border;
   }
-  
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
+
+  /* Dark theme support for secondary buttons */
+  .dark .btn-secondary {
+    @apply bg-slate-700 text-slate-100 hover:bg-slate-600 border-slate-600;
   }
-  
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: #f7fafc;
-    border-radius: 3px;
+
+  /* Light theme support for secondary buttons */
+  .light .btn-secondary {
+    @apply bg-slate-100 text-slate-900 hover:bg-slate-200 border-slate-300;
   }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: #cbd5e0;
-    border-radius: 3px;
+
+  /* Card styles - Theme-aware */
+  .card {
+    @apply border rounded-lg p-6 shadow-sm transition-colors duration-300;
   }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: #a0aec0;
+
+  /* Dark theme support for cards */
+  .dark .card {
+    @apply bg-slate-800 border-slate-600;
+  }
+
+  /* Light theme support for cards */
+  .light .card {
+    @apply bg-white border-slate-200;
+  }
+
+  /* Input styles - Theme-aware */
+  .input {
+    @apply border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-300;
+  }
+
+  /* Dark theme support for inputs */
+  .dark .input {
+    @apply bg-slate-700 border-slate-600 text-slate-100 placeholder-slate-400;
+  }
+
+  /* Light theme support for inputs */
+  .light .input {
+    @apply bg-white border-slate-300 text-slate-900 placeholder-slate-500;
+  }
+
+  /* Modal styles - Theme-aware */
+  .modal {
+    @apply border shadow-xl transition-colors duration-300;
+  }
+
+  /* Dark theme support for modals */
+  .dark .modal {
+    @apply bg-slate-800 border-slate-600;
+  }
+
+  /* Light theme support for modals */
+  .light .modal {
+    @apply bg-white border-slate-200;
   }
 }

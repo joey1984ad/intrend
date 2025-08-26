@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 import { Metric } from './types';
 
 interface MetricsGridProps {
@@ -9,6 +10,8 @@ interface MetricsGridProps {
 }
 
 const MetricsGrid: React.FC<MetricsGridProps> = ({ metrics }) => {
+  const { theme } = useDashboardTheme();
+  
   // Transform metrics to match the three main cards from the design
   const getMetricValue = (label: string) => {
     const metric = metrics.find(m => m.label === label);
@@ -46,7 +49,9 @@ const MetricsGrid: React.FC<MetricsGridProps> = ({ metrics }) => {
     <div className="mb-8">
       {/* Section Title */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Campaigns Overview</h2>
+        <h2 className={`text-2xl font-bold transition-colors duration-300 ${
+          theme === 'white' ? 'text-gray-900' : 'text-white'
+        }`}>Campaigns Overview</h2>
       </div>
       
       {/* Metric Cards Grid */}
@@ -82,12 +87,22 @@ const MetricsGrid: React.FC<MetricsGridProps> = ({ metrics }) => {
       {/* Additional Metrics Grid (if needed) */}
       {metrics.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Metrics</h3>
+          <h3 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+          }`}>Additional Metrics</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
             {metrics.map((metric, index) => (
-              <div key={index} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                <div className="text-sm text-gray-600 mb-1">{metric.label}</div>
-                <div className="text-xl font-bold text-gray-900 mb-2">{metric.value}</div>
+              <div key={index} className={`p-4 rounded-lg shadow-sm border transition-colors duration-300 ${
+                theme === 'white' 
+                  ? 'bg-white border-gray-200' 
+                  : 'bg-slate-800 border-slate-700'
+              }`}>
+                <div className={`text-sm mb-1 transition-colors duration-300 ${
+                  theme === 'white' ? 'text-gray-600' : 'text-gray-200'
+                }`}>{metric.label}</div>
+                <div className={`text-xl font-bold mb-2 transition-colors duration-300 ${
+                  theme === 'white' ? 'text-gray-900' : 'text-gray-50'
+                }`}>{metric.value}</div>
                 <div className="flex items-center text-sm">
                   {metric.trend === 'up' ? (
                     <TrendingUp className="w-4 h-4 text-green-500 mr-1" />

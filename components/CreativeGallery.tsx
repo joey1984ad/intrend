@@ -4,6 +4,7 @@ import React from 'react';
 import FacebookImage from './FacebookImage';
 import { createOptimizedThumbnailUrl } from '../lib/facebook-utils';
 import { CreativeData } from './types';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
 // Shared helper for background color based on performance
 function getPerformanceBackground(performance: string): string {
@@ -36,6 +37,7 @@ const CreativeGallery: React.FC<CreativeGalleryProps> = ({
   topPerformers,
   accessToken
 }) => {
+  const { theme } = useDashboardTheme();
   const isTopPerformer = (creative: CreativeData) => {
     return topPerformers.some(top => top.id === creative.id);
   };
@@ -74,10 +76,16 @@ const CreativeGallery: React.FC<CreativeGalleryProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {[...Array(8)].map((_, i) => (
           <div key={i} className="animate-pulse">
-            <div className="bg-gray-200 rounded-lg h-48 mb-3"></div>
+            <div className={`rounded-lg h-48 mb-3 transition-colors duration-300 ${
+              theme === 'white' ? 'bg-gray-200' : 'bg-slate-600'
+            }`}></div>
             <div className="space-y-2">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+              <div className={`h-4 rounded transition-colors duration-300 ${
+                theme === 'white' ? 'bg-gray-200' : 'bg-slate-600'
+              }`}></div>
+              <div className={`h-3 rounded w-3/4 transition-colors duration-300 ${
+                theme === 'white' ? 'bg-gray-200' : 'bg-slate-600'
+              }`}></div>
             </div>
           </div>
         ))}
@@ -88,62 +96,86 @@ const CreativeGallery: React.FC<CreativeGalleryProps> = ({
   if (creatives.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-400 mb-4">
+        <div className={`mb-4 transition-colors duration-300 ${
+          theme === 'white' ? 'text-gray-400' : 'text-gray-500'
+        }`}>
           <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No creatives found</h3>
-        <p className="text-gray-500">Try adjusting your filters or search terms.</p>
+        <h3 className={`text-lg font-medium mb-2 transition-colors duration-300 ${
+          theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+        }`}>No creatives found</h3>
+        <p className={`transition-colors duration-300 ${
+          theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+        }`}>Try adjusting your filters or search terms.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
-      {/* Top Performers Section */}
-      {topPerformers.length > 0 && (
-        <div className="bg-gradient-to-r from-gray-50 to-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 border border-emerald-200 mr-3 shadow-sm">
-              Top {Math.ceil(creatives.length * 0.1)} Performers
-            </span>
-            <span className="text-gray-700">Top Performers</span>
-          </h3>
+             {/* Top Performers Section */}
+       {topPerformers.length > 0 && (
+         <div className={`rounded-2xl p-6 border shadow-sm transition-colors duration-300 ${
+           theme === 'white' 
+             ? 'bg-gradient-to-r from-gray-50 to-white border-gray-100' 
+             : 'bg-gradient-to-r from-slate-700 to-slate-800 border-slate-600'
+         }`}>
+           <h3 className={`text-xl font-bold mb-6 flex items-center transition-colors duration-300 ${
+             theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+           }`}>
+             <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold mr-3 shadow-sm transition-colors duration-300 ${
+               theme === 'white'
+                 ? 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 border-emerald-200'
+                 : 'bg-gradient-to-r from-emerald-900/20 to-green-900/20 text-emerald-300 border-emerald-600'
+             }`}>
+               Top {Math.ceil(creatives.length * 0.1)} Performers
+             </span>
+             <span className={`transition-colors duration-300 ${
+               theme === 'white' ? 'text-gray-700' : 'text-gray-300'
+             }`}>Top Performers</span>
+           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {topPerformers.map((creative) => (
-              <CreativeCard
-                key={creative.id}
-                creative={creative}
-                isSelected={selectedCreatives.includes(creative.id)}
-                onSelect={() => onCreativeSelect(creative.id)}
-                onCreativeClick={onCreativeClick}
-                isTopPerformer={true}
-                getPerformanceColor={getPerformanceColor}
-                getFatigueColor={getFatigueColor}
-                accessToken={accessToken}
-              />
+                           <CreativeCard
+               key={creative.id}
+               creative={creative}
+               isSelected={selectedCreatives.includes(creative.id)}
+               onSelect={() => onCreativeSelect(creative.id)}
+               onCreativeClick={onCreativeClick}
+               isTopPerformer={true}
+               getPerformanceColor={getPerformanceColor}
+               getFatigueColor={getFatigueColor}
+               accessToken={accessToken}
+               theme={theme}
+             />
             ))}
           </div>
         </div>
       )}
 
-      {/* All Creatives Section */}
-      <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-        <h3 className="text-xl font-bold text-gray-900 mb-6">All Creatives</h3>
+             {/* All Creatives Section */}
+       <div className={`rounded-2xl p-6 border shadow-sm transition-colors duration-300 ${
+         theme === 'white' ? 'bg-white border-gray-100' : 'bg-slate-800 border-slate-600'
+       }`}>
+         <h3 className={`text-xl font-bold mb-6 transition-colors duration-300 ${
+           theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+         }`}>All Creatives</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {creatives.map((creative) => (
-            <CreativeCard
-              key={creative.id}
-              creative={creative}
-              isSelected={selectedCreatives.includes(creative.id)}
-              onSelect={() => onCreativeSelect(creative.id)}
-              onCreativeClick={onCreativeClick}
-              isTopPerformer={isTopPerformer(creative)}
-              getPerformanceColor={getPerformanceColor}
-              getFatigueColor={getFatigueColor}
-              accessToken={accessToken}
-            />
+                         <CreativeCard
+               key={creative.id}
+               creative={creative}
+               isSelected={selectedCreatives.includes(creative.id)}
+               onSelect={() => onCreativeSelect(creative.id)}
+               onCreativeClick={onCreativeClick}
+               isTopPerformer={isTopPerformer(creative)}
+               getPerformanceColor={getPerformanceColor}
+               getFatigueColor={getFatigueColor}
+               accessToken={accessToken}
+               theme={theme}
+             />
           ))}
         </div>
       </div>
@@ -160,6 +192,7 @@ interface CreativeCardProps {
   getPerformanceColor: (performance: string) => string;
   getFatigueColor: (fatigue: string) => string;
   accessToken: string;
+  theme: 'white' | 'dark';
 }
 
 // Helper to get high-res FB CDN stills with better quality parameters
@@ -175,7 +208,8 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
   isTopPerformer,
   getPerformanceColor,
   getFatigueColor,
-  accessToken
+  accessToken,
+  theme
 }) => {
   // Direct media rendering from URLs
   let assetContent: React.ReactNode = null;
@@ -236,7 +270,9 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
               }}
             />
           ) : (
-            <div key={idx} className="w-28 h-28 bg-gray-200 flex items-center justify-center rounded flex-shrink-0 text-xs text-gray-500">N/A</div>
+                         <div key={idx} className={`w-28 h-28 flex items-center justify-center rounded flex-shrink-0 text-xs transition-colors duration-300 ${
+               theme === 'white' ? 'bg-gray-200 text-gray-500' : 'bg-slate-600 text-gray-400'
+             }`}>N/A</div>
           )
         )}
       </div>
@@ -256,36 +292,58 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
       />
     );
   } else {
-    assetContent = (
-      <div className="w-full h-full bg-gray-200 flex flex-col items-center justify-center rounded-t-lg text-xs text-gray-500">
-        No preview available
-      </div>
-    );
+         assetContent = (
+       <div className={`w-full h-full flex flex-col items-center justify-center rounded-t-lg text-xs transition-colors duration-300 ${
+         theme === 'white' ? 'bg-gray-200 text-gray-500' : 'bg-slate-600 text-gray-400'
+       }`}>
+         No preview available
+       </div>
+     );
   }
 
-  // Background color based on selection, type, and performance
-  const cardBackgroundClass = (
-    creative.creativeType === 'dynamic'
-      ? (isSelected ? 'bg-blue-50' : 'bg-white')
-      : (isSelected ? 'bg-blue-50' : getPerformanceBackground(creative.performance))
-  );
+     // Background color based on selection, type, and performance
+   const getCardBackground = () => {
+     if (isSelected) {
+       return theme === 'white' ? 'bg-blue-50' : 'bg-blue-900/20';
+     }
+     if (creative.creativeType === 'dynamic') {
+       return theme === 'white' ? 'bg-white' : 'bg-slate-700';
+     }
+     // Performance-based backgrounds
+     switch (creative.performance) {
+       case 'excellent':
+         return theme === 'white' ? 'bg-green-50' : 'bg-green-900/20';
+       case 'good':
+         return theme === 'white' ? 'bg-blue-50' : 'bg-blue-900/20';
+       case 'average':
+         return theme === 'white' ? 'bg-yellow-50' : 'bg-yellow-900/20';
+       case 'poor':
+         return theme === 'white' ? 'bg-red-50' : 'bg-red-900/20';
+       default:
+         return theme === 'white' ? 'bg-white' : 'bg-slate-700';
+     }
+   };
 
   return (
-    <div
-      className={`relative group cursor-pointer rounded-2xl border border-gray-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${cardBackgroundClass} ${
-        isSelected 
-          ? 'ring-2 ring-indigo-500 ring-opacity-60 border-indigo-300 shadow-lg' 
-          : 'hover:border-gray-300'
-      } ${isTopPerformer ? 'ring-2 ring-emerald-400 ring-opacity-40' : ''}`}
-    >
+         <div
+       className={`relative group cursor-pointer rounded-2xl border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${getCardBackground()} ${
+         theme === 'white' ? 'border-gray-200' : 'border-slate-600'
+       } ${
+         isSelected 
+           ? 'ring-2 ring-indigo-500 ring-opacity-60 border-indigo-300 shadow-lg' 
+           : theme === 'white' ? 'hover:border-gray-300' : 'hover:border-slate-500'
+       } ${isTopPerformer ? 'ring-2 ring-emerald-400 ring-opacity-40' : ''}`}
+     >
       {/* Selection Checkbox */}
       <div className="absolute top-3 right-3 z-10">
-        <div 
-          className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-200 shadow-sm ${
-            isSelected 
-              ? 'bg-gradient-to-r from-indigo-500 to-purple-500 border-indigo-500 shadow-md' 
-              : 'bg-white border-gray-300 hover:border-indigo-300 hover:shadow-md'
-          }`}
+                 <div 
+           className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-200 shadow-sm ${
+             isSelected 
+               ? 'bg-gradient-to-r from-indigo-500 to-purple-500 border-indigo-500 shadow-md' 
+               : theme === 'white' 
+                 ? 'bg-white border-gray-300 hover:border-indigo-300 hover:shadow-md'
+                 : 'bg-slate-700 border-slate-500 hover:border-indigo-400 hover:shadow-md'
+           }`}
           onClick={(e) => {
             e.stopPropagation();
             onSelect();
@@ -301,11 +359,15 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
 
       {/* Top Performer Badge */}
       {isTopPerformer && (
-        <div className="absolute top-3 left-3 z-10">
-          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 border border-emerald-200 shadow-sm">
-            Top 10%
-          </span>
-        </div>
+                 <div className="absolute top-3 left-3 z-10">
+           <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-colors duration-300 ${
+             theme === 'white'
+               ? 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 border-emerald-200'
+               : 'bg-gradient-to-r from-emerald-900/20 to-green-900/20 text-emerald-300 border-emerald-600'
+           }`}>
+             Top 10%
+           </span>
+         </div>
       )}
 
       {/* Asset Preview */}
@@ -330,38 +392,76 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
 
       {/* Creative Info */}
       <div className="p-5 space-y-4" onClick={() => onCreativeClick(creative)}>
-        {/* Name and Campaign */}
-        <div className="space-y-2">
-          <h4 className="font-semibold text-gray-900 truncate hover:text-indigo-600 cursor-pointer transition-colors duration-200">{creative.name}</h4>
-          <p className="text-sm text-gray-600 truncate font-medium">{creative.campaignName}</p>
-          <p className="text-xs text-gray-500 truncate">{creative.adsetName}</p>
-        </div>
+                 {/* Name and Campaign */}
+         <div className="space-y-2">
+           <h4 className={`font-semibold truncate hover:text-indigo-600 cursor-pointer transition-colors duration-200 ${
+             theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+           }`}>{creative.name}</h4>
+           <p className={`text-sm truncate font-medium transition-colors duration-300 ${
+             theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+           }`}>{creative.campaignName}</p>
+           <p className={`text-xs truncate transition-colors duration-300 ${
+             theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+           }`}>{creative.adsetName}</p>
+         </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className="bg-gray-50 rounded-lg p-2 border border-gray-100">
-            <p className="text-gray-500 font-medium">Spend</p>
-            <p className="font-bold text-gray-900">${creative.spend.toFixed(2)}</p>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-2 border border-gray-100">
-            <p className="text-gray-500 font-medium">Impressions</p>
-            <p className="font-bold text-gray-900">{creative.impressions.toLocaleString()}</p>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-2 border border-gray-100">
-            <p className="text-gray-500 font-medium">CTR</p>
-            <p className="font-bold text-gray-900">{creative.ctr.toFixed(2)}%</p>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-2 border border-gray-100">
-            <p className="text-gray-500 font-medium">CPC</p>
-            <p className="font-bold text-gray-900">${creative.cpc.toFixed(2)}</p>
-          </div>
-          {creative.roas && (
-            <div className="col-span-2 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-2 border border-indigo-100">
-              <p className="text-indigo-600 font-medium">ROAS</p>
-              <p className="font-bold text-indigo-900">{creative.roas.toFixed(2)}x</p>
-            </div>
-          )}
-        </div>
+                 {/* Key Metrics */}
+         <div className="grid grid-cols-2 gap-3 text-xs">
+           <div className={`rounded-lg p-2 border transition-colors duration-300 ${
+             theme === 'white' ? 'bg-gray-50 border-gray-100' : 'bg-slate-700 border-slate-600'
+           }`}>
+             <p className={`font-medium transition-colors duration-300 ${
+               theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+             }`}>Spend</p>
+             <p className={`font-bold transition-colors duration-300 ${
+               theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+             }`}>${creative.spend.toFixed(2)}</p>
+           </div>
+           <div className={`rounded-lg p-2 border transition-colors duration-300 ${
+             theme === 'white' ? 'bg-gray-50 border-gray-100' : 'bg-slate-700 border-slate-600'
+           }`}>
+             <p className={`font-medium transition-colors duration-300 ${
+               theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+             }`}>Impressions</p>
+             <p className={`font-bold transition-colors duration-300 ${
+               theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+             }`}>{creative.impressions.toLocaleString()}</p>
+           </div>
+           <div className={`rounded-lg p-2 border transition-colors duration-300 ${
+             theme === 'white' ? 'bg-gray-50 border-gray-100' : 'bg-slate-700 border-slate-600'
+           }`}>
+             <p className={`font-medium transition-colors duration-300 ${
+               theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+             }`}>CTR</p>
+             <p className={`font-bold transition-colors duration-300 ${
+               theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+             }`}>{creative.ctr.toFixed(2)}%</p>
+           </div>
+           <div className={`rounded-lg p-2 border transition-colors duration-300 ${
+             theme === 'white' ? 'bg-gray-50 border-gray-100' : 'bg-slate-700 border-slate-600'
+           }`}>
+             <p className={`font-medium transition-colors duration-300 ${
+               theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+             }`}>CPC</p>
+             <p className={`font-bold transition-colors duration-300 ${
+               theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+             }`}>${creative.cpc.toFixed(2)}</p>
+           </div>
+           {creative.roas && (
+             <div className={`col-span-2 rounded-lg p-2 border transition-colors duration-300 ${
+               theme === 'white' 
+                 ? 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-100' 
+                 : 'bg-gradient-to-r from-indigo-900/20 to-purple-900/20 border-indigo-600'
+             }`}>
+               <p className={`font-medium transition-colors duration-300 ${
+                 theme === 'white' ? 'text-indigo-600' : 'text-indigo-300'
+               }`}>ROAS</p>
+               <p className={`font-bold transition-colors duration-300 ${
+                 theme === 'white' ? 'text-indigo-900' : 'text-indigo-100'
+               }`}>{creative.roas.toFixed(2)}x</p>
+             </div>
+           )}
+         </div>
 
         {/* Performance and Fatigue */}
         <div className="flex items-center justify-between">
@@ -377,9 +477,11 @@ const CreativeCard: React.FC<CreativeCardProps> = ({
             {creative.performance === 'poor' && '⚠️'}
             <span className="ml-1">{creative.performance.charAt(0).toUpperCase() + creative.performance.slice(1)}</span>
           </span>
-          <span className={`text-xs font-semibold px-3 py-1.5 rounded-full bg-gray-50 border border-gray-200 ${getFatigueColor(creative.fatigueLevel)}`}>
-            Fatigue: {creative.fatigueLevel.charAt(0).toUpperCase() + creative.fatigueLevel.slice(1)}
-          </span>
+                     <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors duration-300 ${
+             theme === 'white' ? 'bg-gray-50 border-gray-200' : 'bg-slate-700 border-slate-600'
+           } ${getFatigueColor(creative.fatigueLevel)}`}>
+             Fatigue: {creative.fatigueLevel.charAt(0).toUpperCase() + creative.fatigueLevel.slice(1)}
+           </span>
         </div>
       </div>
     </div>

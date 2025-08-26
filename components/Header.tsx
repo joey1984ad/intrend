@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Loader2, BarChart3, Target, Grid3X3, Users, Image, Library, Bell, User, ChevronDown } from 'lucide-react';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 import { ConnectedAccount, Notification } from './types';
 
 interface HeaderProps {
@@ -45,6 +46,7 @@ const Header: React.FC<HeaderProps> = ({
   isLoadingAds,
   isLoadingDemographics
 }) => {
+  const { theme } = useDashboardTheme();
   const tabs = [
     { id: 'campaigns', label: 'Campaigns', icon: BarChart3, loading: isLoadingCampaigns },
     { id: 'adsets', label: 'Ad Sets', icon: Target, loading: isLoadingAdSets },
@@ -57,7 +59,11 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
+      <div className={`shadow-sm border-b transition-colors duration-300 ${
+        theme === 'white' 
+          ? 'bg-white border-gray-200' 
+          : 'bg-slate-800 border-slate-700'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo and Brand */}
@@ -66,7 +72,9 @@ const Header: React.FC<HeaderProps> = ({
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <div className="w-4 h-4 bg-white rounded-sm"></div>
                 </div>
-                <span className="text-xl font-bold text-gray-900">Intrend</span>
+                <span className={`text-xl font-bold transition-colors duration-300 ${
+                  theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                }`}>Intrend</span>
               </div>
               
               {/* Main Navigation */}
@@ -81,8 +89,12 @@ const Header: React.FC<HeaderProps> = ({
                       onClick={() => setActiveTab(tab.id)}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${
                         isActive
-                          ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          ? theme === 'white'
+                            ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
+                            : 'bg-blue-900/20 text-blue-300 border-b-2 border-blue-400'
+                          : theme === 'white'
+                            ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                            : 'text-gray-300 hover:text-gray-100 hover:bg-slate-700'
                       }`}
                     >
                       <IconComponent className="w-4 h-4" />

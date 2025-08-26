@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Filter, Download, MoreHorizontal, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
 import { DataTableProps, ColumnDefinition } from './types';
 import { useTableFilterSort } from './hooks/useTableFilterSort';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
 // Generic constraint that requires an id property of any type
 type WithId = { id: any };
@@ -35,6 +36,7 @@ export function DataTable<T extends WithId>({
   pagination,
   emptyState
 }: DataTableProps<T>) {
+  const { theme } = useDashboardTheme();
 
   // Get searchable fields from columns
   const searchableFields = useMemo(() => {
@@ -113,12 +115,18 @@ export function DataTable<T extends WithId>({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className={`rounded-lg shadow-sm p-6 transition-colors duration-300 ${
+        theme === 'white' ? 'bg-white' : 'bg-slate-800'
+      }`}>
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className={`h-4 rounded w-1/4 mb-4 transition-colors duration-300 ${
+            theme === 'white' ? 'bg-gray-200' : 'bg-slate-600'
+          }`}></div>
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-12 bg-gray-200 rounded"></div>
+              <div key={i} className={`h-12 rounded transition-colors duration-300 ${
+                theme === 'white' ? 'bg-gray-200' : 'bg-slate-600'
+              }`}></div>
             ))}
           </div>
         </div>
@@ -130,11 +138,17 @@ export function DataTable<T extends WithId>({
     <div className="card">
       {/* Header */}
       {(title || subtitle) && (
-        <div className="p-6 border-b border-gray-200">
+        <div className={`p-6 border-b transition-colors duration-300 ${
+          theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+        }`}>
           <div className="flex items-center justify-between">
             <div>
-              {title && <h2 className="text-xl font-semibold">{title}</h2>}
-              {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
+              {title && <h2 className={`text-xl font-semibold transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+              }`}>{title}</h2>}
+              {subtitle && <p className={`text-sm transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+              }`}>{subtitle}</p>}
             </div>
             <div className="flex items-center space-x-3">
               {showExport && onExport && (
@@ -152,29 +166,43 @@ export function DataTable<T extends WithId>({
       )}
 
       {/* Search and Filters */}
-      <div className="p-6 border-b border-gray-200">
+      <div className={`p-6 border-b transition-colors duration-300 ${
+        theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+      }`}>
         <div className="flex items-center space-x-4">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-400' : 'text-gray-500'
+              }`} />
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full pl-10 pr-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-300 ${
+                  theme === 'white'
+                    ? 'border-gray-300 bg-white text-gray-900'
+                    : 'border-slate-600 bg-slate-700 text-gray-100'
+                }`}
               />
             </div>
           </div>
           {showFilters && (
-            <button className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <button className={`flex items-center px-3 py-2 text-sm font-medium rounded-md border transition-colors duration-300 ${
+              theme === 'white'
+                ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                : 'text-gray-200 bg-slate-700 border-slate-600 hover:bg-slate-600'
+            }`}>
               <Filter className="w-4 h-4 mr-2" />
               Filter
             </button>
           )}
         </div>
         {searchTerm && (
-          <div className="mt-2 text-sm text-gray-600">
+          <div className={`mt-2 text-sm transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-600' : 'text-gray-400'
+          }`}>
             Showing {filteredCount} of {totalCount} results
           </div>
         )}
@@ -182,13 +210,21 @@ export function DataTable<T extends WithId>({
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className={`min-w-full divide-y transition-colors duration-300 ${
+          theme === 'white' ? 'divide-gray-200' : 'divide-slate-700'
+        }`}>
+          <thead className={`transition-colors duration-300 ${
+            theme === 'white' ? 'bg-gray-50' : 'bg-slate-700'
+          }`}>
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-500' : 'text-gray-300'
+              }`}>
                 <input
                   type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className={`rounded text-blue-600 focus:ring-blue-500 transition-colors duration-300 ${
+                    theme === 'white' ? 'border-gray-300' : 'border-slate-500'
+                  }`}
                   checked={allSelected}
                   ref={(input) => {
                     if (input) input.indeterminate = someSelected;
@@ -199,14 +235,18 @@ export function DataTable<T extends WithId>({
               {columns.map((column) => (
                 <th
                   key={column.key as string}
-                  className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-300 ${
+                    theme === 'white' ? 'text-gray-500' : 'text-gray-300'
+                  } ${
                     column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'
                   } ${column.width ? `w-${column.width}` : ''} ${column.className || ''}`}
                 >
                   {column.sortable ? (
                     <button
                       onClick={() => onSort?.(column.key)}
-                      className="flex items-center space-x-1 hover:text-gray-700 group"
+                      className={`flex items-center space-x-1 group transition-colors duration-300 ${
+                        theme === 'white' ? 'hover:text-gray-700' : 'hover:text-gray-200'
+                      }`}
                     >
                       <span>{column.header}</span>
                       <div className="flex flex-col">
@@ -214,14 +254,14 @@ export function DataTable<T extends WithId>({
                           className={`w-3 h-3 -mb-1 ${
                             sortField === column.key && sortDirection === 'asc' 
                               ? 'text-blue-600' 
-                              : 'text-gray-400 group-hover:text-gray-600'
+                              : theme === 'white' ? 'text-gray-400 group-hover:text-gray-600' : 'text-gray-500 group-hover:text-gray-300'
                           }`} 
                         />
                         <ChevronDown 
                           className={`w-3 h-3 -mt-1 ${
                             sortField === column.key && sortDirection === 'desc' 
                               ? 'text-blue-600' 
-                              : 'text-gray-400 group-hover:text-gray-600'
+                              : theme === 'white' ? 'text-gray-400 group-hover:text-gray-600' : 'text-gray-500 group-hover:text-gray-300'
                           }`} 
                         />
                       </div>
@@ -231,19 +271,29 @@ export function DataTable<T extends WithId>({
                   )}
                 </th>
               ))}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-500' : 'text-gray-300'
+              }`}>
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className={`divide-y transition-colors duration-300 ${
+            theme === 'white' ? 'bg-white divide-gray-200' : 'bg-slate-800 divide-slate-700'
+          }`}>
             {sortedData.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + 2} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={columns.length + 2} className={`px-6 py-8 text-center transition-colors duration-300 ${
+                  theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+                }`}>
                   {emptyState ? (
                     <div className="text-center">
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">{emptyState.title}</h3>
-                      <p className="text-gray-600 mb-4">{emptyState.description}</p>
+                      <h3 className={`text-lg font-medium mb-2 transition-colors duration-300 ${
+                        theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                      }`}>{emptyState.title}</h3>
+                      <p className={`mb-4 transition-colors duration-300 ${
+                        theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+                      }`}>{emptyState.description}</p>
                       {emptyState.action && (
                         <button
                           onClick={emptyState.action.onClick}
@@ -260,11 +310,15 @@ export function DataTable<T extends WithId>({
               </tr>
             ) : (
               sortedData.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50">
+                <tr key={item.id} className={`transition-colors duration-300 ${
+                  theme === 'white' ? 'hover:bg-gray-50' : 'hover:bg-slate-700'
+                }`}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <input
                       type="checkbox"
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className={`rounded text-blue-600 focus:ring-blue-500 transition-colors duration-300 ${
+                        theme === 'white' ? 'border-gray-300' : 'border-slate-500'
+                      }`}
                       checked={selectedItems.includes(Number(item.id))}
                       onChange={() => onItemSelect(Number(item.id))}
                     />
@@ -272,7 +326,9 @@ export function DataTable<T extends WithId>({
                   {columns.map((column) => (
                     <td
                       key={column.key as string}
-                      className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${
+                      className={`px-6 py-4 whitespace-nowrap text-sm transition-colors duration-300 ${
+                        theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                      } ${
                         column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'
                       } ${column.className || ''}`}
                     >
@@ -280,7 +336,9 @@ export function DataTable<T extends WithId>({
                     </td>
                   ))}
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button className="text-gray-400 hover:text-gray-600">
+                    <button className={`transition-colors duration-300 ${
+                      theme === 'white' ? 'text-gray-400 hover:text-gray-600' : 'text-gray-500 hover:text-gray-300'
+                    }`}>
                       <MoreHorizontal className="w-4 h-4" />
                     </button>
                   </td>
@@ -293,9 +351,13 @@ export function DataTable<T extends WithId>({
 
       {/* Bulk Actions */}
       {showBulkActions && selectedItems.length > 0 && (
-        <div className="p-6 border-t border-gray-200 bg-gray-50">
+        <div className={`p-6 border-t transition-colors duration-300 ${
+          theme === 'white' ? 'border-gray-200 bg-gray-50' : 'border-slate-700 bg-slate-700'
+        }`}>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">
+            <span className={`text-sm transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+            }`}>
               {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} selected
             </span>
             <div className="flex items-center space-x-3">

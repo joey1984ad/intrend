@@ -8,6 +8,7 @@ import CreativeComparisonModal from './CreativeComparisonModal';
 import CreativeFilters from './CreativeFilters';
 import CreativeDetailModal from './CreativeDetailModal';
 import FacebookImage from './FacebookImage';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
 interface CreativesTabProps {
   searchTerm: string;
@@ -36,6 +37,7 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
   dateRange,
   adAccountId
 }) => {
+  const { theme } = useDashboardTheme();
   const [viewMode, setViewMode] = useState<ViewMode>('gallery');
   const [selectedCreatives, setSelectedCreatives] = useState<number[]>([]);
   const [showComparisonModal, setShowComparisonModal] = useState(false);
@@ -58,7 +60,11 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       searchable: true,
       render: (value, creative) => (
         <div className="flex items-center space-x-4">
-          <div className="w-20 h-20 rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex-shrink-0 shadow-sm border border-gray-200">
+          <div className={`w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 shadow-sm border transition-colors duration-300 ${
+            theme === 'white'
+              ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
+              : 'bg-gradient-to-br from-slate-700 to-slate-600 border-slate-600'
+          }`}>
             <FacebookImage
               src={creative.thumbnailUrl}
               accessToken={facebookAccessToken}
@@ -69,12 +75,18 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
             />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold text-gray-900 truncate cursor-pointer hover:text-indigo-600 transition-colors duration-200" 
+            <div className={`text-sm font-semibold truncate cursor-pointer hover:text-indigo-600 transition-colors duration-200 ${
+              theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+            }`} 
                  onClick={() => handleCreativeClick(creative)}>
               {creative.name}
             </div>
-            <div className="text-xs text-gray-600 truncate font-medium">{creative.adsetName}</div>
-            <div className="text-xs text-gray-500 truncate">{creative.campaignName}</div>
+            <div className={`text-xs truncate font-medium transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+            }`}>{creative.adsetName}</div>
+            <div className={`text-xs truncate transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+            }`}>{creative.campaignName}</div>
           </div>
         </div>
       )
@@ -105,12 +117,16 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => (
-        <div className="text-right">
-          <div className="text-sm font-bold text-gray-900">${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          <div className="text-xs text-gray-500">Total</div>
-        </div>
-      )
+             render: (value) => (
+         <div className="text-right">
+           <div className={`text-sm font-bold transition-colors duration-300 ${
+             theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+           }`}>${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+           <div className={`text-xs transition-colors duration-300 ${
+             theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+           }`}>Total</div>
+         </div>
+       )
     },
     {
       key: 'impressions',
@@ -118,12 +134,16 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => (
-        <div className="text-right">
-          <div className="text-sm font-bold text-gray-900">{value.toLocaleString()}</div>
-          <div className="text-xs text-gray-500">Views</div>
-        </div>
-      )
+             render: (value) => (
+         <div className="text-right">
+           <div className={`text-sm font-bold transition-colors duration-300 ${
+             theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+           }`}>{value.toLocaleString()}</div>
+           <div className={`text-xs transition-colors duration-300 ${
+             theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+           }`}>Views</div>
+         </div>
+       )
     },
     {
       key: 'clicks',
@@ -131,12 +151,16 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => (
-        <div className="text-right">
-          <div className="text-sm font-bold text-gray-900">{value.toLocaleString()}</div>
-          <div className="text-xs text-gray-500">Engagement</div>
-        </div>
-      )
+             render: (value) => (
+         <div className="text-right">
+           <div className={`text-sm font-bold transition-colors duration-300 ${
+             theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+           }`}>{value.toLocaleString()}</div>
+           <div className={`text-xs transition-colors duration-300 ${
+             theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+           }`}>Engagement</div>
+         </div>
+       )
     },
     {
       key: 'ctr',
@@ -144,14 +168,16 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => (
-        <div className="text-right">
-          <div className={`text-sm font-bold ${value >= 2 ? 'text-emerald-600' : value >= 1 ? 'text-blue-600' : value >= 0.5 ? 'text-amber-600' : 'text-red-600'}`}>
-            {value.toFixed(2)}%
-          </div>
-          <div className="text-xs text-gray-500">Click Rate</div>
-        </div>
-      )
+             render: (value) => (
+         <div className="text-right">
+           <div className={`text-sm font-bold ${value >= 2 ? 'text-emerald-600' : value >= 1 ? 'text-blue-600' : value >= 0.5 ? 'text-amber-600' : 'text-red-600'}`}>
+             {value.toFixed(2)}%
+           </div>
+           <div className={`text-xs transition-colors duration-300 ${
+             theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+           }`}>Click Rate</div>
+         </div>
+       )
     },
     {
       key: 'cpc',
@@ -159,14 +185,16 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => (
-        <div className="text-right">
-          <div className={`text-sm font-bold ${value <= 1 ? 'text-emerald-600' : value <= 2 ? 'text-blue-600' : value <= 3 ? 'text-amber-600' : 'text-red-600'}`}>
-            ${value.toFixed(2)}
-          </div>
-          <div className="text-xs text-gray-500">Per Click</div>
-        </div>
-      )
+             render: (value) => (
+         <div className="text-right">
+           <div className={`text-sm font-bold ${value <= 1 ? 'text-emerald-600' : value <= 2 ? 'text-blue-600' : value <= 3 ? 'text-amber-600' : 'text-red-600'}`}>
+             ${value.toFixed(2)}
+           </div>
+           <div className={`text-xs transition-colors duration-300 ${
+             theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+           }`}>Per Click</div>
+         </div>
+       )
     },
     {
       key: 'cpm',
@@ -174,14 +202,16 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => (
-        <div className="text-right">
-          <div className={`text-sm font-bold ${value <= 5 ? 'text-emerald-600' : value <= 10 ? 'text-blue-600' : value <= 15 ? 'text-amber-600' : 'text-red-600'}`}>
-            ${value.toFixed(2)}
-          </div>
-          <div className="text-xs text-gray-500">Per 1K</div>
-        </div>
-      )
+             render: (value) => (
+         <div className="text-right">
+           <div className={`text-sm font-bold ${value <= 5 ? 'text-emerald-600' : value <= 10 ? 'text-blue-600' : value <= 15 ? 'text-amber-600' : 'text-red-600'}`}>
+             ${value.toFixed(2)}
+           </div>
+           <div className={`text-xs transition-colors duration-300 ${
+             theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+           }`}>Per 1K</div>
+         </div>
+       )
     },
     {
       key: 'reach',
@@ -189,12 +219,16 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => (
-        <div className="text-right">
-          <div className="text-sm font-bold text-gray-900">{value.toLocaleString()}</div>
-          <div className="text-xs text-gray-500">Unique Users</div>
-        </div>
-      )
+             render: (value) => (
+         <div className="text-right">
+           <div className={`text-sm font-bold transition-colors duration-300 ${
+             theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+           }`}>{value.toLocaleString()}</div>
+           <div className={`text-xs transition-colors duration-300 ${
+             theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+           }`}>Unique Users</div>
+         </div>
+       )
     },
     {
       key: 'frequency',
@@ -207,7 +241,9 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
           <div className={`text-sm font-bold ${value <= 2 ? 'text-emerald-600' : value <= 3 ? 'text-blue-600' : value <= 4 ? 'text-amber-600' : 'text-red-600'}`}>
             {value.toFixed(1)}
           </div>
-          <div className="text-xs text-gray-500">Avg Views</div>
+          <div className={`text-xs transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+          }`}>Avg Views</div>
         </div>
       )
     },
@@ -222,7 +258,9 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
           <div className={`text-sm font-bold ${value >= 4 ? 'text-emerald-600' : value >= 2 ? 'text-blue-600' : value >= 1 ? 'text-amber-600' : 'text-red-600'}`}>
             {value ? `${value.toFixed(2)}x` : 'N/A'}
           </div>
-          <div className="text-xs text-gray-500">Return</div>
+          <div className={`text-xs transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+          }`}>Return</div>
         </div>
       )
     },
@@ -345,21 +383,31 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       {/* Header with view toggle and actions */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Creatives</h2>
-          <p className="text-sm text-gray-600">
+          <h2 className={`text-2xl font-bold transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+          }`}>Creatives</h2>
+          <p className={`text-sm transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+          }`}>
             {filteredData.length} creative assets • {topPerformers.length} top performers
           </p>
         </div>
         
         <div className="flex items-center space-x-3">
           {/* View Mode Toggle */}
-           <div className="flex bg-gray-100 rounded-lg p-1">
+           <div className={`flex rounded-lg p-1 transition-colors duration-300 ${
+             theme === 'white' ? 'bg-gray-100' : 'bg-slate-700'
+           }`}>
             <button
               onClick={() => setViewMode('gallery')}
               className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                 viewMode === 'gallery'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? theme === 'white'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'bg-slate-600 text-gray-100 shadow-sm'
+                  : theme === 'white'
+                    ? 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-300 hover:text-gray-100'
               }`}
             >
               Gallery
@@ -368,8 +416,12 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
               onClick={() => setViewMode('table')}
               className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                 viewMode === 'table'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? theme === 'white'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'bg-slate-600 text-gray-100 shadow-sm'
+                  : theme === 'white'
+                    ? 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-300 hover:text-gray-100'
               }`}
             >
               Table

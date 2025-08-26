@@ -146,7 +146,7 @@ const SaaSLandingPage: React.FC = () => {
           <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-blue-100 to-indigo-100 bg-clip-text text-transparent">
             Intrend
           </h1>
-          <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
+          <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto text-blue-200">
             AI-Powered Creative Analysis & Facebook Ads Library
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

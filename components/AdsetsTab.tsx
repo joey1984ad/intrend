@@ -3,6 +3,7 @@
 import React from 'react';
 import { DataTable } from './DataTable';
 import { Adset, ColumnDefinition } from './types';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
 interface AdsetsTabProps {
   adsetsData: Adset[];
@@ -29,29 +30,55 @@ const AdsetsTab: React.FC<AdsetsTabProps> = ({
   handleSelectItem,
   handleBulkAction
 }) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+  const { theme } = useDashboardTheme();
+  const formatCurrency = (amount: number | null) => {
+    if (amount == null) return 'N/A';
+    const formatted = new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount);
+    return (
+      <span className={`${theme === 'white' ? 'text-gray-900' : 'text-white'}`}>
+        {formatted}
+      </span>
+    );
   };
 
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('en-US').format(num);
+  const formatNumber = (num: number | null) => {
+    if (num == null) return 'N/A';
+    const formatted = new Intl.NumberFormat('en-US').format(num);
+    return (
+      <span className={`${theme === 'white' ? 'text-gray-900' : 'text-white'}`}>
+        {formatted}
+    </span>
+    );
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE':
-        return 'bg-green-100 text-green-800';
-      case 'PAUSED':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'DELETED':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+    if (theme === 'white') {
+      switch (status) {
+        case 'ACTIVE':
+          return 'bg-green-100 text-green-800';
+        case 'PAUSED':
+          return 'bg-yellow-100 text-yellow-800';
+        case 'DELETED':
+          return 'bg-red-100 text-red-800';
+        default:
+          return 'bg-gray-100 text-gray-800';
+      }
+    } else {
+      switch (status) {
+        case 'ACTIVE':
+          return 'bg-green-900/20 text-green-400';
+        case 'PAUSED':
+          return 'bg-yellow-900/20 text-yellow-400';
+        case 'DELETED':
+          return 'bg-red-900/20 text-red-400';
+        default:
+          return 'bg-slate-700 text-slate-300';
+      }
     }
   };
 
@@ -61,7 +88,12 @@ const AdsetsTab: React.FC<AdsetsTabProps> = ({
       key: 'name',
       header: 'Ad Set Name',
       sortable: true,
-      searchable: true
+      searchable: true,
+      render: (value) => (
+        <span className={`${theme === 'white' ? 'text-gray-900' : 'text-white'}`}>
+          {value}
+        </span>
+      )
     },
     {
       key: 'status',
@@ -112,7 +144,11 @@ const AdsetsTab: React.FC<AdsetsTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => `${value.toFixed(2)}%`
+      render: (value) => (
+        <span className={`${theme === 'white' ? 'text-gray-900' : 'text-white'}`}>
+          {value != null ? `${value.toFixed(2)}%` : 'N/A'}
+        </span>
+      )
     },
     {
       key: 'cpc',
@@ -136,13 +172,22 @@ const AdsetsTab: React.FC<AdsetsTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => value.toFixed(2)
+      render: (value) => (
+        <span className={`${theme === 'white' ? 'text-gray-900' : 'text-white'}`}>
+          {value != null ? value.toFixed(2) : 'N/A'}
+        </span>
+      )
     },
     {
       key: 'campaignName',
       header: 'Campaign',
       sortable: true,
-      searchable: true
+      searchable: true,
+      render: (value) => (
+        <span className={`${theme === 'white' ? 'text-gray-900' : 'text-white'}`}>
+          {value}
+        </span>
+      )
     }
   ];
 
@@ -161,6 +206,7 @@ const AdsetsTab: React.FC<AdsetsTabProps> = ({
       isLoading={isLoading}
       title="Ad Sets"
       subtitle={`${adsetsData.length} ad sets`}
+      className={`${theme === 'white' ? 'text-gray-900' : 'text-white'}`}
       showExport={true}
       onExport={() => {/* Handle export */}}
       bulkActions={[

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { CreativeData } from './types';
 import FacebookImage from './FacebookImage';
 import { createOptimizedThumbnailUrl } from '../lib/facebook-utils';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 import { 
   createCreativeAnalysisSession,
   logCreativeAnalysis,
@@ -38,6 +39,7 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
   facebookAccessToken,
   adAccountId
 }) => {
+  const { theme } = useDashboardTheme();
   const [activeTab, setActiveTab] = useState<'overview' | 'trends' | 'breakdown' | 'campaigns' | 'ai'>('overview');
   const [selectedMetric, setSelectedMetric] = useState<'roas' | 'spend' | 'impressions' | 'clicks' | 'ctr'>('roas');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -749,10 +751,12 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-300 ${
                       activeTab === tab.id
                         ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        : theme === 'white'
+                          ? 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-slate-500'
                     }`}
                   >
                     {tab.label}
@@ -924,7 +928,11 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                     <select
                       value={selectedMetric}
                       onChange={(e) => setSelectedMetric(e.target.value as any)}
-                      className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-300 ${
+                        theme === 'white'
+                          ? 'border-gray-300 bg-white text-gray-900'
+                          : 'border-slate-600 bg-slate-700 text-gray-100'
+                      }`}
                     >
                       <option value="roas">ROAS</option>
                       <option value="spend">Spend</option>
@@ -967,11 +975,21 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-gray-200">
-                          <th className="text-left py-2 px-4 font-medium text-gray-900">Platform</th>
-                          <th className="text-right py-2 px-4 font-medium text-gray-900">Spend</th>
-                          <th className="text-right py-2 px-4 font-medium text-gray-900">Impressions</th>
-                          <th className="text-right py-2 px-4 font-medium text-gray-900">Clicks</th>
-                          <th className="text-right py-2 px-4 font-medium text-gray-900">ROAS</th>
+                          <th className={`text-left py-2 px-4 font-medium transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                          }`}>Platform</th>
+                          <th className={`text-right py-2 px-4 font-medium transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                          }`}>Spend</th>
+                          <th className={`text-right py-2 px-4 font-medium transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                          }`}>Impressions</th>
+                          <th className={`text-right py-2 px-4 font-medium transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                          }`}>Clicks</th>
+                          <th className={`text-right py-2 px-4 font-medium transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                          }`}>ROAS</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -999,13 +1017,27 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-gray-200">
-                          <th className="text-left py-2 px-4 font-medium text-gray-900">Campaign</th>
-                          <th className="text-left py-2 px-4 font-medium text-gray-900">Ad Set</th>
-                          <th className="text-right py-2 px-4 font-medium text-gray-900">Spend</th>
-                          <th className="text-right py-2 px-4 font-medium text-gray-900">Impressions</th>
-                          <th className="text-right py-2 px-4 font-medium text-gray-900">Clicks</th>
-                          <th className="text-right py-2 px-4 font-medium text-gray-900">ROAS</th>
-                          <th className="text-center py-2 px-4 font-medium text-gray-900">Status</th>
+                          <th className={`text-left py-2 px-4 font-medium transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                          }`}>Campaign</th>
+                          <th className={`text-left py-2 px-4 font-medium transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                          }`}>Ad Set</th>
+                          <th className={`text-right py-2 px-4 font-medium transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                          }`}>Spend</th>
+                          <th className={`text-right py-2 px-4 font-medium transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                          }`}>Impressions</th>
+                          <th className={`text-right py-2 px-4 font-medium transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                          }`}>Clicks</th>
+                          <th className={`text-right py-2 px-4 font-medium transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                          }`}>ROAS</th>
+                          <th className={`text-center py-2 px-4 font-medium transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                          }`}>Status</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1047,7 +1079,9 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                         <div className="text-2xl">🤖</div>
                         <div>
                           <h4 className="font-semibold text-blue-900">Current AI Score</h4>
-                          <p className="text-3xl font-bold text-blue-600">{aiScore}/10</p>
+                          <p className={`text-3xl font-bold transition-colors duration-300 ${
+                            theme === 'white' ? 'text-blue-600' : 'text-blue-400'
+                          }`}>{aiScore}/10</p>
                           <p className="text-sm text-blue-700">AI analysis completed</p>
                         </div>
                       </div>
@@ -1406,7 +1440,11 @@ const CreativeDetailModal: React.FC<CreativeDetailModalProps> = ({
                       <h4 className="text-lg font-medium text-gray-900">🔧 Debug & Troubleshooting</h4>
                       <button
                         onClick={() => setShowDebugPanel(!showDebugPanel)}
-                        className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                        className={`px-4 py-2 text-sm font-medium border rounded-md transition-colors duration-300 ${
+                  theme === 'white'
+                    ? 'text-gray-600 hover:text-gray-800 border-gray-300 hover:bg-gray-50 bg-white'
+                    : 'text-gray-300 hover:text-gray-100 border-slate-600 hover:bg-slate-600 bg-slate-700'
+                }`}
                       >
                         {showDebugPanel ? 'Hide Debug Panel' : 'Show Debug Panel'}
                       </button>

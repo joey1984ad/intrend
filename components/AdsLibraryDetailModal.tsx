@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { X, ExternalLink, Calendar, DollarSign, Eye, MapPin, Building, Play, Image as ImageIcon } from 'lucide-react';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
 interface AdsLibraryAd {
   id: string;
@@ -46,6 +47,7 @@ const AdsLibraryDetailModal: React.FC<AdsLibraryDetailModalProps> = ({
   isOpen,
   onClose
 }) => {
+  const { theme } = useDashboardTheme();
   if (!isOpen) return null;
 
   const formatCurrency = (amount: string) => {
@@ -126,16 +128,28 @@ const AdsLibraryDetailModal: React.FC<AdsLibraryDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className={`rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto transition-colors duration-300 ${
+        theme === 'white' ? 'bg-white' : 'bg-slate-800'
+      }`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className={`flex items-center justify-between p-6 border-b transition-colors duration-300 ${
+          theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+        }`}>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Ad Details</h2>
-            <p className="text-gray-600">Detailed information about this advertisement</p>
+            <h2 className={`text-2xl font-bold transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+            }`}>Ad Details</h2>
+            <p className={`transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-600' : 'text-gray-400'
+            }`}>Detailed information about this advertisement</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className={`p-2 rounded-lg transition-colors duration-300 ${
+              theme === 'white'
+                ? 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-slate-700'
+            }`}
           >
             <X className="h-6 w-6" />
           </button>

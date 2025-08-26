@@ -127,7 +127,9 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({ analysisData, onClose
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg border border-gray-200 max-w-4xl mx-auto">
+    <div className={`rounded-lg shadow-lg border max-w-4xl mx-auto transition-colors duration-300 ${
+      theme === 'white' ? 'bg-white border-gray-200' : 'bg-slate-800 border-slate-700'
+    }`}>
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-lg">
         <div className="flex items-center justify-between">
@@ -166,7 +168,9 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({ analysisData, onClose
       </div>
 
       {/* Navigation Tabs */}
-      <div className="border-b border-gray-200">
+      <div className={`border-b transition-colors duration-300 ${
+        theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+      }`}>
         <nav className="flex space-x-8 px-6">
           {[
             { id: 'overview', label: 'Overview', icon: Eye },
@@ -181,7 +185,9 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({ analysisData, onClose
               className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === id
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : theme === 'white'
+                    ? 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-slate-500'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -297,10 +303,16 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({ analysisData, onClose
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {analysisData.optimizationRecommendations?.map((rec, index) => (
-                  <div key={index} className="bg-white p-3 rounded border border-blue-200">
+                  <div key={index} className={`p-3 rounded border transition-colors duration-300 ${
+                    theme === 'white' 
+                      ? 'bg-white border-blue-200' 
+                      : 'bg-slate-700 border-blue-300'
+                  }`}>
                     <div className="flex items-start space-x-3">
                       <span className="text-blue-600 font-semibold text-sm">#{index + 1}</span>
-                      <p className="text-sm text-gray-700">{rec}</p>
+                      <p className={`text-sm transition-colors duration-300 ${
+                        theme === 'white' ? 'text-gray-700' : 'text-gray-200'
+                      }`}>{rec}</p>
                     </div>
                   </div>
                 ))}
@@ -472,17 +484,31 @@ const AIAnalysisPanel: React.FC<AIAnalysisPanelProps> = ({ analysisData, onClose
               </h3>
               <div className="space-y-4">
                 {analysisData.adVariations?.map((variation) => (
-                  <div key={variation.variation} className="bg-white p-4 rounded-lg border border-purple-200">
+                  <div key={variation.variation} className={`p-4 rounded-lg border transition-colors duration-300 ${
+                    theme === 'white' 
+                      ? 'bg-white border-purple-200' 
+                      : 'bg-slate-700 border-purple-300'
+                  }`}>
                     <div className="flex items-start justify-between mb-3">
-                      <h4 className="font-semibold text-purple-900">
+                      <h4 className={`font-semibold transition-colors duration-300 ${
+                        theme === 'white' ? 'text-purple-900' : 'text-purple-200'
+                      }`}>
                         Variation {variation.variation}
                       </h4>
-                      <span className="text-sm text-purple-600 bg-purple-100 px-2 py-1 rounded">
+                      <span className={`text-sm px-2 py-1 rounded transition-colors duration-300 ${
+                        theme === 'white' 
+                          ? 'text-purple-600 bg-purple-100' 
+                          : 'text-purple-300 bg-purple-900/20'
+                      }`}>
                         {variation.expectedImprovement}
                       </span>
                     </div>
-                    <p className="text-gray-700 mb-2">{variation.description}</p>
-                    <div className="text-sm text-gray-600">
+                    <p className={`mb-2 transition-colors duration-300 ${
+                      theme === 'white' ? 'text-gray-700' : 'text-gray-200'
+                    }`}>{variation.description}</p>
+                    <div className={`text-sm transition-colors duration-300 ${
+                      theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+                    }`}>
                       <span className="font-medium">Key Changes:</span> {variation.keyChanges}
                     </div>
                   </div>

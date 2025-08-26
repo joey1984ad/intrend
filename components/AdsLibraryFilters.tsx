@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Filter, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
 interface AdsLibraryFiltersProps {
   filters: {
@@ -20,6 +21,7 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
   filters,
   onFiltersChange
 }) => {
+  const { theme } = useDashboardTheme();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const regions = [
@@ -105,7 +107,11 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
       <div className="flex items-center justify-between">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors"
+          className={`flex items-center space-x-2 transition-colors duration-300 ${
+            theme === 'white' 
+              ? 'text-gray-700 hover:text-gray-900' 
+              : 'text-gray-300 hover:text-gray-100'
+          }`}
         >
           <Filter className="h-5 w-5" />
           <span className="font-medium">Filters</span>
@@ -119,7 +125,11 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center space-x-1 text-sm text-gray-500 hover:text-gray-700"
+            className={`flex items-center space-x-1 text-sm transition-colors duration-300 ${
+              theme === 'white' 
+                ? 'text-gray-500 hover:text-gray-700' 
+                : 'text-gray-400 hover:text-gray-200'
+            }`}
           >
             <X className="h-4 w-4" />
             <span>Clear All</span>
@@ -128,17 +138,27 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
       </div>
 
       {isExpanded && (
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div className={`mt-4 p-4 rounded-lg border transition-colors duration-300 ${
+          theme === 'white' 
+            ? 'bg-gray-50 border-gray-200' 
+            : 'bg-slate-700 border-slate-600'
+        }`}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Region Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-700' : 'text-gray-200'
+              }`}>
                 Region
               </label>
               <select
                 value={filters.region}
                 onChange={(e) => handleFilterChange('region', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-300 ${
+                  theme === 'white'
+                    ? 'border-gray-300 bg-white text-gray-900'
+                    : 'border-slate-600 bg-slate-700 text-gray-100'
+                }`}
               >
                 {regions.map((region) => (
                   <option key={region.value} value={region.value}>
@@ -150,13 +170,19 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
 
             {/* Media Type Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-700' : 'text-gray-200'
+              }`}>
                 Media Type
               </label>
               <select
                 value={filters.mediaType}
                 onChange={(e) => handleFilterChange('mediaType', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-300 ${
+                  theme === 'white'
+                    ? 'border-gray-300 bg-white text-gray-900'
+                    : 'border-slate-600 bg-slate-700 text-gray-100'
+                }`}
               >
                 {mediaTypes.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -168,13 +194,19 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
 
             {/* Ad Type Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-700' : 'text-gray-200'
+              }`}>
                 Ad Type
               </label>
               <select
                 value={filters.adType}
                 onChange={(e) => handleFilterChange('adType', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-300 ${
+                  theme === 'white'
+                    ? 'border-gray-300 bg-white text-gray-900'
+                    : 'border-slate-600 bg-slate-700 text-gray-100'
+                }`}
               >
                 {adTypes.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -186,13 +218,19 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
 
             {/* Date Range Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-700' : 'text-gray-200'
+              }`}>
                 Date Range
               </label>
               <select
                 value={filters.dateRange}
                 onChange={(e) => handleFilterChange('dateRange', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-300 ${
+                  theme === 'white'
+                    ? 'border-gray-300 bg-white text-gray-900'
+                    : 'border-slate-600 bg-slate-700 text-gray-100'
+                }`}
               >
                 {dateRanges.map((range) => (
                   <option key={range.value} value={range.value}>
@@ -204,7 +242,9 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
 
             {/* Spend Range Filters */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-700' : 'text-gray-200'
+              }`}>
                 Min Spend ($)
               </label>
               <input
@@ -212,12 +252,18 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
                 value={filters.minSpend}
                 onChange={(e) => handleFilterChange('minSpend', e.target.value)}
                 placeholder="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-300 ${
+                  theme === 'white'
+                    ? 'border-gray-300 bg-white text-gray-900'
+                    : 'border-slate-600 bg-slate-700 text-gray-100'
+                }`}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-700' : 'text-gray-200'
+              }`}>
                 Max Spend ($)
               </label>
               <input
@@ -225,25 +271,33 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
                 value={filters.maxSpend}
                 onChange={(e) => handleFilterChange('maxSpend', e.target.value)}
                 placeholder="10000"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-300 ${
+                  theme === 'white'
+                    ? 'border-gray-300 bg-white text-gray-900'
+                    : 'border-slate-600 bg-slate-700 text-gray-100'
+                }`}
               />
             </div>
           </div>
 
           {/* Publisher Platforms */}
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Publisher Platforms
-            </label>
+                          <label className={`block text-sm font-medium mb-2 transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-700' : 'text-gray-200'
+              }`}>
+                Publisher Platforms
+              </label>
             <div className="flex flex-wrap gap-2">
               {publisherPlatforms.map((platform) => (
                 <button
                   key={platform.value}
                   onClick={() => handlePlatformToggle(platform.value)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors duration-300 ${
                     filters.publisherPlatforms.includes(platform.value)
                       ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                      : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
+                      : theme === 'white'
+                        ? 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
+                        : 'bg-slate-600 text-gray-200 border border-slate-500 hover:bg-slate-500'
                   }`}
                 >
                   {platform.label}
@@ -254,9 +308,13 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
 
           {/* Active Filters Summary */}
           {hasActiveFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className={`mt-4 pt-4 border-t transition-colors duration-300 ${
+              theme === 'white' ? 'border-gray-200' : 'border-slate-600'
+            }`}>
               <div className="flex flex-wrap gap-2">
-                <span className="text-sm text-gray-600">Active filters:</span>
+                <span className={`text-sm transition-colors duration-300 ${
+                  theme === 'white' ? 'text-gray-600' : 'text-gray-400'
+                }`}>Active filters:</span>
                 {filters.region !== 'US' && (
                   <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                     Region: {regions.find(r => r.value === filters.region)?.label}

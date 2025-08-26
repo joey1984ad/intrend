@@ -147,7 +147,11 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
                   <select
                     value={selectedDateRange}
                     onChange={(e) => setSelectedDateRange(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    className={`border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all transition-colors duration-300 ${
+                      theme === 'white'
+                        ? 'border-gray-300 bg-white text-gray-900'
+                        : 'border-slate-600 bg-slate-700 text-gray-100'
+                    }`}
                   >
                     <option value="last_7d">Last 7 Days</option>
                     <option value="last_30d">Last 30 Days</option>
@@ -164,7 +168,11 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
                     min={0}
                     value={cacheTtlHours}
                     onChange={(e) => setCacheTtlHours?.(Math.max(0, Number(e.target.value)))}
-                    className="w-20 border border-gray-300 rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    className={`w-20 border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all transition-colors duration-300 ${
+                      theme === 'white'
+                        ? 'border-gray-300 bg-white text-gray-900'
+                        : 'border-slate-600 bg-slate-700 text-gray-100'
+                    }`}
                   />
                 </div>
                 
@@ -183,7 +191,11 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
                 {/* Force Refresh */}
                 <button
                   onClick={onRefreshNow}
-                  className="px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-100 transition-all duration-200"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all duration-200 transition-colors duration-300 ${
+                    theme === 'white'
+                      ? 'border-gray-300 text-gray-700 hover:bg-gray-100 bg-white'
+                      : 'border-slate-600 text-gray-200 hover:bg-slate-600 bg-slate-700'
+                  }`}
                   title="Refresh now (bypass cache)"
                 >
                   Refresh
@@ -192,11 +204,17 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
             )}
             
             {/* Total Spend Display */}
-            <div className="text-right pl-6 border-l border-gray-200">
-              <p className="text-3xl font-bold text-gray-900">
+            <div className={`text-right pl-6 border-l transition-colors duration-300 ${
+              theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+            }`}>
+              <p className={`text-3xl font-bold transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+              }`}>
                 ${currentAccountInfo?.totalSpent ? parseFloat(currentAccountInfo.totalSpent).toFixed(2) : currentAccount?.spend || '$0.00'}
               </p>
-              <p className="text-sm text-gray-600">
+              <p className={`text-sm transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-600' : 'text-gray-400'
+              }`}>
                 Total spend ({selectedDateRange === 'last_7d' ? 'Last 7 Days' : 
                                selectedDateRange === 'last_30d' ? 'Last 30 Days' : 
                                selectedDateRange === 'last_90d' ? 'Last 90 Days' : 

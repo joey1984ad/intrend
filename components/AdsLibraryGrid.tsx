@@ -3,6 +3,7 @@
 import React from 'react';
 import AdsLibraryCard from './AdsLibraryCard';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
 interface AdsLibraryAd {
   id: string;
@@ -58,12 +59,17 @@ const AdsLibraryGrid: React.FC<AdsLibraryGridProps> = ({
   pagination,
   onPageChange
 }) => {
+  const { theme } = useDashboardTheme();
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow p-8">
+      <div className={`rounded-lg shadow p-8 transition-colors duration-300 ${
+        theme === 'white' ? 'bg-white' : 'bg-slate-800'
+      }`}>
         <div className="flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <span className="ml-3 text-lg text-gray-600">Searching Facebook Ads Library...</span>
+          <span className={`ml-3 text-lg transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+          }`}>Searching Facebook Ads Library...</span>
         </div>
       </div>
     );
@@ -71,11 +77,17 @@ const AdsLibraryGrid: React.FC<AdsLibraryGridProps> = ({
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow p-8">
+      <div className={`rounded-lg shadow p-8 transition-colors duration-300 ${
+        theme === 'white' ? 'bg-white' : 'bg-slate-800'
+      }`}>
         <div className="text-center">
           <div className="text-red-500 text-lg font-medium mb-2">Search Error</div>
-          <div className="text-gray-600">{error}</div>
-          <div className="mt-4 text-sm text-gray-500">
+          <div className={`transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+          }`}>{error}</div>
+          <div className={`mt-4 text-sm transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+          }`}>
             Please check your Facebook connection and try again.
           </div>
         </div>
@@ -85,10 +97,16 @@ const AdsLibraryGrid: React.FC<AdsLibraryGridProps> = ({
 
   if (ads.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-8">
+      <div className={`rounded-lg shadow p-8 transition-colors duration-300 ${
+        theme === 'white' ? 'bg-white' : 'bg-slate-800'
+      }`}>
         <div className="text-center">
-          <div className="text-gray-500 text-lg font-medium mb-2">No Ads Found</div>
-          <div className="text-gray-600">
+          <div className={`text-lg font-medium mb-2 transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+          }`}>No Ads Found</div>
+          <div className={`transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+          }`}>
             Try adjusting your search terms or filters to find more results.
           </div>
         </div>
@@ -100,14 +118,22 @@ const AdsLibraryGrid: React.FC<AdsLibraryGridProps> = ({
   const endResult = Math.min(pagination.currentPage * pagination.pageSize, pagination.totalResults);
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className={`rounded-lg shadow transition-colors duration-300 ${
+      theme === 'white' ? 'bg-white' : 'bg-slate-800'
+    }`}>
       {/* Results Header */}
-      <div className="px-6 py-4 border-b border-gray-200">
+      <div className={`px-6 py-4 border-b transition-colors duration-300 ${
+        theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+      }`}>
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">
+          <div className={`text-sm transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+          }`}>
             Showing {startResult.toLocaleString()} - {endResult.toLocaleString()} of {pagination.totalResults.toLocaleString()} results
           </div>
-          <div className="text-sm text-gray-500">
+          <div className={`text-sm transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+          }`}>
             Page {pagination.currentPage} of {pagination.totalPages}
           </div>
         </div>
@@ -128,9 +154,13 @@ const AdsLibraryGrid: React.FC<AdsLibraryGridProps> = ({
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="px-6 py-4 border-t border-gray-200">
+        <div className={`px-6 py-4 border-t transition-colors duration-300 ${
+          theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+        }`}>
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
+            <div className={`text-sm transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+            }`}>
               {startResult.toLocaleString()} - {endResult.toLocaleString()} of {pagination.totalResults.toLocaleString()} results
             </div>
             
@@ -138,7 +168,11 @@ const AdsLibraryGrid: React.FC<AdsLibraryGridProps> = ({
               <button
                 onClick={() => onPageChange(pagination.currentPage - 1)}
                 disabled={pagination.currentPage <= 1}
-                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`px-3 py-2 text-sm font-medium rounded-md border disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300 ${
+                  theme === 'white'
+                    ? 'text-gray-500 bg-white border-gray-300 hover:bg-gray-50'
+                    : 'text-gray-300 bg-slate-700 border-slate-600 hover:bg-slate-600'
+                }`}
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -160,10 +194,12 @@ const AdsLibraryGrid: React.FC<AdsLibraryGridProps> = ({
                     <button
                       key={pageNum}
                       onClick={() => onPageChange(pageNum)}
-                      className={`px-3 py-2 text-sm font-medium rounded-md ${
+                      className={`px-3 py-2 text-sm font-medium rounded-md transition-colors duration-300 ${
                         pageNum === pagination.currentPage
                           ? 'bg-blue-600 text-white'
-                          : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                          : theme === 'white'
+                            ? 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                            : 'text-gray-300 bg-slate-700 border border-slate-600 hover:bg-slate-600'
                       }`}
                     >
                       {pageNum}
@@ -175,7 +211,11 @@ const AdsLibraryGrid: React.FC<AdsLibraryGridProps> = ({
               <button
                 onClick={() => onPageChange(pagination.currentPage + 1)}
                 disabled={pagination.currentPage >= pagination.totalPages}
-                className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`px-3 py-2 text-sm font-medium rounded-md border disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300 ${
+                  theme === 'white'
+                    ? 'text-gray-500 bg-white border-gray-300 hover:bg-gray-50'
+                    : 'text-gray-300 bg-slate-700 border-slate-600 hover:bg-slate-600'
+                }`}
               >
                 <ChevronRight className="h-4 w-4" />
               </button>

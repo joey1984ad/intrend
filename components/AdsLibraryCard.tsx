@@ -117,7 +117,11 @@ const AdsLibraryCard: React.FC<AdsLibraryCardProps> = ({ ad, onClick }) => {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+    <div className={`border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer ${
+      theme === 'white' 
+        ? 'bg-white border-gray-200' 
+        : 'bg-slate-800 border-slate-700'
+    }`}>
       {/* Media Preview */}
       <div className="relative aspect-video bg-gray-100">
         {ad.imageUrl || ad.thumbnailUrl ? (
@@ -159,7 +163,9 @@ const AdsLibraryCard: React.FC<AdsLibraryCardProps> = ({ ad, onClick }) => {
       <div className="p-4 space-y-3">
         {/* Page Name */}
         <div className="flex items-start justify-between">
-          <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">
+          <h3 className={`text-sm font-semibold line-clamp-2 transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+          }`}>
             {ad.pageName}
           </h3>
           <button
@@ -176,27 +182,35 @@ const AdsLibraryCard: React.FC<AdsLibraryCardProps> = ({ ad, onClick }) => {
 
         {/* Ad Title */}
         {ad.adCreativeLinkTitle && (
-          <p className="text-sm font-medium text-gray-800 line-clamp-2">
+          <p className={`text-sm font-medium line-clamp-2 transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-800' : 'text-gray-200'
+          }`}>
             {ad.adCreativeLinkTitle}
           </p>
         )}
 
         {/* Ad Description */}
         {ad.adCreativeBody && (
-          <p className="text-xs text-gray-600 line-clamp-3">
+          <p className={`text-xs line-clamp-3 transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-600' : 'text-gray-400'
+          }`}>
             {ad.adCreativeBody}
           </p>
         )}
 
         {/* Ad Caption */}
         {ad.adCreativeLinkCaption && (
-          <p className="text-xs text-gray-500 line-clamp-2">
+          <p className={`text-xs line-clamp-2 transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-500' : 'text-gray-500'
+          }`}>
             {ad.adCreativeLinkCaption}
           </p>
         )}
 
         {/* Metrics Row */}
-        <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className={`flex items-center justify-between text-xs transition-colors duration-300 ${
+          theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+        }`}>
           <div className="flex items-center space-x-1">
             <DollarSign className="h-3 w-3" />
             <span>

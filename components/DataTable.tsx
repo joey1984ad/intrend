@@ -365,12 +365,14 @@ export function DataTable<T extends WithId>({
                 <button
                   key={action.action}
                   onClick={() => onBulkAction(action.action)}
-                  className={`px-3 py-2 text-sm font-medium rounded-md ${
+                  className={`px-3 py-2 text-sm font-medium rounded-md transition-colors duration-300 ${
                     action.variant === 'danger'
                       ? 'text-red-700 bg-red-100 border border-red-300 hover:bg-red-200'
                       : action.variant === 'primary'
                       ? 'text-white bg-blue-600 border border-transparent hover:bg-blue-700'
-                      : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                      : theme === 'white'
+                        ? 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                        : 'text-gray-200 bg-slate-700 border border-slate-600 hover:bg-slate-600'
                   }`}
                 >
                   {action.label}
@@ -383,37 +385,57 @@ export function DataTable<T extends WithId>({
 
       {/* Pagination */}
       {pagination && (
-        <div className="px-6 py-3 border-t border-gray-200 bg-gray-50">
+        <div className={`px-6 py-3 border-t transition-colors duration-300 ${
+          theme === 'white' ? 'border-gray-200 bg-gray-50' : 'border-slate-700 bg-slate-700'
+        }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-700">Show</span>
+              <span className={`text-sm transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-700' : 'text-gray-300'
+              }`}>Show</span>
               <select
                 value={pagination.pageSize}
                 onChange={(e) => pagination.onPageSizeChange(Number(e.target.value))}
-                className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                className={`border rounded-md px-2 py-1 text-sm transition-colors duration-300 ${
+                  theme === 'white'
+                    ? 'border-gray-300 bg-white text-gray-900'
+                    : 'border-slate-600 bg-slate-700 text-gray-100'
+                }`}
               >
                 <option value={10}>10</option>
                 <option value={25}>25</option>
                 <option value={50}>50</option>
                 <option value={100}>100</option>
               </select>
-              <span className="text-sm text-gray-700">entries</span>
+              <span className={`text-sm transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-700' : 'text-gray-300'
+              }`}>entries</span>
             </div>
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
                 disabled={pagination.currentPage === 1}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300 ${
+                  theme === 'white'
+                    ? 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                    : 'border-slate-600 bg-slate-700 text-gray-200 hover:bg-slate-600'
+                }`}
               >
                 Previous
               </button>
-              <span className="text-sm text-gray-700">
+              <span className={`text-sm transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-700' : 'text-gray-300'
+              }`}>
                 Page {pagination.currentPage} of {pagination.totalPages}
               </span>
               <button
                 onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
                 disabled={pagination.currentPage === pagination.totalPages}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300 ${
+                  theme === 'white'
+                    ? 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                    : 'border-slate-700 bg-slate-700 text-gray-200 hover:bg-slate-600'
+                }`}
               >
                 Next
               </button>

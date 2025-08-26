@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Filter, Download, RefreshCw, MoreVertical } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
 interface DemographicsTabProps {
   demographicsData: any[];
@@ -28,6 +29,7 @@ const DemographicsTab: React.FC<DemographicsTabProps> = ({
   handleBulkAction
 }) => {
   const [showFilters, setShowFilters] = useState(false);
+  const { theme } = useDashboardTheme();
 
   const filteredData = demographicsData.filter(demo =>
     demo.age.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -119,8 +121,12 @@ const DemographicsTab: React.FC<DemographicsTabProps> = ({
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Age Group Performance */}
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance by Age Group</h3>
+        <div className={`p-6 rounded-lg shadow-sm transition-colors duration-300 ${
+          theme === 'white' ? 'bg-white' : 'bg-slate-800'
+        }`}>
+          <h3 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+          }`}>Performance by Age Group</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={ageGroupData}>
               <XAxis dataKey="age" />
@@ -132,8 +138,12 @@ const DemographicsTab: React.FC<DemographicsTabProps> = ({
         </div>
 
         {/* Gender Distribution */}
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Gender Distribution</h3>
+        <div className={`p-6 rounded-lg shadow-sm transition-colors duration-300 ${
+          theme === 'white' ? 'bg-white' : 'bg-slate-800'
+        }`}>
+          <h3 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+          }`}>Gender Distribution</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -166,19 +176,31 @@ const DemographicsTab: React.FC<DemographicsTabProps> = ({
               placeholder="Search demographics..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`pl-10 pr-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-300 ${
+                theme === 'white'
+                  ? 'border-gray-300 bg-white text-gray-900'
+                  : 'border-slate-600 bg-slate-700 text-gray-100'
+              }`}
             />
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-300 ${
+              theme === 'white'
+                ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                : 'text-gray-200 bg-slate-700 border-slate-600 hover:bg-slate-600'
+            }`}
           >
             <Filter className="w-4 h-4" />
             <span>Filters</span>
           </button>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+          <button className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-300 ${
+            theme === 'white'
+              ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+              : 'text-gray-200 bg-slate-700 border-slate-600 hover:bg-slate-600'
+          }`}>
             <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
           </button>
@@ -186,10 +208,14 @@ const DemographicsTab: React.FC<DemographicsTabProps> = ({
       </div>
 
       {/* Demographics Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className={`rounded-lg shadow overflow-hidden transition-colors duration-300 ${
+        theme === 'white' ? 'bg-white' : 'bg-slate-800'
+      }`}>
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="bg-gray-50">
+            <thead className={`transition-colors duration-300 ${
+              theme === 'white' ? 'bg-gray-50' : 'bg-slate-700'
+            }`}>
               <tr>
                 <th className="px-6 py-3 text-left">
                   <input
@@ -286,7 +312,9 @@ const DemographicsTab: React.FC<DemographicsTabProps> = ({
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white">
+            <tbody className={`transition-colors duration-300 ${
+              theme === 'white' ? 'bg-white' : 'bg-slate-800'
+            }`}>
               {isLoading ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-4 text-center text-gray-500">

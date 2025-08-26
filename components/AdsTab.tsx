@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Filter, Download, RefreshCw, MoreVertical } from 'lucide-react';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
 interface AdsTabProps {
   adsData: any[];
@@ -26,6 +27,7 @@ const AdsTab: React.FC<AdsTabProps> = ({
   handleSelectItem,
   handleBulkAction
 }) => {
+  const { theme } = useDashboardTheme();
   const [showFilters, setShowFilters] = useState(false);
 
   const filteredData = adsData.filter(ad =>
@@ -102,7 +104,11 @@ const AdsTab: React.FC<AdsTabProps> = ({
           <button
             onClick={() => handleBulkAction('pause')}
             disabled={selectedItems.length === 0}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`px-4 py-2 text-sm font-medium rounded-md border disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300 ${
+              theme === 'white'
+                ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                : 'text-gray-200 bg-slate-700 border-slate-600 hover:bg-slate-600'
+            }`}
           >
             Pause Selected
           </button>
@@ -126,23 +132,39 @@ const AdsTab: React.FC<AdsTabProps> = ({
               placeholder="Search ads..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`pl-10 pr-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-300 ${
+                theme === 'white'
+                  ? 'border-gray-300 bg-white text-gray-900'
+                  : 'border-slate-600 bg-slate-700 text-gray-100'
+              }`}
             />
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-300 ${
+              theme === 'white'
+                ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                : 'text-gray-200 bg-slate-700 border-slate-600 hover:bg-slate-600'
+            }`}
           >
             <Filter className="w-4 h-4" />
             <span>Filters</span>
           </button>
         </div>
         <div className="flex items-center space-x-3">
-           <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+           <button className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-300 ${
+             theme === 'white'
+               ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+               : 'text-gray-200 bg-slate-700 border-slate-600 hover:bg-slate-600'
+           }`}>
             <Download className="w-4 h-4" />
             <span>Export</span>
           </button>
-          <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+          <button className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md border transition-colors duration-300 ${
+            theme === 'white'
+              ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+              : 'text-gray-200 bg-slate-700 border-slate-600 hover:bg-slate-600'
+          }`}>
             <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
           </button>
@@ -150,10 +172,16 @@ const AdsTab: React.FC<AdsTabProps> = ({
       </div>
 
       {/* Ads Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className={`rounded-lg shadow overflow-hidden transition-colors duration-300 ${
+        theme === 'white' ? 'bg-white' : 'bg-slate-800'
+      }`}>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className={`min-w-full divide-y transition-colors duration-300 ${
+            theme === 'white' ? 'divide-gray-200' : 'divide-slate-700'
+          }`}>
+            <thead className={`transition-colors duration-300 ${
+              theme === 'white' ? 'bg-gray-50' : 'bg-slate-700'
+            }`}>
               <tr>
                 <th className="px-6 py-3 text-left">
                   <input
@@ -272,7 +300,9 @@ const AdsTab: React.FC<AdsTabProps> = ({
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className={`divide-y transition-colors duration-300 ${
+              theme === 'white' ? 'bg-white divide-gray-200' : 'bg-slate-800 divide-slate-700'
+            }`}>
               {isLoading ? (
                 <tr>
                   <td colSpan={11} className="px-6 py-4 text-center text-gray-500">

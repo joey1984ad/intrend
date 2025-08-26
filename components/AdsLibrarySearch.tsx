@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Search, X } from 'lucide-react';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
 interface AdsLibrarySearchProps {
   searchTerm: string;
@@ -14,6 +15,7 @@ const AdsLibrarySearch: React.FC<AdsLibrarySearchProps> = ({
   onSearch,
   isLoading
 }) => {
+  const { theme } = useDashboardTheme();
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -47,14 +49,22 @@ const AdsLibrarySearch: React.FC<AdsLibrarySearchProps> = ({
             onChange={(e) => setLocalSearchTerm(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Search for ads, brands, or keywords..."
-            className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
+            className={`block w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-300 ${
+              theme === 'white'
+                ? 'border-gray-300 text-gray-900 placeholder-gray-500 bg-white'
+                : 'border-slate-600 text-gray-100 placeholder-gray-400 bg-slate-700'
+            }`}
             disabled={isLoading}
           />
           {localSearchTerm && (
             <button
               type="button"
               onClick={handleClear}
-              className="absolute inset-y-0 right-16 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+              className={`absolute inset-y-0 right-16 flex items-center pr-3 transition-colors duration-300 ${
+                theme === 'white'
+                  ? 'text-gray-400 hover:text-gray-600'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
             >
               <X className="h-5 w-5" />
             </button>
@@ -75,7 +85,9 @@ const AdsLibrarySearch: React.FC<AdsLibrarySearchProps> = ({
 
       {/* Search Suggestions */}
       <div className="mt-3 flex flex-wrap gap-2">
-        <span className="text-sm text-gray-500">Popular searches:</span>
+        <span className={`text-sm transition-colors duration-300 ${
+          theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+        }`}>Popular searches:</span>
         {['Nike', 'Apple', 'McDonald\'s', 'Coca-Cola', 'Tesla'].map((suggestion) => (
           <button
             key={suggestion}
@@ -83,7 +95,11 @@ const AdsLibrarySearch: React.FC<AdsLibrarySearchProps> = ({
               setLocalSearchTerm(suggestion);
               onSearch(suggestion);
             }}
-            className="text-sm text-blue-600 hover:text-blue-800 hover:underline px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+            className={`text-sm text-blue-600 hover:text-blue-800 hover:underline px-2 py-1 rounded transition-colors duration-300 ${
+              theme === 'white'
+                ? 'hover:bg-blue-50'
+                : 'hover:bg-blue-900/20'
+            }`}
           >
             {suggestion}
           </button>
@@ -91,7 +107,9 @@ const AdsLibrarySearch: React.FC<AdsLibrarySearchProps> = ({
       </div>
 
       {/* Search Tips */}
-      <div className="mt-3 text-sm text-gray-600">
+      <div className={`mt-3 text-sm transition-colors duration-300 ${
+        theme === 'white' ? 'text-gray-600' : 'text-gray-400'
+      }`}>
         <p>
           💡 <strong>Search tips:</strong> Use quotes for exact phrases, add "political" for political ads, 
           or specify regions like "US" or "EU" for targeted results.

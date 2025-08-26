@@ -4,6 +4,7 @@ import React from 'react';
 import { CreativeData } from './types';
 import FacebookImage from './FacebookImage';
 import { createOptimizedThumbnailUrl } from '../lib/facebook-utils';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
 interface CreativeComparisonModalProps {
   creatives: CreativeData[];
@@ -21,6 +22,7 @@ const CreativeComparisonModal: React.FC<CreativeComparisonModalProps> = ({
   onClose,
   facebookAccessToken
 }) => {
+  const { theme } = useDashboardTheme();
   if (creatives.length < 2) {
     return null;
   }
@@ -68,12 +70,20 @@ const CreativeComparisonModal: React.FC<CreativeComparisonModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-hidden">
+      <div className={`rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-hidden transition-colors duration-300 ${
+        theme === 'white' ? 'bg-white' : 'bg-slate-800'
+      }`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className={`flex items-center justify-between p-6 border-b transition-colors duration-300 ${
+          theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+        }`}>
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Creative Comparison</h2>
-            <p className="text-sm text-gray-600">Comparing {creatives.length} creatives</p>
+            <h2 className={`text-xl font-semibold transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+            }`}>Creative Comparison</h2>
+            <p className={`text-sm transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-600' : 'text-gray-400'
+            }`}>Comparing {creatives.length} creatives</p>
           </div>
           <button
             onClick={onClose}
@@ -187,9 +197,13 @@ const CreativeComparisonModal: React.FC<CreativeComparisonModalProps> = ({
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 px-4 font-medium text-gray-900">Metric</th>
+                      <th className={`text-left py-2 px-4 font-medium transition-colors duration-300 ${
+                        theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                      }`}>Metric</th>
                       {creatives.map((creative) => (
-                        <th key={creative.id} className="text-center py-2 px-4 font-medium text-gray-900">
+                        <th key={creative.id} className={`text-center py-2 px-4 font-medium transition-colors duration-300 ${
+                          theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                        }`}>
                           {creative.name}
                         </th>
                       ))}
@@ -267,7 +281,9 @@ const CreativeComparisonModal: React.FC<CreativeComparisonModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end p-6 border-t border-gray-200">
+        <div className={`flex items-center justify-end p-6 border-t transition-colors duration-300 ${
+          theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+        }`}>
           <button
             onClick={onClose}
             className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors"

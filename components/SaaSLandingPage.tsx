@@ -70,6 +70,8 @@ const SaaSLandingPage: React.FC = () => {
       name: 'Professional',
       price: '$10',
       period: '/month',
+      annualPrice: '$100',
+      annualPeriod: '/year',
       description: 'Ideal for growing agencies and businesses',
       features: [
         'Up to 10 ad accounts',
@@ -86,6 +88,8 @@ const SaaSLandingPage: React.FC = () => {
       name: 'Enterprise',
       price: '$20',
       period: '/month',
+      annualPrice: '$200',
+      annualPeriod: '/year',
       description: 'For large agencies and enterprise clients',
       features: [
         'Unlimited ad accounts',
@@ -230,8 +234,22 @@ const SaaSLandingPage: React.FC = () => {
                   <div className="mb-4">
                     <span className="text-4xl font-bold text-white">{plan.price}</span>
                     <span className="text-blue-200">{plan.period}</span>
+                    {plan.annualPrice && (
+                      <div className="mt-2">
+                        <span className="text-2xl font-bold text-green-400">{plan.annualPrice}</span>
+                        <span className="text-green-300 text-sm">{plan.annualPeriod}</span>
+                        <div className="text-xs text-green-300 mt-1">Save 17% with annual billing</div>
+                      </div>
+                    )}
                   </div>
                   <p className="text-blue-200">{plan.description}</p>
+                  {plan.annualPrice && (
+                    <div className="mt-2 text-center">
+                      <span className="inline-block bg-green-500/20 text-green-300 text-xs px-2 py-1 rounded-full border border-green-500/30">
+                        💰 Save 17% with annual billing
+                      </span>
+                    </div>
+                  )}
                 </div>
                 
                 <ul className="space-y-3 mb-8">

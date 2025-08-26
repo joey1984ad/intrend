@@ -66,13 +66,19 @@ const MetricsGrid: React.FC<MetricsGridProps> = ({ metrics }) => {
             
             {/* Content */}
             <div className="relative z-10">
-              <h3 className={`text-sm font-medium ${card.textColor} mb-2`}>
+              <h3 className={`text-sm font-medium transition-colors duration-300 ${
+                theme === 'white' ? card.textColor : 'text-white'
+              } mb-2`}>
                 {card.title}
               </h3>
-              <div className={`text-3xl font-bold ${card.valueColor} mb-2`}>
+              <div className={`text-3xl font-bold transition-colors duration-300 ${
+                theme === 'white' ? card.valueColor : 'text-white'
+              } mb-2`}>
                 {card.value}
               </div>
-              <p className={`text-sm ${card.textColor} opacity-90`}>
+              <p className={`text-sm transition-colors duration-300 ${
+                theme === 'white' ? card.textColor : 'text-white'
+              } opacity-90`}>
                 {card.description}
               </p>
             </div>

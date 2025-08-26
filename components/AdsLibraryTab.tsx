@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 import AdsLibrarySearch from './AdsLibrarySearch';
 import AdsLibraryFilters from './AdsLibraryFilters';
 import AdsLibraryGrid from './AdsLibraryGrid';
@@ -55,6 +56,7 @@ const AdsLibraryTab: React.FC<AdsLibraryTabProps> = ({
   dateRange,
   selectedAdAccounts
 }) => {
+  const { theme } = useDashboardTheme();
   const [ads, setAds] = useState<AdsLibraryAd[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -220,10 +222,16 @@ const AdsLibraryTab: React.FC<AdsLibraryTabProps> = ({
 
   if (!facebookAccessToken) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className={`rounded-lg shadow p-6 transition-colors duration-300 ${
+        theme === 'white' ? 'bg-white' : 'bg-slate-800'
+      }`}>
         <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Connect Facebook Account</h3>
-          <p className="text-gray-600 mb-4">
+          <h3 className={`text-lg font-medium mb-2 transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+          }`}>Connect Facebook Account</h3>
+          <p className={`mb-4 transition-colors duration-300 ${
+            theme === 'white' ? 'text-gray-600' : 'text-gray-400'
+          }`}>
             Please connect your Facebook account to access the Ads Library
           </p>
         </div>
@@ -234,11 +242,17 @@ const AdsLibraryTab: React.FC<AdsLibraryTabProps> = ({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className={`rounded-lg shadow p-6 transition-colors duration-300 ${
+        theme === 'white' ? 'bg-white' : 'bg-slate-800'
+      }`}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Facebook Ads Library</h2>
-            <p className="text-gray-600">
+            <h2 className={`text-2xl font-bold transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+            }`}>Facebook Ads Library</h2>
+            <p className={`transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-600' : 'text-gray-400'
+            }`}>
               Search and analyze ads from Facebook's public Ads Library
             </p>
           </div>
@@ -261,7 +275,9 @@ const AdsLibraryTab: React.FC<AdsLibraryTabProps> = ({
         {/* Search and Filters */}
         <div className="mb-4">
           {/* Connection Status Indicator */}
-          <div className="flex items-center gap-2 mb-3 p-3 rounded-md text-sm">
+          <div className={`flex items-center gap-2 mb-3 p-3 rounded-md text-sm transition-colors duration-300 ${
+            theme === 'white' ? 'bg-gray-50' : 'bg-slate-700'
+          }`}>
             {connectionStatus === 'checking' && (
               <div className="flex items-center gap-2 text-blue-600">
                 <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>

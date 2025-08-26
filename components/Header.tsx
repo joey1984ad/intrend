@@ -69,9 +69,11 @@ const Header: React.FC<HeaderProps> = ({
             {/* Logo and Brand */}
             <div className="flex items-center space-x-8">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  <div className="w-4 h-4 bg-white rounded-sm"></div>
-                </div>
+                                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                   <div className={`w-4 h-4 rounded-sm transition-colors duration-300 ${
+                     theme === 'white' ? 'bg-white' : 'bg-slate-200'
+                   }`}></div>
+                 </div>
                 <span className={`text-xl font-bold transition-colors duration-300 ${
                   theme === 'white' ? 'text-gray-900' : 'text-gray-100'
                 }`}>Intrend</span>
@@ -120,21 +122,37 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
                 </button>
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50">
-                    <div className="p-4 border-b border-gray-200">
-                      <h3 className="font-semibold text-gray-900">Notifications</h3>
+                  <div className={`absolute right-0 mt-2 w-80 rounded-xl shadow-xl border z-50 transition-colors duration-300 ${
+                    theme === 'white' 
+                      ? 'bg-white border-gray-200' 
+                      : 'bg-slate-800 border-slate-700'
+                  }`}>
+                    <div className={`p-4 border-b transition-colors duration-300 ${
+                      theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+                    }`}>
+                      <h3 className={`font-semibold transition-colors duration-300 ${
+                        theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                      }`}>Notifications</h3>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
                       {notifications.map(notification => (
-                        <div key={notification.id} className="p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <div key={notification.id} className={`p-4 border-b last:border-b-0 transition-colors duration-300 ${
+                          theme === 'white'
+                            ? 'border-gray-100 hover:bg-gray-50'
+                            : 'border-slate-700 hover:bg-slate-700'
+                        }`}>
                           <div className="flex items-start">
                             <div className={`w-2 h-2 rounded-full mt-2 mr-3 ${
                               notification.type === 'warning' ? 'bg-yellow-500' :
                               notification.type === 'success' ? 'bg-green-500' : 'bg-blue-500'
                             }`}></div>
                             <div>
-                              <p className="text-sm text-gray-900">{notification.message}</p>
-                              <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                              <p className={`text-sm transition-colors duration-300 ${
+                                theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                              }`}>{notification.message}</p>
+                              <p className={`text-xs transition-colors duration-300 ${
+                                theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+                              }`}>{notification.time}</p>
                             </div>
                           </div>
                         </div>
@@ -148,7 +166,11 @@ const Header: React.FC<HeaderProps> = ({
               <select 
                 value={selectedAccount} 
                 onChange={(e) => setSelectedAccount(e.target.value)}
-                className="border border-gray-300 bg-white text-gray-900 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                className={`border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                  theme === 'white'
+                    ? 'border-gray-300 bg-white text-gray-900'
+                    : 'border-slate-600 bg-slate-700 text-gray-100'
+                }`}
               >
                 {connectedAccounts.length > 0 ? (
                   connectedAccounts.filter(acc => acc.status === 'connected').map(account => (
@@ -164,7 +186,11 @@ const Header: React.FC<HeaderProps> = ({
                 <select 
                   value={selectedDateRange} 
                   onChange={(e) => setSelectedDateRange(e.target.value)}
-                  className="border border-gray-300 bg-white text-gray-900 rounded-lg px-3 py-2 text-sm appearance-none pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  className={`border rounded-lg px-3 py-2 text-sm appearance-none pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                    theme === 'white'
+                      ? 'border-gray-300 bg-white text-gray-900'
+                      : 'border-slate-600 bg-slate-700 text-gray-100'
+                  }`}
                 >
                   <option value="last_7d">Last 7 Days</option>
                   <option value="last_30d">Last 30 Days</option>
@@ -185,15 +211,27 @@ const Header: React.FC<HeaderProps> = ({
               </button>
 
               {/* User Profile */}
-              <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
-                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-gray-600" />
+              <div className={`flex items-center space-x-3 pl-4 border-l transition-colors duration-300 ${
+                theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+              }`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                  theme === 'white' ? 'bg-gray-200' : 'bg-slate-600'
+                }`}>
+                  <User className={`w-4 h-4 transition-colors duration-300 ${
+                    theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+                  }`} />
                 </div>
                 <div className="text-sm">
-                  <p className="font-medium text-gray-900">John Doe</p>
-                  <p className="text-gray-500">Admin</p>
+                  <p className={`font-medium transition-colors duration-300 ${
+                    theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                  }`}>John Doe</p>
+                  <p className={`transition-colors duration-300 ${
+                    theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+                  }`}>Admin</p>
                 </div>
-                <ChevronDown className="w-4 h-4 text-gray-400" />
+                <ChevronDown className={`w-4 h-4 transition-colors duration-300 ${
+                  theme === 'white' ? 'text-gray-400' : 'text-gray-500'
+                }`} />
               </div>
             </div>
           </div>

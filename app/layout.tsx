@@ -2,8 +2,8 @@ import './globals.css'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Agency Dashboard - Meta Ads',
-  description: 'Digital marketing dashboard for agency clients',
+  title: 'Facebook Ads Dashboard - Intrend',
+  description: 'Comprehensive analytics and management for your Facebook advertising campaigns',
 }
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="antialiased">{children}</body>
     </html>
   )
 } 

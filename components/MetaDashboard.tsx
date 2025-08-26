@@ -637,7 +637,7 @@ const MetaDashboardRefactored: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -660,7 +660,7 @@ const MetaDashboardRefactored: React.FC = () => {
       />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <AccountSummary
           currentAccountInfo={currentAccountInfo}
           currentAccount={null}
@@ -683,36 +683,40 @@ const MetaDashboardRefactored: React.FC = () => {
 
         {/* Tab Content */}
         {activeTab === 'creatives' && (
-          <CreativesTab
-            searchTerm={creativesSearchTerm}
-            setSearchTerm={setCreativesSearchTerm}
-            selectedCampaigns={selectedCampaigns}
-            handleBulkAction={handleBulkAction}
-            setShowExportModal={setShowExportModal}
-            isLoadingCreatives={isLoadingCreatives}
-            creativeData={creativeData}
-            facebookAccessToken={facebookAccessToken}
-            dateRange={selectedDateRange}
-            adAccountId={selectedAdAccount || ''}
-          />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <CreativesTab
+              searchTerm={creativesSearchTerm}
+              setSearchTerm={setCreativesSearchTerm}
+              selectedCampaigns={selectedCampaigns}
+              handleBulkAction={handleBulkAction}
+              setShowExportModal={setShowExportModal}
+              isLoadingCreatives={isLoadingCreatives}
+              creativeData={creativeData}
+              facebookAccessToken={facebookAccessToken}
+              dateRange={selectedDateRange}
+              adAccountId={selectedAdAccount || ''}
+            />
+          </div>
         )}
 
         {/* Campaigns Tab */}
         {activeTab === 'campaigns' && (
           <>
-            <ChartsSection
-              clicksData={clicksData}
-              campaignClicks={campaignClicks}
-              publisherData={publisherData}
-              sampleClicksData={sampleClicksData}
-              sampleCampaignClicks={sampleCampaignClicks}
-              samplePublisherData={samplePublisherData}
-            />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+              <ChartsSection
+                clicksData={clicksData}
+                campaignClicks={campaignClicks}
+                publisherData={publisherData}
+                sampleClicksData={sampleClicksData}
+                sampleCampaignClicks={sampleCampaignClicks}
+                samplePublisherData={samplePublisherData}
+              />
+            </div>
 
             <MetricsGrid metrics={metrics} />
 
             {/* Performance Insights Graph */}
-            <div className="mb-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
               <InsightsGraph
                 accessToken={facebookAccessToken}
                 adAccountId={selectedAdAccount}
@@ -722,76 +726,86 @@ const MetaDashboardRefactored: React.FC = () => {
               />
             </div>
 
-            <CampaignsTab
-              campaigns={campaignsData}
-              isLoading={isLoadingFacebookData}
-              searchTerm={campaignsSearchTerm}
-              setSearchTerm={setCampaignsSearchTerm}
-              selectedCampaigns={selectedCampaigns}
-              handleSelectCampaign={handleSelectCampaign}
-              handleBulkAction={handleBulkAction}
-              setShowExportModal={setShowExportModal}
-              sortField={sortField}
-              sortDirection={sortDirection}
-              handleSort={handleSort}
-            />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <CampaignsTab
+                campaigns={campaignsData}
+                isLoading={isLoadingFacebookData}
+                searchTerm={campaignsSearchTerm}
+                setSearchTerm={setCampaignsSearchTerm}
+                selectedCampaigns={selectedCampaigns}
+                handleSelectCampaign={handleSelectCampaign}
+                handleBulkAction={handleBulkAction}
+                setShowExportModal={setShowExportModal}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                handleSort={handleSort}
+              />
+            </div>
           </>
         )}
 
         {activeTab === 'adsets' && (
-          <AdsetsTab
-            adsetsData={adsetsData}
-            isLoading={isLoadingAdsets}
-            searchTerm={adsetsSearchTerm}
-            setSearchTerm={setAdsetsSearchTerm}
-            sortField={sortField}
-            sortDirection={sortDirection}
-            handleSort={handleSort}
-            selectedItems={selectedCampaigns}
-            handleSelectItem={handleSelectCampaign}
-            handleBulkAction={handleBulkAction}
-          />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <AdsetsTab
+              adsetsData={adsetsData}
+              isLoading={isLoadingAdsets}
+              searchTerm={adsetsSearchTerm}
+              setSearchTerm={setAdsetsSearchTerm}
+              sortField={sortField}
+              sortDirection={sortDirection}
+              handleSort={handleSort}
+              selectedItems={selectedCampaigns}
+              handleSelectItem={handleSelectCampaign}
+              handleBulkAction={handleBulkAction}
+            />
+          </div>
         )}
 
         {activeTab === 'ads' && (
-          <AdsTab
-            adsData={adsData}
-            isLoading={isLoadingAds}
-            searchTerm={adsSearchTerm}
-            setSearchTerm={setAdsSearchTerm}
-            sortField={sortField}
-            sortDirection={sortDirection}
-            handleSort={handleSort}
-            selectedItems={selectedCampaigns}
-            handleSelectItem={handleSelectCampaign}
-            handleBulkAction={handleBulkAction}
-          />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <AdsTab
+              adsData={adsData}
+              isLoading={isLoadingAds}
+              searchTerm={adsSearchTerm}
+              setSearchTerm={setAdsSearchTerm}
+              sortField={sortField}
+              sortDirection={sortDirection}
+              handleSort={handleSort}
+              selectedItems={selectedCampaigns}
+              handleSelectItem={handleSelectCampaign}
+              handleBulkAction={handleBulkAction}
+            />
+          </div>
         )}
 
         {activeTab === 'demographics' && (
-          <DemographicsTab
-            demographicsData={demographicsData}
-            isLoading={isLoadingDemographics}
-            searchTerm={demographicsSearchTerm}
-            setSearchTerm={setDemographicsSearchTerm}
-            sortField={sortField}
-            sortDirection={sortDirection}
-            handleSort={handleSort}
-            selectedItems={selectedCampaigns}
-            handleSelectItem={handleSelectCampaign}
-            handleBulkAction={handleBulkAction}
-          />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <DemographicsTab
+              demographicsData={demographicsData}
+              isLoading={isLoadingDemographics}
+              searchTerm={demographicsSearchTerm}
+              setSearchTerm={setDemographicsSearchTerm}
+              sortField={sortField}
+              sortDirection={sortDirection}
+              handleSort={handleSort}
+              selectedItems={selectedCampaigns}
+              handleSelectItem={handleSelectCampaign}
+              handleBulkAction={handleBulkAction}
+            />
+          </div>
         )}
 
         {activeTab === 'ads-library' && (
-          <AdsLibraryTab
-            searchTerm={adsLibrarySearchTerm}
-            setSearchTerm={setAdsLibrarySearchTerm}
-            facebookAccessToken={facebookAccessToken}
-            adAccountId={selectedAdAccount}
-            dateRange={selectedDateRange}
-            selectedAdAccounts={facebookAdAccounts}
-          />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <AdsLibraryTab
+              searchTerm={adsLibrarySearchTerm}
+              setSearchTerm={setAdsLibrarySearchTerm}
+              facebookAccessToken={facebookAccessToken}
+              adAccountId={selectedAdAccount}
+              dateRange={selectedDateRange}
+              selectedAdAccounts={facebookAdAccounts}
+            />
+          </div>
         )}
       </div>
 

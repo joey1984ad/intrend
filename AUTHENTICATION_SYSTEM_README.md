@@ -28,6 +28,7 @@ This project now includes a complete authentication system with modern signup an
 - **Loading States**: Spinner animations during authentication
 - **Error Handling**: Graceful fallback for OAuth failures
 - **Redirect Flow**: Seamless navigation to dashboard after auth
+- **API Route**: `/api/auth/google/callback` handles OAuth response
 
 ### Form Validation
 - **Real-time Validation**: Form buttons disabled until valid
@@ -49,66 +50,65 @@ This project now includes a complete authentication system with modern signup an
 Landing Page (/)
 ├── "Get Started" → Signup Page (/signup)
 ├── "Sign In" → Login Page (/login)
-└── "Dashboard" → Dashboard (/dashboard)
+└── Pricing Plans → Signup Page (/signup)
 
 Signup Page (/signup)
 ├── Google OAuth → Dashboard (/dashboard)
-├── Email Form → Dashboard (/dashboard)
-└── "Sign in" → Login Page (/login)
+└── Email Form → Dashboard (/dashboard)
 
 Login Page (/login)
 ├── Google OAuth → Dashboard (/dashboard)
-├── Email Form → Dashboard (/dashboard)
-└── "Sign up for free" → Signup Page (/signup)
-
-Dashboard (/dashboard)
-└── "← Back to Landing" → Landing Page (/)
+└── Email Form → Dashboard (/dashboard)
 ```
 
-## Components
+## Google OAuth Implementation
 
-### SignupPage.tsx
-- **State Management**: Form data, loading states, validation
-- **Google OAuth**: Simulated Google authentication flow
-- **Form Handling**: Input validation and submission
-- **Features Preview**: Benefits list for new users
-- **Navigation**: Links to login and landing page
+### Frontend Components
+- **SignupPage.tsx**: Main signup component with Google OAuth button
+- **LoginPage.tsx**: Main login component with Google OAuth button
+- **GoogleSignInTest.tsx**: Testing component for OAuth functionality
 
-### LoginPage.tsx
-- **Authentication**: Email/password and Google OAuth
-- **Form Management**: Input handling and validation
-- **Security Features**: Password visibility toggle
-- **User Options**: Remember me, forgot password
-- **Navigation**: Links to signup and landing page
+### Backend API
+- **`/api/auth/google/callback`**: Handles OAuth callback from Google
+- **Token Exchange**: Exchanges authorization code for access token
+- **User Info**: Fetches user profile from Google
+- **Error Handling**: Comprehensive error handling and user feedback
 
-## Styling & Design
+### Environment Variables
+```bash
+# Google OAuth Configuration
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+```
 
-### Visual Elements
-- **Color Scheme**: Blue primary (#3B82F6) with slate accents
-- **Typography**: Modern, readable fonts
-- **Icons**: Heroicons for consistent iconography
-- **Gradients**: Subtle background gradients
-- **Shadows**: Depth and visual hierarchy
+## Code Examples
 
-### Responsive Design
-- **Mobile First**: Optimized for small screens
-- **Flexbox Layout**: Flexible component positioning
-- **Grid System**: Responsive form layouts
-- **Breakpoints**: Tailwind CSS responsive utilities
-- **Touch Friendly**: Proper button sizes for mobile
-
-## Technical Implementation
-
-### State Management
+### Google OAuth Button
 ```typescript
-const [formData, setFormData] = useState({
-  firstName: '',
-  lastName: '',
-  email: '',
-  password: '',
-  company: '',
-  agreeToTerms: false
-});
+const handleGoogleSignup = async () => {
+  setIsGoogleLoading(true);
+  
+  try {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      throw new Error('Google Client ID not configured');
+    }
+
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${clientId}&` +
+      `redirect_uri=${encodeURIComponent(window.location.origin + '/api/auth/google/callback')}&` +
+      `response_type=code&` +
+      `scope=openid email profile&` +
+      `access_type=offline&` +
+      `prompt=consent`;
+    
+    window.location.href = googleAuthUrl;
+  } catch (error) {
+    console.error('Google signup error:', error);
+    setIsGoogleLoading(false);
+  }
+};
 ```
 
 ### Form Validation
@@ -118,13 +118,39 @@ const isFormValid = formData.firstName && formData.lastName &&
                    formData.agreeToTerms;
 ```
 
-### Google OAuth Simulation
+### OAuth Callback Handler
 ```typescript
-const handleGoogleSignup = async () => {
-  setIsGoogleLoading(true);
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  window.location.href = '/dashboard';
-};
+export async function GET(request: NextRequest) {
+  const code = request.nextUrl.searchParams.get('code');
+  
+  if (!code) {
+    return NextResponse.redirect(
+      `${request.nextUrl.origin}/signup?error=no_auth_code`
+    );
+  }
+
+  try {
+    // Exchange code for token
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID!,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        redirect_uri: `${request.nextUrl.origin}/api/auth/google/callback`,
+        grant_type: 'authorization_code',
+      }),
+    });
+
+    // Handle response and redirect to dashboard
+    return NextResponse.redirect(`${request.nextUrl.origin}/dashboard`);
+  } catch (error) {
+    return NextResponse.redirect(
+      `${request.nextUrl.origin}/signup?error=google_auth_failed`
+    );
+  }
+}
 ```
 
 ## File Structure
@@ -143,8 +169,13 @@ components/
 ├── SaaSLandingPage.tsx  # Landing page component (updated)
 ├── SignupPage.tsx       # Signup page component
 ├── LoginPage.tsx        # Login page component
+├── GoogleSignInTest.tsx # Google OAuth test component
 ├── MetaDashboard.tsx    # Dashboard component
 └── Header.tsx           # Header with back link (updated)
+
+app/api/auth/google/
+└── callback/
+    └── route.ts         # Google OAuth callback handler
 ```
 
 ## Customization
@@ -173,70 +204,114 @@ components/
 - **Password Reset**: Email-based password recovery
 - **Email Verification**: Account activation flow
 - **Two-Factor Auth**: Additional security layer
-- **Social Login**: More OAuth providers (GitHub, LinkedIn)
+- **Social Login**: Add Facebook, GitHub, etc.
+- **Session Management**: JWT tokens and refresh logic
 
 ### User Management
-- **User Profiles**: Editable account information
+- **User Profiles**: Editable profile information
+- **Account Settings**: Password change, preferences
 - **Team Management**: Multi-user accounts
-- **Role-based Access**: Permission management
-- **Session Management**: Login history and security
+- **Role-Based Access**: Admin, user, viewer roles
 
 ### Security Features
 - **Rate Limiting**: Prevent brute force attacks
-- **Audit Logging**: Track authentication events
-- **IP Whitelisting**: Geographic restrictions
-- **Device Management**: Trusted device handling
+- **Audit Logs**: Track authentication attempts
+- **IP Whitelisting**: Restrict access by location
+- **Device Management**: Track and manage devices
 
-## Testing
+## Setup Instructions
 
-### Manual Testing
-1. **Navigation**: Test all links between pages
-2. **Forms**: Submit forms with valid/invalid data
-3. **Responsiveness**: Test on different screen sizes
-4. **Loading States**: Verify loading animations
-5. **Validation**: Test form validation rules
+### 1. Google OAuth Configuration
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable Google+ API
+4. Create OAuth 2.0 credentials
+5. Add authorized redirect URIs:
+   - `https://localhost:3000/api/auth/google/callback` (development with HTTPS)
+   - `http://localhost:3000/api/auth/google/callback` (development with HTTP)
+   - `https://yourdomain.com/api/auth/google/callback` (production)
 
-### Automated Testing
-- **Unit Tests**: Component functionality
-- **Integration Tests**: Page navigation flow
-- **E2E Tests**: Complete user journeys
-- **Accessibility Tests**: Screen reader compatibility
-
-## Deployment
-
-### Build Process
+### 2. Environment Variables
+Create `.env.local` file with:
 ```bash
-npm run build  # Creates optimized production build
-npm run start  # Starts production server
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 ```
 
-### Environment Variables
-- **Google OAuth**: Client ID and secret
-- **API Endpoints**: Authentication service URLs
-- **Security Keys**: JWT secrets and encryption keys
+### 3. HTTPS Setup for Localhost (Optional but Recommended)
+For secure local development with HTTPS:
 
-### Performance
-- **Code Splitting**: Automatic route-based splitting
-- **Static Generation**: Pre-rendered pages for SEO
-- **Image Optimization**: Automatic image optimization
-- **Bundle Analysis**: Webpack bundle analyzer
+1. **Install mkcert** (for local SSL certificates):
+   ```bash
+   # Windows (using Chocolatey)
+   choco install mkcert
+   
+   # macOS
+   brew install mkcert
+   
+   # Linux
+   sudo apt install mkcert
+   ```
 
-## Support & Maintenance
+2. **Generate local SSL certificate**:
+   ```bash
+   mkcert -install
+   mkcert localhost 127.0.0.1 ::1
+   ```
 
-### Monitoring
-- **Error Tracking**: Monitor authentication failures
-- **Performance**: Track page load times
-- **Analytics**: User behavior and conversion rates
-- **Security**: Failed login attempts and suspicious activity
+3. **Update Next.js configuration** (`next.config.js`):
+   ```javascript
+   /** @type {import('next').NextConfig} */
+   const nextConfig = {
+     // ... other config
+     devIndicators: {
+       buildActivity: false,
+     },
+   }
+   
+   module.exports = nextConfig
+   ```
 
-### Updates
-- **Dependencies**: Regular package updates
-- **Security Patches**: Prompt security updates
-- **Feature Updates**: New authentication methods
-- **Bug Fixes**: Continuous improvement
+4. **Start development server with HTTPS**:
+   ```bash
+   # Your project already has HTTPS support configured
+   npm run dev:https
+   
+   # Or use the regular dev command which includes HTTPS
+   npm run dev
+   ```
+
+### 4. Testing
+1. **Start development server**:
+   - HTTP: `npm run dev` (navigates to `http://localhost:3000`)
+   - HTTPS: `npm run dev:https` (navigates to `https://localhost:3000`)
+
+2. Navigate to `/signup` or `/login`
+3. Click "Continue with Google" button
+4. Complete OAuth flow
+5. Verify redirect to dashboard
+
+**Note**: When using HTTPS localhost, ensure your Google OAuth redirect URI includes `https://localhost:3000/api/auth/google/callback`
+
+## Troubleshooting
+
+### Common Issues
+- **"Google Client ID not configured"**: Check environment variables
+- **"Invalid redirect URI"**: Verify redirect URIs in Google Console
+- **OAuth errors**: Check browser console and network tab
+- **CORS issues**: Ensure proper redirect URI configuration
+- **HTTPS localhost errors**: Verify SSL certificates and Google OAuth redirect URIs include HTTPS
+
+### Debug Steps
+1. Check environment variables are loaded
+2. Verify Google OAuth credentials are correct
+3. Test redirect URI matches exactly
+4. Check browser console for errors
+5. Verify API route is accessible
 
 ## Conclusion
 
 The authentication system provides a professional, user-friendly experience that matches modern SaaS standards. With Google OAuth integration, comprehensive form validation, and responsive design, users can easily create accounts and access the Meta Ads dashboard.
 
-The system is built with scalability in mind, ready for future enhancements like real backend integration, additional OAuth providers, and advanced security features.
+The system is designed to be secure, scalable, and maintainable, with clear separation of concerns between frontend components and backend API routes. The Google OAuth implementation follows best practices and provides a seamless user experience.

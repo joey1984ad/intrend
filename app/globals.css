@@ -11,7 +11,6 @@
 .max-w-7xl .loader-light { color: #000 !important; }
 .theme-dark .max-w-7xl .loader-light { color: #fff !important; }
 
-
 /* Inline-flex default and hover/highlight styles within main content (dark theme only) */
 .theme-dark .max-w-7xl .inline-flex {
   color: #fff !important;
@@ -113,10 +112,15 @@ body:not(.theme-dark) .hover\:bg-blue-700:hover {
   background-color: #1d4ed8 !important;
 }
 
-/* Trendy visual polish */
+/* Modern UI Enhancements */
 @layer base {
   body {
     @apply antialiased;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
   }
 }
 
@@ -124,10 +128,80 @@ body:not(.theme-dark) .hover\:bg-blue-700:hover {
   .card {
     @apply rounded-xl shadow-lg ring-1 ring-black/5 bg-white;
   }
+  
   .theme-dark .card {
     @apply bg-white/5 backdrop-blur ring-white/10;
   }
+  
   .btn {
-    @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors;
+    @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-all duration-200;
+  }
+  
+  /* Modern button variants */
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+  }
+  
+  /* Enhanced form controls */
+  .form-input {
+    @apply border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200;
+  }
+  
+  .form-select {
+    @apply border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none;
+  }
+  
+  /* Modern shadows and borders */
+  .shadow-modern {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  .shadow-elevated {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Gradient backgrounds */
+  .bg-gradient-modern {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  /* Hover effects */
+  .hover-lift {
+    @apply transition-all duration-200 hover:-translate-y-1 hover:shadow-elevated;
+  }
+  
+  /* Focus states */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+}
+
+/* Custom scrollbar */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f7fafc;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #f7fafc;
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
   }
 }

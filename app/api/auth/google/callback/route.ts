@@ -4,38 +4,22 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const error = searchParams.get('error');
-  const state = searchParams.get('state');
-
-  console.log('🔐 Google OAuth Callback - Code:', code ? 'Present' : 'Missing', 'Error:', error, 'State:', state);
 
   if (error) {
-    console.error('❌ Google OAuth error:', error);
-    return NextResponse.redirect(new URL('/signup?error=google_auth_failed', request.url));
+    console.error('Google OAuth error:', error);
+    return NextResponse.redirect(
+      `${request.nextUrl.origin}/signup?error=oauth_error`
+    );
   }
 
   if (!code) {
-    console.error('❌ No authorization code received');
-    return NextResponse.redirect(new URL('/signup?error=no_auth_code', request.url));
+    console.error('No authorization code received from Google');
+    return NextResponse.redirect(
+      `${request.nextUrl.origin}/signup?error=no_auth_code`
+    );
   }
 
   try {
-    // Validate environment variables
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const nextAuthUrl = process.env.NEXTAUTH_URL;
-
-    if (!clientId || clientId === 'your_google_client_id_here') {
-      console.error('❌ GOOGLE_CLIENT_ID not configured');
-      return NextResponse.redirect(new URL('/signup?error=oauth_not_configured', request.url));
-    }
-
-    if (!clientSecret || clientSecret === 'your_google_client_secret_here') {
-      console.error('❌ GOOGLE_CLIENT_SECRET not configured');
-      return NextResponse.redirect(new URL('/signup?error=oauth_not_configured', request.url));
-    }
-
-    console.log('🔐 Exchanging authorization code for access token...');
-    
     // Exchange authorization code for access token
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -44,48 +28,56 @@ export async function GET(request: NextRequest) {
       },
       body: new URLSearchParams({
         code,
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: `${nextAuthUrl || 'http://localhost:3000'}/api/auth/google/callback`,
+        client_id: process.env.GOOGLE_CLIENT_ID!,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        redirect_uri: `${request.nextUrl.origin}/api/auth/google/callback`,
         grant_type: 'authorization_code',
       }),
     });
 
-    const tokenData = await tokenResponse.json();
-
     if (!tokenResponse.ok) {
-      console.error('Token exchange failed:', tokenData);
-      return NextResponse.redirect(new URL('/signup?error=token_exchange_failed', request.url));
+      console.error('Failed to exchange authorization code for token');
+      return NextResponse.redirect(
+        `${request.nextUrl.origin}/signup?error=token_exchange_failed`
+      );
     }
 
-    // Get user info using access token
-    const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: {
-        Authorization: `Bearer ${tokenData.access_token}`,
-      },
-    });
+    const tokenData = await tokenResponse.json();
+    const { access_token } = tokenData;
 
-    const userData = await userResponse.json();
+    // Get user information from Google
+    const userResponse = await fetch(
+      'https://www.googleapis.com/oauth2/v2/userinfo',
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
 
     if (!userResponse.ok) {
-      console.error('User info fetch failed:', userData);
-      return NextResponse.redirect(new URL('/signup?error=user_info_failed', request.url));
+      console.error('Failed to get user information from Google');
+      return NextResponse.redirect(
+        `${request.nextUrl.origin}/signup?error=user_info_failed`
+      );
     }
+
+    const userData = await userResponse.json();
+    console.log('Google user data:', userData);
 
     // Here you would typically:
     // 1. Check if user exists in your database
     // 2. Create new user if they don't exist
-    // 3. Set up session/token
+    // 3. Create a session or JWT token
     // 4. Redirect to dashboard
 
-    console.log('Google user data:', userData);
-
-    // For now, redirect to dashboard with user data in query params
-    // In production, you'd set up proper session management
-    return NextResponse.redirect(new URL(`/dashboard?google_user=${encodeURIComponent(JSON.stringify(userData))}`, request.url));
+    // For now, redirect to dashboard with success
+    return NextResponse.redirect(`${request.nextUrl.origin}/dashboard`);
 
   } catch (error) {
-    console.error('Google OAuth error:', error);
-    return NextResponse.redirect(new URL('/signup?error=oauth_error', request.url));
+    console.error('Google OAuth callback error:', error);
+    return NextResponse.redirect(
+      `${request.nextUrl.origin}/signup?error=google_auth_failed`
+    );
   }
 }

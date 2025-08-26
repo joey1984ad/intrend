@@ -49,32 +49,32 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
     fatigueLevel: ''
   });
 
-  // Enhanced column definitions with more metrics
+  // Enhanced column definitions with modern styling and better metrics
   const columns: ColumnDefinition<CreativeData>[] = [
     {
       key: 'name',
-      header: 'Ad Name',
+      header: 'Creative Asset',
       sortable: true,
       searchable: true,
       render: (value, creative) => (
-        <div className="flex items-center space-x-3">
-          <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+        <div className="flex items-center space-x-4">
+          <div className="w-20 h-20 rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex-shrink-0 shadow-sm border border-gray-200">
             <FacebookImage
               src={creative.thumbnailUrl}
               accessToken={facebookAccessToken}
               alt={creative.name}
               className="w-full h-full object-cover"
               contentType={creative.creativeType === 'video' ? 'video' : creative.creativeType === 'carousel' || creative.creativeType === 'dynamic' ? 'carousel' : 'image'}
-              fallbackSrc="https://via.placeholder.com/64x64/6B7280/FFFFFF?text=No+Image"
+              fallbackSrc="https://via.placeholder.com/80x80/6B7280/FFFFFF?text=No+Image"
             />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium text-gray-900 truncate cursor-pointer hover:text-blue-600" 
+            <div className="text-sm font-semibold text-gray-900 truncate cursor-pointer hover:text-indigo-600 transition-colors duration-200" 
                  onClick={() => handleCreativeClick(creative)}>
               {creative.name}
             </div>
-            <div className="text-xs text-gray-500 truncate">{creative.adsetName}</div>
-            <div className="text-xs text-gray-400 truncate">{creative.campaignName}</div>
+            <div className="text-xs text-gray-600 truncate font-medium">{creative.adsetName}</div>
+            <div className="text-xs text-gray-500 truncate">{creative.campaignName}</div>
           </div>
         </div>
       )
@@ -85,13 +85,17 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       render: (value) => (
-        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-          value === 'image' ? 'bg-blue-100 text-blue-800' :
-          value === 'video' ? 'bg-green-100 text-green-800' :
-          value === 'carousel' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-purple-100 text-purple-800'
+        <span className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full shadow-sm ${
+          value === 'image' ? 'bg-gradient-to-r from-blue-50 to-indigo-100 text-indigo-700 border border-indigo-200' :
+          value === 'video' ? 'bg-gradient-to-r from-emerald-50 to-teal-100 text-emerald-700 border border-emerald-200' :
+          value === 'carousel' ? 'bg-gradient-to-r from-amber-50 to-orange-100 text-amber-700 border border-amber-200' :
+          'bg-gradient-to-r from-violet-50 to-purple-100 text-violet-700 border border-violet-200'
         }`}>
-          {value.charAt(0).toUpperCase() + value.slice(1)}
+          {value === 'image' && '🖼️'}
+          {value === 'video' && '🎥'}
+          {value === 'carousel' && '🖼️🔄'}
+          {value === 'dynamic' && '⚡'}
+          <span className="ml-1">{value.charAt(0).toUpperCase() + value.slice(1)}</span>
         </span>
       )
     },
@@ -101,7 +105,12 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      render: (value) => (
+        <div className="text-right">
+          <div className="text-sm font-bold text-gray-900">${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div className="text-xs text-gray-500">Total</div>
+        </div>
+      )
     },
     {
       key: 'impressions',
@@ -109,7 +118,12 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => value.toLocaleString()
+      render: (value) => (
+        <div className="text-right">
+          <div className="text-sm font-bold text-gray-900">{value.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">Views</div>
+        </div>
+      )
     },
     {
       key: 'clicks',
@@ -117,7 +131,12 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => value.toLocaleString()
+      render: (value) => (
+        <div className="text-right">
+          <div className="text-sm font-bold text-gray-900">{value.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">Engagement</div>
+        </div>
+      )
     },
     {
       key: 'ctr',
@@ -125,7 +144,14 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => `${value.toFixed(2)}%`
+      render: (value) => (
+        <div className="text-right">
+          <div className={`text-sm font-bold ${value >= 2 ? 'text-emerald-600' : value >= 1 ? 'text-blue-600' : value >= 0.5 ? 'text-amber-600' : 'text-red-600'}`}>
+            {value.toFixed(2)}%
+          </div>
+          <div className="text-xs text-gray-500">Click Rate</div>
+        </div>
+      )
     },
     {
       key: 'cpc',
@@ -133,7 +159,14 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => `$${value.toFixed(2)}`
+      render: (value) => (
+        <div className="text-right">
+          <div className={`text-sm font-bold ${value <= 1 ? 'text-emerald-600' : value <= 2 ? 'text-blue-600' : value <= 3 ? 'text-amber-600' : 'text-red-600'}`}>
+            ${value.toFixed(2)}
+          </div>
+          <div className="text-xs text-gray-500">Per Click</div>
+        </div>
+      )
     },
     {
       key: 'cpm',
@@ -141,7 +174,14 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => `$${value.toFixed(2)}`
+      render: (value) => (
+        <div className="text-right">
+          <div className={`text-sm font-bold ${value <= 5 ? 'text-emerald-600' : value <= 10 ? 'text-blue-600' : value <= 15 ? 'text-amber-600' : 'text-red-600'}`}>
+            ${value.toFixed(2)}
+          </div>
+          <div className="text-xs text-gray-500">Per 1K</div>
+        </div>
+      )
     },
     {
       key: 'reach',
@@ -149,7 +189,12 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => value.toLocaleString()
+      render: (value) => (
+        <div className="text-right">
+          <div className="text-sm font-bold text-gray-900">{value.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">Unique Users</div>
+        </div>
+      )
     },
     {
       key: 'frequency',
@@ -157,7 +202,14 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => value.toFixed(1)
+      render: (value) => (
+        <div className="text-right">
+          <div className={`text-sm font-bold ${value <= 2 ? 'text-emerald-600' : value <= 3 ? 'text-blue-600' : value <= 4 ? 'text-amber-600' : 'text-red-600'}`}>
+            {value.toFixed(1)}
+          </div>
+          <div className="text-xs text-gray-500">Avg Views</div>
+        </div>
+      )
     },
     {
       key: 'roas',
@@ -165,7 +217,14 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       align: 'right',
-      render: (value) => value ? `${value.toFixed(2)}x` : 'N/A'
+      render: (value) => (
+        <div className="text-right">
+          <div className={`text-sm font-bold ${value >= 4 ? 'text-emerald-600' : value >= 2 ? 'text-blue-600' : value >= 1 ? 'text-amber-600' : 'text-red-600'}`}>
+            {value ? `${value.toFixed(2)}x` : 'N/A'}
+          </div>
+          <div className="text-xs text-gray-500">Return</div>
+        </div>
+      )
     },
     {
       key: 'performance',
@@ -173,13 +232,17 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       render: (value) => (
-        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-          value === 'excellent' ? 'bg-green-100 text-green-800' :
-          value === 'good' ? 'bg-blue-100 text-blue-800' :
-          value === 'average' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-red-100 text-red-800'
+        <span className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full shadow-sm ${
+          value === 'excellent' ? 'bg-gradient-to-r from-emerald-50 to-green-100 text-emerald-700 border border-emerald-200' :
+          value === 'good' ? 'bg-gradient-to-r from-blue-50 to-indigo-100 text-blue-700 border border-blue-200' :
+          value === 'average' ? 'bg-gradient-to-r from-amber-50 to-yellow-100 text-amber-700 border border-amber-200' :
+          'bg-gradient-to-r from-red-50 to-pink-100 text-red-700 border border-red-200'
         }`}>
-          {value.charAt(0).toUpperCase() + value.slice(1)}
+          {value === 'excellent' && '⭐'}
+          {value === 'good' && '👍'}
+          {value === 'average' && '➖'}
+          {value === 'poor' && '⚠️'}
+          <span className="ml-1">{value.charAt(0).toUpperCase() + value.slice(1)}</span>
         </span>
       )
     },
@@ -189,12 +252,15 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
       sortable: true,
       searchable: true,
       render: (value) => (
-        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-          value === 'low' ? 'bg-green-100 text-green-800' :
-          value === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-red-100 text-red-800'
+        <span className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full shadow-sm ${
+          value === 'low' ? 'bg-gradient-to-r from-emerald-50 to-green-100 text-emerald-700 border border-emerald-200' :
+          value === 'medium' ? 'bg-gradient-to-r from-amber-50 to-yellow-100 text-amber-700 border border-amber-200' :
+          'bg-gradient-to-r from-red-50 to-pink-100 text-red-700 border border-red-200'
         }`}>
-          {value.charAt(0).toUpperCase() + value.slice(1)}
+          {value === 'low' && '🟢'}
+          {value === 'medium' && '🟡'}
+          {value === 'high' && '🔴'}
+          <span className="ml-1">{value.charAt(0).toUpperCase() + value.slice(1)}</span>
         </span>
       )
     }

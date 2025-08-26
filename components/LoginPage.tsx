@@ -72,7 +72,7 @@ const LoginPage: React.FC = () => {
   const isFormValid = formData.email && formData.password;
 
   return (
-    <div className="min-h-screen transition-colors duration-200 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen transition-colors duration-200 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
@@ -81,10 +81,10 @@ const LoginPage: React.FC = () => {
               <path strokeLinecap="round" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 5v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
             </svg>
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-slate-900">
+          <h2 className="mt-6 text-3xl font-extrabold text-white">
             Sign in to your account
           </h2>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-blue-200">
             Welcome back to Intrend
           </p>
         </div>
@@ -129,7 +129,7 @@ const LoginPage: React.FC = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-blue-200 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
                 Email address
               </label>
               <input
@@ -140,13 +140,13 @@ const LoginPage: React.FC = () => {
                 required
                 value={formData.email}
                 onChange={handleInputChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-white/20 placeholder-gray-400 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white/10 transition-all duration-200"
+                className="appearance-none relative block w-full px-3 py-2 border border-white/20 placeholder-blue-300 text-white bg-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white/20 transition-all duration-200"
                 placeholder="Enter your email"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-blue-200 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
                 Password
               </label>
               <div className="relative">
@@ -158,7 +158,7 @@ const LoginPage: React.FC = () => {
                   required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-white/20 placeholder-gray-400 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white/10 transition-all duration-200"
+                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-white/20 placeholder-blue-300 text-white bg-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white/20 transition-all duration-200"
                   placeholder="Enter your password"
                 />
                 <button
@@ -185,13 +185,13 @@ const LoginPage: React.FC = () => {
                   onChange={handleInputChange}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-white/20 rounded bg-white/5"
                 />
-                <label htmlFor="rememberMe" className="ml-2 block text-sm text-blue-200">
+                <label htmlFor="rememberMe" className="ml-2 block text-sm text-white">
                   Remember me
                 </label>
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-blue-400 hover:text-blue-300 underline">
+                <a href="#" className="font-medium text-blue-300 hover:text-blue-200 underline">
                   Forgot your password?
                 </a>
               </div>
@@ -216,9 +216,9 @@ const LoginPage: React.FC = () => {
           </div>
 
           <div className="text-center">
-            <p className="text-sm text-blue-200">
+            <p className="text-sm text-white">
               Don't have an account?{' '}
-              <Link href="/signup" className="font-medium text-blue-400 hover:text-blue-300 underline">
+              <Link href="/signup" className="font-medium text-blue-300 hover:text-blue-200 underline">
                 Sign up
               </Link>
             </p>
@@ -226,8 +226,8 @@ const LoginPage: React.FC = () => {
         </form>
 
         {/* Security Note */}
-        <div className="mt-8 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
-          <p className="text-sm text-blue-200 text-center">
+        <div className="mt-8 p-4 bg-blue-500/20 rounded-lg border border-blue-500/30">
+          <p className="text-sm text-white text-center">
             🔒 Your data is protected with enterprise-grade security
           </p>
         </div>

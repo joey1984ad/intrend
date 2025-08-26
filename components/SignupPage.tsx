@@ -105,7 +105,7 @@ import { useSearchParams } from 'next/navigation';
                      formData.password && formData.agreeToTerms;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
@@ -113,10 +113,10 @@ import { useSearchParams } from 'next/navigation';
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-slate-900">
+          <h2 className="mt-6 text-3xl font-extrabold text-white">
             Create your account
           </h2>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-blue-200">
             Start your free trial with Intrend
           </p>
         </div>
@@ -168,7 +168,7 @@ import { useSearchParams } from 'next/navigation';
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-blue-200 mb-2">
+                <label htmlFor="firstName" className="block text-sm font-medium text-white mb-2">
                   First Name
                 </label>
                 <input
@@ -178,12 +178,12 @@ import { useSearchParams } from 'next/navigation';
                   required
                   value={formData.firstName}
                   onChange={handleInputChange}
-                  className="appearance-none relative block w-full px-3 py-2 border border-white/20 placeholder-gray-400 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white/10 transition-all duration-200"
+                  className="appearance-none relative block w-full px-3 py-2 border border-white/20 placeholder-blue-300 text-white bg-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white/20 transition-all duration-200"
                   placeholder="First name"
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-blue-200 mb-2">
+                <label htmlFor="lastName" className="block text-sm font-medium text-white mb-2">
                   Last Name
                 </label>
                 <input
@@ -193,14 +193,14 @@ import { useSearchParams } from 'next/navigation';
                   required
                   value={formData.lastName}
                   onChange={handleInputChange}
-                  className="appearance-none relative block w-full px-3 py-2 border border-white/20 placeholder-gray-400 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white/10 transition-all duration-200"
+                  className="appearance-none relative block w-full px-3 py-2 border border-white/20 placeholder-blue-300 text-white bg-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white/20 transition-all duration-200"
                   placeholder="Last name"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-blue-200 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
                 Email address
               </label>
               <input
@@ -211,13 +211,13 @@ import { useSearchParams } from 'next/navigation';
                 required
                 value={formData.email}
                 onChange={handleInputChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-white/20 placeholder-gray-400 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white/10 transition-all duration-200"
+                className="appearance-none relative block w-full px-3 py-2 border border-white/20 placeholder-blue-300 text-white bg-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white/20 transition-all duration-200"
                 placeholder="Enter your email"
               />
             </div>
 
             <div>
-              <label htmlFor="company" className="block text-sm font-medium text-blue-200 mb-2">
+              <label htmlFor="company" className="block text-sm font-medium text-white mb-2">
                 Company (Optional)
               </label>
               <input
@@ -226,13 +226,13 @@ import { useSearchParams } from 'next/navigation';
                 type="text"
                 value={formData.company}
                 onChange={handleInputChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-white/20 placeholder-gray-400 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white/10 transition-all duration-200"
+                className="appearance-none relative block w-full px-3 py-2 border border-white/20 placeholder-blue-300 text-white bg-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white/20 transition-all duration-200"
                 placeholder="Your company name"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-blue-200 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
                 Password
               </label>
               <div className="relative">
@@ -244,7 +244,7 @@ import { useSearchParams } from 'next/navigation';
                   required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-white/20 placeholder-gray-400 text-white bg-white/5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white/10 transition-all duration-200"
+                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-white/20 placeholder-blue-300 text-white bg-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white/20 transition-all duration-200"
                   placeholder="Create a password"
                 />
                 <button
@@ -271,13 +271,13 @@ import { useSearchParams } from 'next/navigation';
                 onChange={handleInputChange}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-white/20 rounded bg-white/5"
               />
-              <label htmlFor="agreeToTerms" className="ml-2 block text-sm text-blue-200">
+              <label htmlFor="agreeToTerms" className="ml-2 block text-sm text-white">
                 I agree to the{' '}
-                <a href="#" className="text-blue-400 hover:text-blue-300 underline">
+                <a href="#" className="text-blue-300 hover:text-blue-200 underline">
                   Terms of Service
                 </a>{' '}
                 and{' '}
-                <a href="#" className="text-blue-400 hover:text-blue-300 underline">
+                <a href="#" className="text-blue-300 hover:text-blue-200 underline">
                   Privacy Policy
                 </a>
               </label>
@@ -302,9 +302,9 @@ import { useSearchParams } from 'next/navigation';
           </div>
 
           <div className="text-center">
-            <p className="text-sm text-blue-200">
+            <p className="text-sm text-white">
               Already have an account?{' '}
-              <Link href="/login" className="font-medium text-blue-400 hover:text-blue-300 underline">
+              <Link href="/login" className="font-medium text-blue-300 hover:text-blue-200 underline">
                 Sign in
               </Link>
             </p>
@@ -312,9 +312,9 @@ import { useSearchParams } from 'next/navigation';
         </form>
 
         {/* Features Preview */}
-        <div className="mt-8 p-6 bg-white/5 rounded-xl border border-white/10">
+        <div className="mt-8 p-6 bg-white/10 rounded-xl border border-white/20">
           <h3 className="text-lg font-semibold text-white mb-4">What you'll get:</h3>
-          <ul className="space-y-2 text-sm text-blue-200">
+          <ul className="space-y-2 text-sm text-white">
             <li className="flex items-center">
               <CheckIcon className="h-4 w-4 text-green-400 mr-2 flex-shrink-0" />
               Meta Ads Performance Dashboard

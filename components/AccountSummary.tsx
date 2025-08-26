@@ -210,7 +210,7 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
               <p className={`text-3xl font-bold transition-colors duration-300 ${
                 theme === 'white' ? 'text-gray-900' : 'text-gray-100'
               }`}>
-                ${currentAccountInfo?.totalSpent ? parseFloat(currentAccountInfo.totalSpent).toFixed(2) : currentAccount?.spend || '$0.00'}
+                {currentAccountInfo?.totalSpent ? `$${parseFloat(currentAccountInfo.totalSpent).toFixed(2)}` : currentAccount?.spend || '$0.00'}
               </p>
               <p className={`text-sm transition-colors duration-300 ${
                 theme === 'white' ? 'text-gray-600' : 'text-gray-400'

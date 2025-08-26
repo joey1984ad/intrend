@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Loader2, BarChart3, Target, Grid3X3, Users, Image, Library, Bell, User, ChevronDown } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 import { ConnectedAccount, Notification } from './types';
@@ -24,6 +25,7 @@ interface HeaderProps {
   isLoadingAdSets?: boolean;
   isLoadingAds?: boolean;
   isLoadingDemographics?: boolean;
+  isLoggedIn?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -44,9 +46,22 @@ const Header: React.FC<HeaderProps> = ({
   isLoadingCampaigns,
   isLoadingAdSets,
   isLoadingAds,
-  isLoadingDemographics
+  isLoadingDemographics,
+  isLoggedIn = false
 }) => {
   const { theme } = useDashboardTheme();
+  const router = useRouter();
+
+  const handleLogoClick = () => {
+    if (isLoggedIn) {
+      // If logged in, navigate to campaigns tab
+      setActiveTab('campaigns');
+    } else {
+      // If not logged in, navigate to homepage
+      router.push('/');
+    }
+  };
+
   const tabs = [
     { id: 'campaigns', label: 'Campaigns', icon: BarChart3, loading: isLoadingCampaigns },
     { id: 'adsets', label: 'Ad Sets', icon: Target, loading: isLoadingAdSets },
@@ -68,16 +83,20 @@ const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center justify-between h-16">
             {/* Logo and Brand */}
             <div className="flex items-center space-x-8">
-              <div className="flex items-center space-x-3">
-                                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                   <div className={`w-4 h-4 rounded-sm transition-colors duration-300 ${
-                     theme === 'white' ? 'bg-white' : 'bg-slate-200'
-                   }`}></div>
-                 </div>
-                <span className={`text-xl font-bold transition-colors duration-300 ${
+              <button 
+                onClick={handleLogoClick}
+                className="flex items-center space-x-3 hover:opacity-80 transition-all duration-200 cursor-pointer group"
+                title={isLoggedIn ? "Go to Campaigns" : "Go to Homepage"}
+              >
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <div className={`w-4 h-4 rounded-sm transition-colors duration-300 ${
+                    theme === 'white' ? 'bg-white' : 'bg-slate-200'
+                  }`}></div>
+                </div>
+                <span className={`text-xl font-bold transition-colors duration-300 group-hover:text-blue-600 ${
                   theme === 'white' ? 'text-gray-900' : 'text-gray-100'
                 }`}>Intrend</span>
-              </div>
+              </button>
               
               {/* Main Navigation */}
               <nav className="flex space-x-1">

@@ -671,6 +671,7 @@ const MetaDashboardRefactored: React.FC = () => {
         isLoadingAdSets={isLoadingAdsets}
         isLoadingAds={isLoadingAds}
         isLoadingDemographics={isLoadingDemographics}
+        isLoggedIn={true}
       />
 
       {/* Main Content */}

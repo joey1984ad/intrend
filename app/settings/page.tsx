@@ -8,22 +8,31 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [mounted, setMounted] = useState(false);
   
-  // Get theme context only after component mounts, with fallback
-  let theme = 'white';
-  let setTheme = (newTheme: 'white' | 'dark') => {};
+  // Always call hooks first, then handle theme context safely
+  const [theme, setTheme] = useState<'white' | 'dark'>('white');
   
-  try {
-    const themeContext = useDashboardTheme();
-    theme = themeContext?.theme || 'white';
-    setTheme = themeContext?.setTheme || (() => {});
-  } catch (error) {
-    // If theme context is not available, use default theme
-    theme = 'white';
-    setTheme = (newTheme: 'white' | 'dark') => {
-      console.log('Theme context not available, cannot change theme');
-    };
-    console.log('Theme context not available, using default theme');
-  }
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // Try to get theme context safely after component is mounted
+  useEffect(() => {
+    if (mounted) {
+      try {
+        const themeContext = useDashboardTheme();
+        if (themeContext?.theme) {
+          setTheme(themeContext.theme);
+        }
+        if (themeContext?.setTheme) {
+          // Override the local setTheme with the context one
+          setTheme(themeContext.setTheme);
+        }
+      } catch (error) {
+        // If theme context is not available, keep default theme
+        console.log('Theme context not available, using default theme');
+      }
+    }
+  }, [mounted]);
   
   useEffect(() => {
     setMounted(true);

@@ -52,16 +52,27 @@ const Header: React.FC<HeaderProps> = ({
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [mounted, setMounted] = useState(false);
   
-  // Get theme context only after component mounts, with fallback
-  let theme = 'white';
-  try {
-    const themeContext = useDashboardTheme();
-    theme = themeContext?.theme || 'white';
-  } catch (error) {
-    // If theme context is not available, use default theme
-    theme = 'white';
-    console.log('Theme context not available, using default theme');
-  }
+  // Always call hooks first, then handle theme context safely
+  const [theme, setTheme] = useState<'white' | 'dark'>('white');
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // Try to get theme context safely after component is mounted
+  useEffect(() => {
+    if (mounted) {
+      try {
+        const themeContext = useDashboardTheme();
+        if (themeContext?.theme) {
+          setTheme(themeContext.theme);
+        }
+      } catch (error) {
+        // If theme context is not available, keep default theme
+        console.log('Theme context not available, using default theme');
+      }
+    }
+  }, [mounted]);
   
   const router = useRouter();
   

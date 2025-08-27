@@ -28,17 +28,14 @@ interface Invoice {
 export default function BillingPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [mounted, setMounted] = useState(false);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string>('');
   
-  // Get theme context only after component mounts, with fallback
-  let theme = 'white';
-  try {
-    const themeContext = useDashboardTheme();
-    theme = themeContext?.theme || 'white';
-  } catch (error) {
-    // If theme context is not available, use default theme
-    theme = 'white';
-    console.log('Theme context not available, using default theme');
-  }
+  // Always call hooks first, then handle theme context safely
+  const [theme, setTheme] = useState<'white' | 'dark'>('white');
   
   useEffect(() => {
     setMounted(true);
@@ -49,6 +46,21 @@ export default function BillingPage() {
       nodeEnv: process.env.NODE_ENV
     });
   }, []);
+  
+  // Try to get theme context safely after component is mounted
+  useEffect(() => {
+    if (mounted) {
+      try {
+        const themeContext = useDashboardTheme();
+        if (themeContext?.theme) {
+          setTheme(themeContext.theme);
+        }
+      } catch (error) {
+        // If theme context is not available, keep default theme
+        console.log('Theme context not available, using default theme');
+      }
+    }
+  }, [mounted]);
   
   // Don't render until mounted to avoid SSR issues
   if (!mounted) {

@@ -35,6 +35,12 @@ export default function BillingPage() {
   
   useEffect(() => {
     setMounted(true);
+    
+    // Debug: Log available environment variables
+    console.log('Available env vars:', {
+      stripeKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+      nodeEnv: process.env.NODE_ENV
+    });
   }, []);
   
   // Don't render until mounted to avoid SSR issues
@@ -88,6 +94,14 @@ export default function BillingPage() {
 
   const handleCheckout = async () => {
     try {
+      // Check if Stripe is configured
+      const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+      if (!stripeKey) {
+        console.warn('Stripe publishable key not found');
+        alert('Stripe is not configured. Please contact support.');
+        return;
+      }
+
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -109,14 +123,25 @@ export default function BillingPage() {
         } else if (data.redirectUrl) {
           window.location.href = data.redirectUrl;
         }
+      } else {
+        alert('Failed to create checkout session. Please try again.');
       }
     } catch (error) {
       console.error('Checkout error:', error);
+      alert('Failed to create checkout session. Please try again.');
     }
   };
 
   const handleCustomerPortal = async () => {
     try {
+      // Check if Stripe is configured
+      const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+      if (!stripeKey) {
+        console.warn('Stripe publishable key not found');
+        alert('Stripe is not configured. Please contact support.');
+        return;
+      }
+
       const response = await fetch('/api/stripe/customer-portal', {
         method: 'POST',
         headers: {
@@ -132,9 +157,12 @@ export default function BillingPage() {
       
       if (data.success && data.url) {
         window.location.href = data.url;
+      } else {
+        alert('Failed to access customer portal. Please try again.');
       }
     } catch (error) {
       console.error('Customer portal error:', error);
+      alert('Failed to access customer portal. Please try again.');
     }
   };
 

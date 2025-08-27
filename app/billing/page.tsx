@@ -70,11 +70,6 @@ export default function BillingPage() {
       </div>
     );
   }
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<string>('');
 
   // Mock data - replace with real API calls
   useEffect(() => {

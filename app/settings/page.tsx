@@ -5,8 +5,26 @@ import { Settings, User, Bell, Shield, Palette, Globe, Database, Key, LogOut } f
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useDashboardTheme();
   const [activeTab, setActiveTab] = useState('profile');
+  const [mounted, setMounted] = useState(false);
+  
+  // Get theme context only after component mounts
+  const themeContext = useDashboardTheme();
+  const theme = themeContext?.theme || 'white';
+  const setTheme = themeContext?.setTheme || (() => {});
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // Don't render until mounted to avoid SSR issues
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },

@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, BarChart3, Target, Grid3X3, Users, Image, Library, Bell, User, ChevronDown, Settings, LogOut } from 'lucide-react';
+import { Loader2, BarChart3, Target, Grid3X3, Users, Image, Library, Bell, User, ChevronDown, Settings, LogOut, CreditCard } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 import { ConnectedAccount, Notification } from './types';
 
@@ -49,9 +49,32 @@ const Header: React.FC<HeaderProps> = ({
   isLoadingDemographics,
   isLoggedIn = false
 }) => {
-  const { theme } = useDashboardTheme();
-  const router = useRouter();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  
+  // Get theme context only after component mounts
+  const themeContext = useDashboardTheme();
+  const theme = themeContext?.theme || 'white';
+  
+  const router = useRouter();
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // Don't render until mounted to avoid SSR issues
+  if (!mounted) {
+    return (
+      <div className="shadow-sm border-b bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="animate-pulse bg-gray-200 h-8 w-32 rounded"></div>
+            <div className="animate-pulse bg-gray-200 h-8 w-48 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogoClick = () => {
     if (isLoggedIn) {
@@ -303,6 +326,17 @@ const Header: React.FC<HeaderProps> = ({
                       >
                         <Settings className="w-4 h-4" />
                         <span>Settings</span>
+                      </button>
+                      <button
+                        onClick={() => router.push('/billing')}
+                        className={`w-full flex items-center space-x-3 px-4 py-2 text-sm transition-colors duration-200 ${
+                          theme === 'white'
+                            ? 'text-gray-700 hover:bg-gray-50'
+                            : 'text-gray-200 hover:bg-slate-700'
+                        }`}
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        <span>Billing</span>
                       </button>
                       <button
                         onClick={() => router.push('/profile')}

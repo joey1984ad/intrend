@@ -266,7 +266,7 @@ const SaaSLandingPage: React.FC = () => {
                 </ul>
                 
                 <a 
-                  href="/signup"
+                  href="/billing"
                   className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-300 inline-block text-center ${
                     plan.popular
                       ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105'

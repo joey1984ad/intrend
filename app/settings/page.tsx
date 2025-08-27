@@ -8,10 +8,22 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [mounted, setMounted] = useState(false);
   
-  // Get theme context only after component mounts
-  const themeContext = useDashboardTheme();
-  const theme = themeContext?.theme || 'white';
-  const setTheme = themeContext?.setTheme || (() => {});
+  // Get theme context only after component mounts, with fallback
+  let theme = 'white';
+  let setTheme = (newTheme: 'white' | 'dark') => {};
+  
+  try {
+    const themeContext = useDashboardTheme();
+    theme = themeContext?.theme || 'white';
+    setTheme = themeContext?.setTheme || (() => {});
+  } catch (error) {
+    // If theme context is not available, use default theme
+    theme = 'white';
+    setTheme = (newTheme: 'white' | 'dark') => {
+      console.log('Theme context not available, cannot change theme');
+    };
+    console.log('Theme context not available, using default theme');
+  }
   
   useEffect(() => {
     setMounted(true);

@@ -1,10 +1,12 @@
 import Stripe from 'stripe';
 
-// Server-side Stripe instance
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-06-20',
-  typescript: true,
-});
+// Server-side Stripe instance - only create if secret key exists
+export const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20',
+      typescript: true,
+    })
+  : null;
 
 // Client-side Stripe instance
 export const getStripe = () => {

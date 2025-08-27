@@ -29,9 +29,16 @@ export default function BillingPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [mounted, setMounted] = useState(false);
   
-  // Get theme context only after component mounts
-  const themeContext = useDashboardTheme();
-  const theme = themeContext?.theme || 'white';
+  // Get theme context only after component mounts, with fallback
+  let theme = 'white';
+  try {
+    const themeContext = useDashboardTheme();
+    theme = themeContext?.theme || 'white';
+  } catch (error) {
+    // If theme context is not available, use default theme
+    theme = 'white';
+    console.log('Theme context not available, using default theme');
+  }
   
   useEffect(() => {
     setMounted(true);

@@ -1,8 +1,8 @@
 'use client'
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, BarChart3, Target, Grid3X3, Users, Image, Library, Bell, User, ChevronDown } from 'lucide-react';
+import { Loader2, BarChart3, Target, Grid3X3, Users, Image, Library, Bell, User, ChevronDown, Settings, LogOut } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 import { ConnectedAccount, Notification } from './types';
 
@@ -51,6 +51,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const { theme } = useDashboardTheme();
   const router = useRouter();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const handleLogoClick = () => {
     if (isLoggedIn) {
@@ -229,10 +230,17 @@ const Header: React.FC<HeaderProps> = ({
                 <Loader2 className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
 
-              {/* User Profile */}
-              <div className={`flex items-center space-x-3 pl-4 border-l transition-colors duration-300 ${
-                theme === 'white' ? 'border-gray-200' : 'border-slate-700'
-              }`}>
+                            {/* User Profile Dropdown */}
+              <div 
+                className="relative"
+                onMouseEnter={() => setShowProfileMenu(true)}
+                onMouseLeave={() => setShowProfileMenu(false)}
+              >
+                <button 
+                  className={`flex items-center space-x-3 pl-4 border-l transition-colors duration-300 hover:opacity-80 ${
+                    theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+                  }`}
+                >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-300 ${
                   theme === 'white' ? 'bg-gray-200' : 'bg-slate-600'
                 }`}>
@@ -251,6 +259,84 @@ const Header: React.FC<HeaderProps> = ({
                 <ChevronDown className={`w-4 h-4 transition-colors duration-300 ${
                   theme === 'white' ? 'text-gray-400' : 'text-gray-500'
                 }`} />
+              </button>
+
+                {/* Profile Dropdown Menu */}
+                {showProfileMenu && (
+                  <div 
+                    className={`absolute right-0 mt-0 w-56 rounded-xl shadow-xl border z-50 transition-colors duration-300 ${
+                      theme === 'white' 
+                        ? 'bg-white border-gray-200' 
+                        : 'bg-slate-800 border-slate-700'
+                    }`}
+                  >
+                    <div className={`p-4 border-b transition-colors duration-300 ${
+                      theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+                    }`}>
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                          theme === 'white' ? 'bg-gray-200' : 'bg-slate-600'
+                        }`}>
+                          <User className={`w-5 h-5 transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+                          }`} />
+                        </div>
+                        <div>
+                          <p className={`font-medium transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                          }`}>John Doe</p>
+                          <p className={`text-sm transition-colors duration-300 ${
+                            theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+                          }`}>john.doe@example.com</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="py-2">
+                      <button
+                        onClick={() => router.push('/settings')}
+                        className={`w-full flex items-center space-x-3 px-4 py-2 text-sm transition-colors duration-200 ${
+                          theme === 'white'
+                            ? 'text-gray-700 hover:bg-gray-50'
+                            : 'text-gray-200 hover:bg-slate-700'
+                        }`}
+                      >
+                        <Settings className="w-4 h-4" />
+                        <span>Settings</span>
+                      </button>
+                      <button
+                        onClick={() => router.push('/profile')}
+                        className={`w-full flex items-center space-x-3 px-4 py-2 text-sm transition-colors duration-200 ${
+                          theme === 'white'
+                            ? 'text-gray-700 hover:bg-gray-50'
+                            : 'text-gray-200 hover:bg-slate-700'
+                        }`}
+                      >
+                        <User className="w-4 h-4" />
+                        <span>Profile</span>
+                      </button>
+                    </div>
+                    
+                    <div className={`py-2 border-t transition-colors duration-300 ${
+                      theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+                    }`}>
+                      <button
+                        onClick={() => {
+                          // Handle logout
+                          console.log('Logout clicked');
+                        }}
+                        className={`w-full flex items-center space-x-3 px-4 py-2 text-sm transition-colors duration-200 ${
+                          theme === 'white'
+                            ? 'text-red-600 hover:bg-red-50'
+                            : 'text-red-400 hover:bg-red-900/20'
+                        }`}
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -4,6 +4,18 @@ import React, { useState } from 'react';
 import { Filter, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
+// Debug utility function
+const debugLog = (component: string, functionName: string, message: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  const logMessage = `🔍 [${timestamp}] ${component}.${functionName}: ${message}`;
+  
+  if (data) {
+    console.log(logMessage, data);
+  } else {
+    console.log(logMessage);
+  }
+};
+
 interface AdsLibraryFiltersProps {
   filters: {
     region: string;
@@ -21,8 +33,21 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
   filters,
   onFiltersChange
 }) => {
+  debugLog('AdsLibraryFilters', 'constructor', 'Component initialized with props', {
+    filters,
+    filtersKeys: Object.keys(filters)
+  });
+
   const { theme } = useDashboardTheme();
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Debug filters changes
+  React.useEffect(() => {
+    debugLog('AdsLibraryFilters', 'useEffect', 'Filters prop changed', {
+      oldFilters: filters,
+      newFilters: filters
+    });
+  }, [filters]);
 
   const regions = [
     { value: 'US', label: 'United States' },
@@ -69,18 +94,38 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
   ];
 
   const handleFilterChange = (key: string, value: any) => {
+    debugLog('AdsLibraryFilters', 'handleFilterChange', 'Filter value changed', {
+      key,
+      oldValue: filters[key as keyof typeof filters],
+      newValue: value,
+      allFilters: filters
+    });
+    
     const newFilters = { ...filters, [key]: value };
+    debugLog('AdsLibraryFilters', 'handleFilterChange', 'Calling onFiltersChange', newFilters);
     onFiltersChange(newFilters);
   };
 
   const handlePlatformToggle = (platform: string) => {
+    debugLog('AdsLibraryFilters', 'handlePlatformToggle', 'Platform toggle clicked', {
+      platform,
+      currentPlatforms: filters.publisherPlatforms,
+      isCurrentlyIncluded: filters.publisherPlatforms.includes(platform)
+    });
+    
     const newPlatforms = filters.publisherPlatforms.includes(platform)
       ? filters.publisherPlatforms.filter(p => p !== platform)
       : [...filters.publisherPlatforms, platform];
+    
+    debugLog('AdsLibraryFilters', 'handlePlatformToggle', 'New platforms array', newPlatforms);
     handleFilterChange('publisherPlatforms', newPlatforms);
   };
 
   const clearFilters = () => {
+    debugLog('AdsLibraryFilters', 'clearFilters', 'Clear filters button clicked', {
+      currentFilters: filters
+    });
+    
     const defaultFilters = {
       region: 'US',
       mediaType: 'all',
@@ -90,7 +135,17 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
       maxSpend: '',
       publisherPlatforms: []
     };
+    
+    debugLog('AdsLibraryFilters', 'clearFilters', 'Setting default filters', defaultFilters);
     onFiltersChange(defaultFilters);
+  };
+
+  const toggleExpanded = () => {
+    debugLog('AdsLibraryFilters', 'toggleExpanded', 'Toggle expanded clicked', {
+      currentState: isExpanded,
+      newState: !isExpanded
+    });
+    setIsExpanded(!isExpanded);
   };
 
   const hasActiveFilters = 
@@ -102,11 +157,18 @@ const AdsLibraryFilters: React.FC<AdsLibraryFiltersProps> = ({
     filters.maxSpend !== '' ||
     filters.publisherPlatforms.length > 0;
 
+  debugLog('AdsLibraryFilters', 'render', 'Rendering filters component', {
+    isExpanded,
+    hasActiveFilters,
+    filters,
+    theme
+  });
+
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between">
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={toggleExpanded}
           className={`flex items-center space-x-2 transition-colors duration-300 ${
             theme === 'white' 
               ? 'text-gray-700 hover:text-gray-900' 

@@ -3,6 +3,18 @@
 import React from 'react';
 import { Eye, ExternalLink, Play, Image as ImageIcon, Calendar, DollarSign, MapPin } from 'lucide-react';
 
+// Debug utility function
+const debugLog = (component: string, functionName: string, message: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  const logMessage = `🔍 [${timestamp}] ${component}.${functionName}: ${message}`;
+  
+  if (data) {
+    console.log(logMessage, data);
+  } else {
+    console.log(logMessage);
+  }
+};
+
 interface AdsLibraryAd {
   id: string;
   adCreativeBody: string;
@@ -25,6 +37,7 @@ interface AdsLibraryAd {
   impressions: {
     lowerBound: string;
     upperBound: string;
+    upperBound: string;
   };
   publisherPlatforms: string[];
   mediaType: 'image' | 'video' | 'carousel' | 'dynamic';
@@ -41,80 +54,186 @@ interface AdsLibraryCardProps {
 }
 
 const AdsLibraryCard: React.FC<AdsLibraryCardProps> = ({ ad, onClick }) => {
+  debugLog('AdsLibraryCard', 'constructor', 'Component initialized with ad', {
+    adId: ad.id,
+    adTitle: ad.adCreativeLinkTitle,
+    pageName: ad.pageName,
+    mediaType: ad.mediaType,
+    status: ad.status
+  });
+
   const formatCurrency = (amount: string) => {
-    const num = parseInt(amount);
-    if (isNaN(num)) return '$0';
+    debugLog('AdsLibraryCard', 'formatCurrency', 'Formatting currency', { amount });
     
-    if (num >= 1000000) {
-      return `$${(num / 1000000).toFixed(1)}M`;
-    } else if (num >= 1000) {
-      return `$${(num / 1000).toFixed(1)}K`;
+    const num = parseInt(amount);
+    if (isNaN(num)) {
+      debugLog('AdsLibraryCard', 'formatCurrency', 'Invalid amount, returning $0', { amount });
+      return '$0';
     }
-    return `$${num.toLocaleString()}`;
+    
+    let result;
+    if (num >= 1000000) {
+      result = `$${(num / 1000000).toFixed(1)}M`;
+    } else if (num >= 1000) {
+      result = `$${(num / 1000).toFixed(1)}K`;
+    } else {
+      result = `$${num.toLocaleString()}`;
+    }
+    
+    debugLog('AdsLibraryCard', 'formatCurrency', 'Currency formatted', { amount, result });
+    return result;
   };
 
   const formatImpressions = (amount: string) => {
-    const num = parseInt(amount);
-    if (isNaN(num)) return '0';
+    debugLog('AdsLibraryCard', 'formatImpressions', 'Formatting impressions', { amount });
     
-    if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(1)}M`;
-    } else if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}K`;
+    const num = parseInt(amount);
+    if (isNaN(num)) {
+      debugLog('AdsLibraryCard', 'formatImpressions', 'Invalid amount, returning 0', { amount });
+      return '0';
     }
-    return num.toLocaleString();
+    
+    let result;
+    if (num >= 1000000) {
+      result = `${(num / 1000000).toFixed(1)}M`;
+    } else if (num >= 1000) {
+      result = `${(num / 1000).toFixed(1)}K`;
+    } else {
+      result = num.toLocaleString();
+    }
+    
+    debugLog('AdsLibraryCard', 'formatImpressions', 'Impressions formatted', { amount, result });
+    return result;
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    debugLog('AdsLibraryCard', 'formatDate', 'Formatting date', { dateString });
+    
+    try {
+      const date = new Date(dateString);
+      const result = date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+      
+      debugLog('AdsLibraryCard', 'formatDate', 'Date formatted', { dateString, result });
+      return result;
+    } catch (error) {
+      debugLog('AdsLibraryCard', 'formatDate', 'Date formatting error', { dateString, error });
+      return 'Invalid Date';
+    }
   };
 
   const getPlatformIcon = (platform: string) => {
+    debugLog('AdsLibraryCard', 'getPlatformIcon', 'Getting platform icon', { platform });
+    
+    let icon;
     switch (platform.toLowerCase()) {
       case 'facebook':
-        return '📘';
+        icon = '📘';
+        break;
       case 'instagram':
-        return '📷';
+        icon = '📷';
+        break;
       case 'messenger':
-        return '💬';
+        icon = '💬';
+        break;
       case 'audience_network':
-        return '🌐';
+        icon = '🌐';
+        break;
       default:
-        return '📱';
+        icon = '📱';
+        break;
     }
+    
+    debugLog('AdsLibraryCard', 'getPlatformIcon', 'Platform icon selected', { platform, icon });
+    return icon;
   };
 
   const getMediaIcon = () => {
+    debugLog('AdsLibraryCard', 'getMediaIcon', 'Getting media icon', { mediaType: ad.mediaType });
+    
+    let icon;
     switch (ad.mediaType) {
       case 'video':
-        return <Play className="h-8 w-8 text-white" />;
+        icon = <Play className="h-8 w-8 text-white" />;
+        break;
       case 'image':
-        return <ImageIcon className="h-8 w-8 text-white" />;
+        icon = <ImageIcon className="h-8 w-8 text-white" />;
+        break;
       case 'carousel':
-        return <div className="text-white text-sm font-medium">Carousel</div>;
+        icon = <div className="text-white text-sm font-medium">Carousel</div>;
+        break;
       case 'dynamic':
-        return <div className="text-white text-sm font-medium">Dynamic</div>;
+        icon = <div className="text-white text-sm font-medium">Dynamic</div>;
+        break;
       default:
-        return <ImageIcon className="h-8 w-8 text-white" />;
+        icon = <ImageIcon className="h-8 w-8 text-white" />;
+        break;
     }
+    
+    debugLog('AdsLibraryCard', 'getMediaIcon', 'Media icon selected', { mediaType: ad.mediaType });
+    return icon;
   };
 
   const getStatusColor = () => {
+    debugLog('AdsLibraryCard', 'getStatusColor', 'Getting status color', { status: ad.status });
+    
+    let colorClass;
     switch (ad.status) {
       case 'ACTIVE':
-        return 'bg-green-100 text-green-800';
+        colorClass = 'bg-green-100 text-green-800';
+        break;
       case 'PAUSED':
-        return 'bg-yellow-100 text-yellow-800';
+        colorClass = 'bg-yellow-100 text-yellow-800';
+        break;
       case 'DELETED':
-        return 'bg-red-100 text-red-800';
+        colorClass = 'bg-red-100 text-red-800';
+        break;
       default:
-        return 'bg-gray-100 text-gray-800';
+        colorClass = 'bg-gray-100 text-gray-800';
+        break;
     }
+    
+    debugLog('AdsLibraryCard', 'getStatusColor', 'Status color selected', { status: ad.status, colorClass });
+    return colorClass;
   };
+
+  const handleCardClick = () => {
+    debugLog('AdsLibraryCard', 'handleCardClick', 'Card clicked', {
+      adId: ad.id,
+      adTitle: ad.adCreativeLinkTitle,
+      pageName: ad.pageName
+    });
+    onClick();
+  };
+
+  const handleExternalLinkClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    debugLog('AdsLibraryCard', 'handleExternalLinkClick', 'External link clicked', {
+      adId: ad.id,
+      adSnapshotUrl: ad.adSnapshotUrl
+    });
+    window.open(ad.adSnapshotUrl, '_blank');
+  };
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    debugLog('AdsLibraryCard', 'handleImageError', 'Image failed to load', {
+      adId: ad.id,
+      imageUrl: ad.imageUrl || ad.thumbnailUrl
+    });
+    const target = e.target as HTMLImageElement;
+    target.style.display = 'none';
+  };
+
+  debugLog('AdsLibraryCard', 'render', 'Rendering ad card', {
+    adId: ad.id,
+    hasImage: !!(ad.imageUrl || ad.thumbnailUrl),
+    hasVideo: !!ad.videoUrl,
+    mediaType: ad.mediaType,
+    status: ad.status
+  });
 
   return (
     <div className={`border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer ${
@@ -129,10 +248,7 @@ const AdsLibraryCard: React.FC<AdsLibraryCardProps> = ({ ad, onClick }) => {
             src={ad.imageUrl || ad.thumbnailUrl}
             alt="Ad preview"
             className="w-full h-full object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-            }}
+            onError={handleImageError}
           />
         ) : ad.videoUrl ? (
           <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
@@ -169,10 +285,7 @@ const AdsLibraryCard: React.FC<AdsLibraryCardProps> = ({ ad, onClick }) => {
             {ad.pageName}
           </h3>
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              window.open(ad.adSnapshotUrl, '_blank');
-            }}
+            onClick={handleExternalLinkClick}
             className="flex-shrink-0 ml-2 p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
             title="View on Facebook"
           >
@@ -212,8 +325,8 @@ const AdsLibraryCard: React.FC<AdsLibraryCardProps> = ({ ad, onClick }) => {
           theme === 'white' ? 'text-gray-500' : 'text-gray-400'
         }`}>
           <div className="flex items-center space-x-1">
-            <DollarSign className="h-3 w-3" />
-            <span>
+            <DollarSign className="h-3 w-3 flex-shrink-0" />
+            <span className="ml-1">
               {ad.spend.lowerBound === ad.spend.upperBound
                 ? formatCurrency(ad.spend.lowerBound)
                 : `${formatCurrency(ad.spend.lowerBound)} - ${formatCurrency(ad.spend.upperBound)}`
@@ -221,8 +334,8 @@ const AdsLibraryCard: React.FC<AdsLibraryCardProps> = ({ ad, onClick }) => {
             </span>
           </div>
           <div className="flex items-center space-x-1">
-            <Eye className="h-3 w-3" />
-            <span>
+            <Eye className="h-3 w-3 flex-shrink-0" />
+            <span className="ml-1">
               {ad.impressions.lowerBound === ad.impressions.upperBound
                 ? formatImpressions(ad.impressions.lowerBound)
                 : `${formatImpressions(ad.impressions.lowerBound)} - ${formatImpressions(ad.impressions.upperBound)}`
@@ -252,12 +365,12 @@ const AdsLibraryCard: React.FC<AdsLibraryCardProps> = ({ ad, onClick }) => {
         {/* Footer */}
         <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
           <div className="flex items-center space-x-1">
-            <Calendar className="h-3 w-3" />
-            <span>{formatDate(ad.adDeliveryStartTime)}</span>
+            <Calendar className="h-3 w-3 flex-shrink-0" />
+            <span className="ml-1">{formatDate(ad.adDeliveryStartTime)}</span>
           </div>
           <div className="flex items-center space-x-1">
-            <MapPin className="h-3 w-3" />
-            <span>{ad.region}</span>
+            <MapPin className="h-3 w-3 flex-shrink-0" />
+            <span className="ml-1">{ad.region}</span>
           </div>
         </div>
 
@@ -270,7 +383,7 @@ const AdsLibraryCard: React.FC<AdsLibraryCardProps> = ({ ad, onClick }) => {
 
         {/* View Details Button */}
         <button
-          onClick={onClick}
+          onClick={handleCardClick}
           className="w-full mt-3 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
         >
           <Eye className="inline h-4 w-4 mr-1" />

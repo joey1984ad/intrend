@@ -4,6 +4,18 @@ import React, { useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
+// Debug utility function
+const debugLog = (component: string, functionName: string, message: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  const logMessage = `🔍 [${timestamp}] ${component}.${functionName}: ${message}`;
+  
+  if (data) {
+    console.log(logMessage, data);
+  } else {
+    console.log(logMessage);
+  }
+};
+
 interface AdsLibrarySearchProps {
   searchTerm: string;
   onSearch: (query: string) => void;
@@ -15,26 +27,75 @@ const AdsLibrarySearch: React.FC<AdsLibrarySearchProps> = ({
   onSearch,
   isLoading
 }) => {
+  debugLog('AdsLibrarySearch', 'constructor', 'Component initialized with props', {
+    searchTerm,
+    isLoading
+  });
+
   const { theme } = useDashboardTheme();
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
 
+  // Debug localSearchTerm changes
+  React.useEffect(() => {
+    debugLog('AdsLibrarySearch', 'useEffect', 'localSearchTerm changed', {
+      oldValue: searchTerm,
+      newValue: localSearchTerm
+    });
+  }, [localSearchTerm, searchTerm]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    debugLog('AdsLibrarySearch', 'handleSubmit', 'Form submitted', {
+      localSearchTerm,
+      trimmed: localSearchTerm.trim(),
+      hasContent: localSearchTerm.trim().length > 0
+    });
+    
     if (localSearchTerm.trim()) {
+      debugLog('AdsLibrarySearch', 'handleSubmit', 'Calling onSearch with trimmed term');
       onSearch(localSearchTerm.trim());
+    } else {
+      debugLog('AdsLibrarySearch', 'handleSubmit', 'Search term is empty, not calling onSearch');
     }
   };
 
   const handleClear = () => {
+    debugLog('AdsLibrarySearch', 'handleClear', 'Clear button clicked');
     setLocalSearchTerm('');
     onSearch('');
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      debugLog('AdsLibrarySearch', 'handleKeyPress', 'Enter key pressed');
       handleSubmit(e);
     }
   };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    debugLog('AdsLibrarySearch', 'handleInputChange', 'Input value changed', {
+      oldValue: localSearchTerm,
+      newValue,
+      length: newValue.length
+    });
+    setLocalSearchTerm(newValue);
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    debugLog('AdsLibrarySearch', 'handleSuggestionClick', 'Suggestion clicked', {
+      suggestion,
+      currentLocalTerm: localSearchTerm
+    });
+    setLocalSearchTerm(suggestion);
+    onSearch(suggestion);
+  };
+
+  debugLog('AdsLibrarySearch', 'render', 'Rendering search component', {
+    localSearchTerm,
+    isLoading,
+    theme
+  });
 
   return (
     <div className="mb-6">
@@ -46,7 +107,7 @@ const AdsLibrarySearch: React.FC<AdsLibrarySearchProps> = ({
           <input
             type="text"
             value={localSearchTerm}
-            onChange={(e) => setLocalSearchTerm(e.target.value)}
+            onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder="Search for ads, brands, or keywords..."
             className={`block w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-300 ${
@@ -91,10 +152,7 @@ const AdsLibrarySearch: React.FC<AdsLibrarySearchProps> = ({
         {['Nike', 'Apple', 'McDonald\'s', 'Coca-Cola', 'Tesla'].map((suggestion) => (
           <button
             key={suggestion}
-            onClick={() => {
-              setLocalSearchTerm(suggestion);
-              onSearch(suggestion);
-            }}
+            onClick={() => handleSuggestionClick(suggestion)}
             className={`text-sm text-blue-600 hover:text-blue-800 hover:underline px-2 py-1 rounded transition-colors duration-300 ${
               theme === 'white'
                 ? 'hover:bg-blue-50'

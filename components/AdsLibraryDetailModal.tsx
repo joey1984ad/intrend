@@ -4,6 +4,18 @@ import React from 'react';
 import { X, ExternalLink, Calendar, DollarSign, Eye, MapPin, Building, Play, Image as ImageIcon } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 
+// Debug utility function
+const debugLog = (component: string, functionName: string, message: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  const logMessage = `🔍 [${timestamp}] ${component}.${functionName}: ${message}`;
+  
+  if (data) {
+    console.log(logMessage, data);
+  } else {
+    console.log(logMessage);
+  }
+};
+
 interface AdsLibraryAd {
   id: string;
   adCreativeBody: string;
@@ -47,84 +59,201 @@ const AdsLibraryDetailModal: React.FC<AdsLibraryDetailModalProps> = ({
   isOpen,
   onClose
 }) => {
+  debugLog('AdsLibraryDetailModal', 'constructor', 'Component initialized with props', {
+    adId: ad.id,
+    isOpen,
+    adTitle: ad.adCreativeLinkTitle,
+    pageName: ad.pageName
+  });
+
   const { theme } = useDashboardTheme();
-  if (!isOpen) return null;
+
+  // Debug props changes
+  React.useEffect(() => {
+    debugLog('AdsLibraryDetailModal', 'useEffect', 'Props changed', {
+      adId: ad.id,
+      isOpen,
+      adTitle: ad.adCreativeLinkTitle
+    });
+  }, [ad, isOpen]);
+
+  if (!isOpen) {
+    debugLog('AdsLibraryDetailModal', 'render', 'Modal is closed, returning null');
+    return null;
+  }
 
   const formatCurrency = (amount: string) => {
-    const num = parseInt(amount);
-    if (isNaN(num)) return '$0';
+    debugLog('AdsLibraryDetailModal', 'formatCurrency', 'Formatting currency', { amount });
     
-    if (num >= 1000000) {
-      return `$${(num / 1000000).toFixed(1)}M`;
-    } else if (num >= 1000) {
-      return `$${(num / 1000).toFixed(1)}K`;
+    const num = parseInt(amount);
+    if (isNaN(num)) {
+      debugLog('AdsLibraryDetailModal', 'formatCurrency', 'Invalid amount, returning $0', { amount });
+      return '$0';
     }
-    return `$${num.toLocaleString()}`;
+    
+    let result;
+    if (num >= 1000000) {
+      result = `$${(num / 1000000).toFixed(1)}M`;
+    } else if (num >= 1000) {
+      result = `$${(num / 1000).toFixed(1)}K`;
+    } else {
+      result = `$${num.toLocaleString()}`;
+    }
+    
+    debugLog('AdsLibraryDetailModal', 'formatCurrency', 'Currency formatted', { amount, result });
+    return result;
   };
 
   const formatImpressions = (amount: string) => {
-    const num = parseInt(amount);
-    if (isNaN(num)) return '0';
+    debugLog('AdsLibraryDetailModal', 'formatImpressions', 'Formatting impressions', { amount });
     
-    if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(1)}M`;
-    } else if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}K`;
+    const num = parseInt(amount);
+    if (isNaN(num)) {
+      debugLog('AdsLibraryDetailModal', 'formatImpressions', 'Invalid amount, returning 0', { amount });
+      return '0';
     }
-    return num.toLocaleString();
+    
+    let result;
+    if (num >= 1000000) {
+      result = `${(num / 1000000).toFixed(1)}M`;
+    } else if (num >= 1000) {
+      result = `${(num / 1000).toFixed(1)}K`;
+    } else {
+      result = num.toLocaleString();
+    }
+    
+    debugLog('AdsLibraryDetailModal', 'formatImpressions', 'Impressions formatted', { amount, result });
+    return result;
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    debugLog('AdsLibraryDetailModal', 'formatDate', 'Formatting date', { dateString });
+    
+    try {
+      const date = new Date(dateString);
+      const result = date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      
+      debugLog('AdsLibraryDetailModal', 'formatDate', 'Date formatted', { dateString, result });
+      return result;
+    } catch (error) {
+      debugLog('AdsLibraryDetailModal', 'formatDate', 'Date formatting error', { dateString, error });
+      return 'Invalid Date';
+    }
   };
 
   const getPlatformIcon = (platform: string) => {
+    debugLog('AdsLibraryDetailModal', 'getPlatformIcon', 'Getting platform icon', { platform });
+    
+    let icon;
     switch (platform.toLowerCase()) {
       case 'facebook':
-        return '📘';
+        icon = '📘';
+        break;
       case 'instagram':
-        return '📷';
+        icon = '📷';
+        break;
       case 'messenger':
-        return '💬';
+        icon = '💬';
+        break;
       case 'audience_network':
-        return '🌐';
+        icon = '🌐';
+        break;
       default:
-        return '📱';
+        icon = '📱';
+        break;
     }
+    
+    debugLog('AdsLibraryDetailModal', 'getPlatformIcon', 'Platform icon selected', { platform, icon });
+    return icon;
   };
 
   const getStatusColor = () => {
+    debugLog('AdsLibraryDetailModal', 'getStatusColor', 'Getting status color', { status: ad.status });
+    
+    let colorClass;
     switch (ad.status) {
       case 'ACTIVE':
-        return 'bg-green-100 text-green-800';
+        colorClass = 'bg-green-100 text-green-800';
+        break;
       case 'PAUSED':
-        return 'bg-yellow-100 text-yellow-800';
+        colorClass = 'bg-yellow-100 text-yellow-800';
+        break;
       case 'DELETED':
-        return 'bg-red-100 text-red-800';
+        colorClass = 'bg-red-100 text-red-800';
+        break;
       default:
-        return 'bg-gray-100 text-gray-800';
+        colorClass = 'bg-gray-100 text-gray-800';
+        break;
     }
+    
+    debugLog('AdsLibraryDetailModal', 'getStatusColor', 'Status color selected', { status: ad.status, colorClass });
+    return colorClass;
   };
 
   const getMediaIcon = () => {
+    debugLog('AdsLibraryDetailModal', 'getMediaIcon', 'Getting media icon', { mediaType: ad.mediaType });
+    
+    let icon;
     switch (ad.mediaType) {
       case 'video':
-        return <Play className="h-12 w-12 text-white" />;
+        icon = <Play className="h-12 w-12 text-white" />;
+        break;
       case 'image':
-        return <ImageIcon className="h-12 w-12 text-white" />;
+        icon = <ImageIcon className="h-12 w-12 text-white" />;
+        break;
       case 'carousel':
-        return <div className="text-white text-lg font-medium">Carousel</div>;
+        icon = <div className="text-white text-lg font-medium">Carousel</div>;
+        break;
       case 'dynamic':
-        return <div className="text-white text-lg font-medium">Dynamic</div>;
+        icon = <div className="text-white text-lg font-medium">Dynamic</div>;
+        break;
       default:
-        return <ImageIcon className="h-12 w-12 text-white" />;
+        icon = <ImageIcon className="h-12 w-12 text-white" />;
+        break;
     }
+    
+    debugLog('AdsLibraryDetailModal', 'getMediaIcon', 'Media icon selected', { mediaType: ad.mediaType });
+    return icon;
   };
+
+  const handleClose = () => {
+    debugLog('AdsLibraryDetailModal', 'handleClose', 'Close button clicked', {
+      adId: ad.id,
+      adTitle: ad.adCreativeLinkTitle
+    });
+    onClose();
+  };
+
+  const handleExternalLinkClick = () => {
+    debugLog('AdsLibraryDetailModal', 'handleExternalLinkClick', 'External link clicked', {
+      adId: ad.id,
+      adSnapshotUrl: ad.adSnapshotUrl
+    });
+    window.open(ad.adSnapshotUrl, '_blank');
+  };
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    debugLog('AdsLibraryDetailModal', 'handleImageError', 'Image failed to load', {
+      adId: ad.id,
+      imageUrl: ad.imageUrl || ad.thumbnailUrl
+    });
+    const target = e.target as HTMLImageElement;
+    target.style.display = 'none';
+  };
+
+  debugLog('AdsLibraryDetailModal', 'render', 'Rendering detail modal', {
+    adId: ad.id,
+    hasImage: !!(ad.imageUrl || ad.thumbnailUrl),
+    hasVideo: !!ad.videoUrl,
+    mediaType: ad.mediaType,
+    status: ad.status,
+    theme
+  });
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -144,7 +273,7 @@ const AdsLibraryDetailModal: React.FC<AdsLibraryDetailModalProps> = ({
             }`}>Detailed information about this advertisement</p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className={`p-2 rounded-lg transition-colors duration-300 ${
               theme === 'white'
                 ? 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
@@ -166,10 +295,7 @@ const AdsLibraryDetailModal: React.FC<AdsLibraryDetailModalProps> = ({
                     src={ad.imageUrl || ad.thumbnailUrl}
                     alt="Ad preview"
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                    }}
+                    onError={handleImageError}
                   />
                 ) : ad.videoUrl ? (
                   <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
@@ -202,6 +328,7 @@ const AdsLibraryDetailModal: React.FC<AdsLibraryDetailModalProps> = ({
                   href={ad.adSnapshotUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={handleExternalLinkClick}
                   className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <ExternalLink className="h-4 w-4" />
@@ -348,7 +475,7 @@ const AdsLibraryDetailModal: React.FC<AdsLibraryDetailModalProps> = ({
               Ad ID: {ad.id}
             </div>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             >
               Close

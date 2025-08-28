@@ -1,7 +1,0 @@
-[33mcommit 6d87864f8c581c2992b421a2c894e2dabdd0fb40[m[33m ([m[1;31morigin/facebook-first-attempt-fix[m[33m)[m
-Author: Joe S <Josephsaeid@gmail.com>
-Date:   Sun Aug 10 17:10:35 2025 -0700
-
-    Theme: in light mode, set .w-6 background to blue-600 as well
-
-app/globals.css

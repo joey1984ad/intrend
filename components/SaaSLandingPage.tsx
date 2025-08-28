@@ -399,7 +399,198 @@ const SaaSLandingPage: React.FC = () => {
         </div>
       </section>
 
-
+      {/* AI Ad Optimization Mockup Section */}
+      <section 
+        data-section="1"
+        className={`py-24 bg-white/60 backdrop-blur-sm transition-all duration-1000 ${
+          isVisible[1] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center space-x-2 bg-purple-50 border border-purple-200 rounded-full px-6 py-3 mb-6">
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-purple-700">AI-Powered Optimization</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-slate-900">
+              Watch AI Transform Your Ads in Real-Time
+            </h2>
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+              See how our AI analyzes your existing ads and generates high-performing variations that drive better results.
+            </p>
+          </div>
+          
+          <div className="relative">
+            {/* Mockup Dashboard Container */}
+            <div className="bg-white/90 backdrop-blur-sm border border-slate-200/50 rounded-3xl p-8 shadow-2xl overflow-hidden">
+              {/* Dashboard Header */}
+              <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                    <SparklesIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">TechFlow Agency</h3>
+                    <p className="text-sm text-slate-600">Campaign: Summer Sale 2024</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-slate-600">Live Optimization</span>
+                </div>
+              </div>
+              
+              {/* Campaign Performance Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                {/* Original Ad Performance */}
+                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-slate-900">Original Ad</h4>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">CTR:</span>
+                      <span className="font-medium text-slate-900">1.2%</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">CPC:</span>
+                      <span className="font-medium text-slate-900">$0.85</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">ROAS:</span>
+                      <span className="font-medium text-slate-900">2.1x</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* AI Analysis */}
+                <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-6 border border-purple-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-slate-900">AI Analysis</h4>
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2 text-sm">
+                      <CheckCircleIcon className="w-4 h-4 text-green-500" />
+                      <span className="text-slate-700">Strong visual hierarchy</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-sm">
+                      <CheckCircleIcon className="w-4 h-4 text-green-500" />
+                      <span className="text-slate-700">Clear CTA button</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-sm">
+                      <div className="w-4 h-4 bg-amber-500 rounded-full"></div>
+                      <span className="text-slate-700">Optimize color contrast</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Predicted Improvement */}
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 border border-emerald-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-slate-900">Predicted Results</h4>
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">CTR:</span>
+                      <span className="font-medium text-emerald-700">+45%</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">CPC:</span>
+                      <span className="font-medium text-emerald-700">-28%</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">ROAS:</span>
+                      <span className="font-medium text-emerald-700">+67%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* AI-Generated Variations */}
+              <div className="mb-8">
+                <h4 className="font-semibold text-slate-900 mb-4 flex items-center space-x-2">
+                  <CpuChipIcon className="w-5 h-5 text-purple-600" />
+                  <span>AI-Generated Variations</span>
+                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Variation 1 */}
+                  <div className="group relative bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-200 hover:border-blue-300 transition-all duration-300">
+                    <div className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                        <EyeIcon className="w-8 h-8 text-white" />
+                      </div>
+                      <h5 className="font-medium text-slate-900 mb-2">Variation A</h5>
+                      <p className="text-xs text-slate-600 mb-3">Enhanced contrast + Bold CTA</p>
+                      <div className="inline-flex items-center space-x-1 px-2 py-1 bg-blue-100 rounded-full">
+                        <span className="text-xs text-blue-700 font-medium">+52% CTR</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Variation 2 */}
+                  <div className="group relative bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-200 hover:border-emerald-300 transition-all duration-300">
+                    <div className="absolute top-2 right-2 w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                        <RocketLaunchIcon className="w-8 h-8 text-white" />
+                      </div>
+                      <h5 className="font-medium text-slate-900 mb-2">Variation B</h5>
+                      <p className="text-xs text-slate-600 mb-3">Dynamic messaging + Social proof</p>
+                      <div className="inline-flex items-center space-x-1 px-2 py-1 bg-emerald-100 rounded-full">
+                        <span className="text-xs text-emerald-700 font-medium">+38% ROAS</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Variation 3 */}
+                  <div className="group relative bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl p-4 border border-violet-200 hover:border-violet-300 transition-all duration-300">
+                    <div className="absolute top-2 right-2 w-3 h-3 bg-violet-500 rounded-full animate-pulse"></div>
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                        <SparklesIcon className="w-8 h-8 text-white" />
+                      </div>
+                      <h5 className="font-medium text-slate-900 mb-2">Variation C</h5>
+                      <p className="text-xs text-slate-600 mb-3">Personalized copy + Urgency</p>
+                      <div className="inline-flex items-center space-x-1 px-2 py-1 bg-violet-100 rounded-full">
+                        <span className="text-xs text-violet-700 font-medium">+41% Conv.</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-xl font-medium hover:from-purple-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                  <CpuChipIcon className="w-4 h-4" />
+                  <span>Generate More Variations</span>
+                </button>
+                <button className="inline-flex items-center space-x-2 px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition-all duration-300">
+                  <ChartBarIcon className="w-4 h-4" />
+                  <span>View Full Analysis</span>
+                </button>
+              </div>
+            </div>
+            
+            {/* Floating Success Metrics */}
+            <div className="absolute -top-4 -right-4 bg-white/90 backdrop-blur-sm border border-slate-200/50 rounded-2xl p-4 shadow-xl">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <CheckCircleIcon className="w-6 h-6 text-white" />
+                </div>
+                <p className="text-sm font-semibold text-slate-900">Optimization Complete</p>
+                <p className="text-xs text-slate-600">3 variations generated</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Pricing Section */}
       <section 

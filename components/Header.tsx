@@ -131,7 +131,7 @@ const Header: React.FC<HeaderProps> = ({
     return (
       <div className="shadow-sm border-b bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-20">
             <div className="animate-pulse bg-gray-200 h-8 w-32 rounded"></div>
             <div className="animate-pulse bg-gray-200 h-8 w-48 rounded"></div>
           </div>
@@ -149,7 +149,7 @@ const Header: React.FC<HeaderProps> = ({
           : 'bg-slate-800 border-slate-700'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-20">
             {/* Logo and Brand */}
             <div className="flex items-center space-x-4 lg:space-x-8">
               <button 
@@ -167,8 +167,8 @@ const Header: React.FC<HeaderProps> = ({
                 }`}>Intrend</span>
               </button>
               
-              {/* Desktop Navigation - Hidden on mobile */}
-              <nav className="hidden lg:flex space-x-1">
+              {/* Desktop Navigation - Visible on all screen sizes */}
+              <nav className="flex space-x-1 overflow-x-auto scrollbar-hide">
                 {tabs.map((tab) => {
                   const IconComponent = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -177,7 +177,7 @@ const Header: React.FC<HeaderProps> = ({
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${
+                      className={`px-3 lg:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-1 lg:space-x-2 whitespace-nowrap ${
                         isActive
                           ? theme === 'white'
                             ? 'text-blue-700 border-b-2 border-blue-600'
@@ -187,8 +187,8 @@ const Header: React.FC<HeaderProps> = ({
                             : 'text-gray-300 hover:text-white hover:bg-slate-700 hover:shadow-md'
                       }`}
                     >
-                      <IconComponent className="w-4 h-4" />
-                      <span>{tab.label}</span>
+                                             <IconComponent className="w-4 h-4" />
+                       <span className="hidden sm:inline">{tab.label}</span>
                       {tab.loading && (
                         <Loader2 className={`w-3.5 h-3.5 animate-spin transition-colors duration-300 ${
                           theme === 'white' ? 'text-blue-500' : 'text-blue-400'

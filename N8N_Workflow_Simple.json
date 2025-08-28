@@ -1,0 +1,75 @@
+{
+  "name": "AI Creative Analysis - Simple",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "analyze-creatives",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simple validation and response\nconst webhookData = $json;\nconst sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\nconsole.log(`🔍 [${sessionId}] Webhook data received:`, webhookData);\n\n// Check required fields\nif (!webhookData.accessToken || !webhookData.creativeId || !webhookData.adAccountId) {\n  return {\n    json: {\n      success: false,\n      error: \"Missing required fields\",\n      message: \"accessToken, creativeId, and adAccountId are required\",\n      sessionId: sessionId,\n      timestamp: new Date().toISOString()\n    }\n  };\n}\n\n// Return success response\nreturn {\n  json: {\n    success: true,\n    message: \"Webhook received successfully\",\n    sessionId: sessionId,\n    receivedData: webhookData,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "validate-data",
+      "name": "Validate Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        400,
+        640
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Data": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "id": "simple-ai-analysis",
+  "tags": []
+}

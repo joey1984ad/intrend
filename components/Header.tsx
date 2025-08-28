@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, BarChart3, Target, Grid3X3, Users, Image, Library, Bell, User, ChevronDown, Settings, LogOut, CreditCard } from 'lucide-react';
+import { Loader2, BarChart3, Target, Grid3X3, Users, Image, Library, User, ChevronDown, Settings, LogOut, CreditCard } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
-import { ConnectedAccount, Notification } from './types';
+import { ConnectedAccount } from './types';
 
 interface HeaderProps {
   activeTab: string;
@@ -17,9 +17,7 @@ interface HeaderProps {
   setSelectedDateRange: (range: string) => void;
   handleRefresh: () => void;
   isLoading: boolean;
-  showNotifications: boolean;
-  setShowNotifications: (show: boolean) => void;
-  notifications: Notification[];
+
   isLoadingCreatives?: boolean;
   isLoadingCampaigns?: boolean;
   isLoadingAdSets?: boolean;
@@ -39,9 +37,7 @@ const Header: React.FC<HeaderProps> = ({
   setSelectedDateRange,
   handleRefresh,
   isLoading,
-  showNotifications,
-  setShowNotifications,
-  notifications,
+
   isLoadingCreatives,
   isLoadingCampaigns,
   isLoadingAdSets,
@@ -52,27 +48,13 @@ const Header: React.FC<HeaderProps> = ({
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [mounted, setMounted] = useState(false);
   
-  // Always call hooks first, then handle theme context safely
-  const [theme, setTheme] = useState<'white' | 'dark'>('white');
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  
-  // Try to get theme context safely after component is mounted
-  useEffect(() => {
-    if (mounted) {
-      try {
-        const themeContext = useDashboardTheme();
-        if (themeContext?.theme) {
-          setTheme(themeContext.theme);
-        }
-      } catch (error) {
-        // If theme context is not available, keep default theme
-        console.log('Theme context not available, using default theme');
-      }
-    }
-  }, [mounted]);
+     // Get theme from context
+   const themeContext = useDashboardTheme();
+   const theme = themeContext?.theme || 'white';
+   
+   useEffect(() => {
+     setMounted(true);
+   }, []);
   
   const router = useRouter();
   
@@ -116,11 +98,11 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <>
       {/* Header */}
-      <div className={`shadow-sm border-b transition-colors duration-300 ${
-        theme === 'white' 
-          ? 'bg-theme border-gray-200' 
-          : 'bg-slate-800 border-slate-700'
-      }`}>
+                                         <div className={`shadow-sm border-b transition-colors duration-300 p-2.5 ${
+           theme === 'white' 
+             ? 'bg-white border-gray-200' 
+             : 'bg-slate-800 border-slate-700'
+         }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo and Brand */}
@@ -135,9 +117,9 @@ const Header: React.FC<HeaderProps> = ({
                     theme === 'white' ? 'bg-white' : 'bg-slate-200'
                   }`}></div>
                 </div>
-                <span className={`text-xl font-bold transition-colors duration-300 group-hover:text-blue-600 ${
-                  theme === 'white' ? 'text-gray-900' : 'text-gray-100'
-                }`}>Intrend</span>
+                                 <span className={`text-xl font-bold transition-colors duration-300 group-hover:text-blue-600 ${
+                   theme === 'white' ? 'text-gray-900' : 'text-white'
+                 }`}>Intrend</span>
               </button>
               
               {/* Main Navigation */}
@@ -150,21 +132,23 @@ const Header: React.FC<HeaderProps> = ({
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${
-                        isActive
-                          ? theme === 'white'
-                            ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
-                            : 'bg-blue-900/20 text-blue-300 border-b-2 border-blue-400'
-                          : theme === 'white'
-                            ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                            : 'text-gray-300 hover:text-gray-100 hover:bg-slate-700'
-                      }`}
+                                                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${
+                          isActive
+                            ? theme === 'white'
+                              ? 'text-blue-700 border-b-2 border-blue-600'
+                              : 'text-white border-b-2 border-blue-400'
+                            : theme === 'white'
+                              ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                              : 'text-gray-300 hover:text-white hover:bg-slate-700 hover:shadow-md'
+                        }`}
                     >
                       <IconComponent className="w-4 h-4" />
                       <span>{tab.label}</span>
-                      {tab.loading && (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
-                      )}
+                                             {tab.loading && (
+                         <Loader2 className={`w-3.5 h-3.5 animate-spin transition-colors duration-300 ${
+                           theme === 'white' ? 'text-blue-500' : 'text-blue-400'
+                         }`} />
+                       )}
                     </button>
                   );
                 })}
@@ -173,73 +157,21 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Right Side Controls */}
             <div className="flex items-center space-x-4">
-              {/* Notifications */}
-              <div className="relative">
-                <button 
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className="p-2 text-gray-400 hover:text-gray-600 relative transition-colors"
-                >
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-                </button>
-                {showNotifications && (
-                  <div className={`absolute right-0 mt-2 w-80 rounded-xl shadow-xl border z-50 transition-colors duration-300 ${
-                    theme === 'white' 
-                      ? 'bg-white border-gray-200' 
-                      : 'bg-slate-800 border-slate-700'
-                  }`}>
-                    <div className={`p-4 border-b transition-colors duration-300 ${
-                      theme === 'white' ? 'border-gray-200' : 'border-slate-700'
-                    }`}>
-                      <h3 className={`font-semibold transition-colors duration-300 ${
-                        theme === 'white' ? 'text-gray-900' : 'text-gray-100'
-                      }`}>Notifications</h3>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto">
-                      {notifications.map(notification => (
-                        <div key={notification.id} className={`p-4 border-b last:border-b-0 transition-colors duration-300 ${
-                          theme === 'white'
-                            ? 'border-gray-100 hover:bg-gray-50'
-                            : 'border-slate-700 hover:bg-slate-700'
-                        }`}>
-                          <div className="flex items-start">
-                            <div className={`w-2 h-2 rounded-full mt-2 mr-3 ${
-                              notification.type === 'warning' ? 'bg-yellow-500' :
-                              notification.type === 'success' ? 'bg-green-500' : 'bg-blue-500'
-                            }`}></div>
-                            <div>
-                              <p className={`text-sm transition-colors duration-300 ${
-                                theme === 'white' ? 'text-gray-900' : 'text-gray-100'
-                              }`}>{notification.message}</p>
-                              <p className={`text-xs transition-colors duration-300 ${
-                                theme === 'white' ? 'text-gray-500' : 'text-gray-400'
-                              }`}>{notification.time}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+
 
               {/* Account Selection */}
               <select 
                 value={selectedAccount} 
                 onChange={(e) => setSelectedAccount(e.target.value)}
-                className={`border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                  theme === 'white'
-                    ? 'border-gray-300 bg-white text-gray-900'
-                    : 'border-slate-600 bg-slate-700 text-gray-100'
-                }`}
+                                 className={`border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                   theme === 'white'
+                     ? 'border-gray-300 bg-white text-gray-900 hover:border-gray-400'
+                     : 'border-slate-500 bg-slate-800 text-white hover:border-slate-400 hover:bg-slate-700'
+                 }`}
               >
-                {connectedAccounts.length > 0 ? (
-                  connectedAccounts.filter(acc => acc.status === 'connected').map(account => (
-                    <option key={account.id} value={account.id}>{account.name}</option>
-                  ))
-                ) : (
-                  <option value="">No accounts connected</option>
-                )}
+                                 {connectedAccounts.filter(acc => acc.status === 'connected').map(account => (
+                   <option key={account.id} value={account.id}>{account.name}</option>
+                 ))}
               </select>
 
               {/* Date Range */}
@@ -247,28 +179,38 @@ const Header: React.FC<HeaderProps> = ({
                 <select 
                   value={selectedDateRange} 
                   onChange={(e) => setSelectedDateRange(e.target.value)}
-                  className={`border rounded-lg px-3 py-2 text-sm appearance-none pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                    theme === 'white'
-                      ? 'border-gray-300 bg-white text-gray-900'
-                      : 'border-slate-600 bg-slate-700 text-gray-100'
-                  }`}
+                                     className={`border rounded-lg px-3 py-2 text-sm appearance-none pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                     theme === 'white'
+                       ? 'border-gray-300 bg-white text-gray-900 hover:border-gray-400'
+                       : 'border-slate-500 bg-slate-800 text-white hover:border-slate-400 hover:bg-slate-700'
+                   }`}
                 >
                   <option value="last_7d">Last 7 Days</option>
                   <option value="last_30d">Last 30 Days</option>
                   <option value="last_90d">Last 90 Days</option>
                   <option value="last_12m">Last 12 Months</option>
                 </select>
-                <ChevronDown className="w-4 h-4 absolute right-2 top-3 text-gray-400 pointer-events-none" />
+                                 <ChevronDown className={`w-4 h-4 absolute right-2 top-3 pointer-events-none transition-colors duration-300 ${
+                   theme === 'white' ? 'text-gray-400' : 'text-gray-500'
+                 }`} />
               </div>
 
               {/* Refresh Button */}
               <button 
                 onClick={handleRefresh}
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                                 className={`p-2 transition-colors disabled:opacity-50 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 ${
+                   theme === 'white'
+                     ? 'text-gray-400 hover:text-gray-600'
+                     : 'text-gray-500 hover:text-gray-300'
+                 }`}
                 disabled={isLoading}
                 title="Refresh data"
               >
-                <Loader2 className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+                                 <Loader2 className={`w-5 h-5 transition-colors duration-300 ${
+                   isLoading ? 'animate-spin' : ''
+                 } ${
+                   theme === 'white' ? 'text-gray-400' : 'text-gray-500'
+                 }`} />
               </button>
 
                             {/* User Profile Dropdown */}
@@ -278,9 +220,9 @@ const Header: React.FC<HeaderProps> = ({
                 onMouseLeave={() => setShowProfileMenu(false)}
               >
                 <button 
-                  className={`flex items-center space-x-3 pl-4 border-l transition-colors duration-300 hover:opacity-80 ${
-                    theme === 'white' ? 'border-gray-200' : 'border-slate-700'
-                  }`}
+                                     className={`flex items-center space-x-3 pl-4 border-l transition-colors duration-300 hover:opacity-80 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 ${
+                     theme === 'white' ? 'border-gray-200' : 'border-slate-700'
+                   }`}
                 >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-300 ${
                   theme === 'white' ? 'bg-gray-200' : 'bg-slate-600'
@@ -305,11 +247,11 @@ const Header: React.FC<HeaderProps> = ({
                 {/* Profile Dropdown Menu */}
                 {showProfileMenu && (
                   <div 
-                    className={`absolute right-0 mt-0 w-56 rounded-xl shadow-xl border z-50 transition-colors duration-300 ${
-                      theme === 'white' 
-                        ? 'bg-white border-gray-200' 
-                        : 'bg-slate-800 border-slate-700'
-                    }`}
+                                         className={`absolute right-0 mt-0 w-56 rounded-xl shadow-xl border z-50 transition-colors duration-300 ${
+                       theme === 'white' 
+                         ? 'bg-white border-gray-200' 
+                         : 'bg-slate-900 border-slate-700'
+                     }`}
                   >
                     <div className={`p-4 border-b transition-colors duration-300 ${
                       theme === 'white' ? 'border-gray-200' : 'border-slate-700'
@@ -336,10 +278,10 @@ const Header: React.FC<HeaderProps> = ({
                     <div className="py-2">
                       <button
                         onClick={() => router.push('/settings')}
-                        className={`w-full flex items-center space-x-3 px-4 py-2 text-sm transition-colors duration-200 ${
+                        className={`w-full flex items-center space-x-3 px-4 py-2 text-sm transition-colors duration-200 rounded-lg ${
                           theme === 'white'
                             ? 'text-gray-700 hover:bg-gray-50'
-                            : 'text-gray-200 hover:bg-slate-700'
+                            : 'text-white hover:bg-slate-700'
                         }`}
                       >
                         <Settings className="w-4 h-4" />
@@ -347,10 +289,10 @@ const Header: React.FC<HeaderProps> = ({
                       </button>
                       <button
                         onClick={() => router.push('/billing')}
-                        className={`w-full flex items-center space-x-3 px-4 py-2 text-sm transition-colors duration-200 ${
+                        className={`w-full flex items-center space-x-3 px-4 py-2 text-sm transition-colors duration-200 rounded-lg ${
                           theme === 'white'
                             ? 'text-gray-700 hover:bg-gray-50'
-                            : 'text-gray-200 hover:bg-slate-700'
+                            : 'text-white hover:bg-slate-700'
                         }`}
                       >
                         <CreditCard className="w-4 h-4" />
@@ -358,10 +300,10 @@ const Header: React.FC<HeaderProps> = ({
                       </button>
                       <button
                         onClick={() => router.push('/profile')}
-                        className={`w-full flex items-center space-x-3 px-4 py-2 text-sm transition-colors duration-200 ${
+                        className={`w-full flex items-center space-x-3 px-4 py-2 text-sm transition-colors duration-200 rounded-lg ${
                           theme === 'white'
                             ? 'text-gray-700 hover:bg-gray-50'
-                            : 'text-gray-200 hover:bg-slate-700'
+                            : 'text-white hover:bg-slate-700'
                         }`}
                       >
                         <User className="w-4 h-4" />
@@ -377,11 +319,11 @@ const Header: React.FC<HeaderProps> = ({
                           // Handle logout
                           console.log('Logout clicked');
                         }}
-                        className={`w-full flex items-center space-x-3 px-4 py-2 text-sm transition-colors duration-200 ${
-                          theme === 'white'
-                            ? 'text-red-600 hover:bg-red-50'
-                            : 'text-red-400 hover:bg-red-900/20'
-                        }`}
+                                                 className={`w-full flex items-center space-x-3 px-4 py-2 text-sm transition-colors duration-200 rounded-lg ${
+                           theme === 'white'
+                             ? 'text-red-600 hover:bg-red-50'
+                             : 'text-red-400 hover:bg-red-900/20'
+                         }`}
                       >
                         <LogOut className="w-4 h-4" />
                         <span>Sign Out</span>

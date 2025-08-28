@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ChartBarIcon, 
   UsersIcon, 
@@ -11,7 +11,15 @@ import {
   RocketLaunchIcon,
   GlobeAltIcon,
   CpuChipIcon,
-  PresentationChartLineIcon
+  PresentationChartLineIcon,
+  CheckCircleIcon,
+  ArrowRightIcon,
+  PlayIcon,
+  StarIcon,
+  ClockIcon,
+  BoltIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import PricingSection from './PricingSection';
 
@@ -20,43 +28,191 @@ const SaaSLandingPage: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [activeFAQ, setActiveFAQ] = useState<number | null>(null);
+  const [isVisible, setIsVisible] = useState<boolean[]>(new Array(10).fill(false));
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  // Mouse tracking for parallax effects
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  // Intersection Observer for scroll animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = parseInt(entry.target.getAttribute('data-section') || '0');
+            setIsVisible(prev => {
+              const newState = [...prev];
+              newState[index] = true;
+              return newState;
+            });
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    document.querySelectorAll('[data-section]').forEach((el) => {
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   const features = [
     {
       icon: ChartBarIcon,
       title: 'Meta Ads Performance Dashboard',
-      description: 'Real-time insights into Facebook, Instagram, and Messenger ad performance with comprehensive metrics and visualizations.'
+      description: 'Real-time insights into Facebook, Instagram, and Messenger ad performance with comprehensive metrics and visualizations.',
+      benefit: 'Track performance across all platforms in one place'
     },
     {
       icon: CpuChipIcon,
       title: 'AI Creative Analysis',
-      description: 'AI-powered analysis of your ad creatives with performance predictions and optimization recommendations.'
+      description: 'AI-powered analysis of your ad creatives with performance predictions and optimization recommendations.',
+      benefit: 'Increase ROAS by up to 40% with AI insights'
     },
     {
       icon: UsersIcon,
       title: 'Multi-Account Management',
-      description: 'Manage multiple Facebook ad accounts from a single dashboard with unified reporting and insights.'
+      description: 'Manage multiple Facebook ad accounts from a single dashboard with unified reporting and insights.',
+      benefit: 'Save 5+ hours per week on account management'
     },
     {
       icon: EyeIcon,
       title: 'Creative Gallery & Insights',
-      description: 'Comprehensive creative asset management with performance tracking across all your campaigns.'
+      description: 'Comprehensive creative asset management with performance tracking across all your campaigns.',
+      benefit: 'Optimize creatives based on real performance data'
     },
     {
       icon: GlobeAltIcon,
       title: 'Cross-Platform Analytics',
-      description: 'Unified analytics for Facebook, Instagram, Messenger, and Audience Network campaigns.'
+      description: 'Unified analytics for Facebook, Instagram, Messenger, and Audience Network campaigns.',
+      benefit: 'Get complete picture of your advertising ecosystem'
     },
     {
       icon: RocketLaunchIcon,
       title: 'Campaign Optimization',
-      description: 'Data-driven insights and recommendations to improve your Meta Ads performance and ROAS.'
+      description: 'Data-driven insights and recommendations to improve your Meta Ads performance and ROAS.',
+      benefit: 'Automated optimization suggestions save time and money'
+    }
+  ];
+
+  const problems = [
+    {
+      problem: 'Scattered Data Across Platforms',
+      solution: 'Unified Dashboard',
+      icon: CogIcon,
+      description: 'Stop jumping between Facebook, Instagram, and other platforms'
+    },
+    {
+      problem: 'Poor Creative Performance',
+      solution: 'AI-Powered Analysis',
+      icon: CpuChipIcon,
+      description: 'Let AI identify what makes your best creatives perform'
+    },
+    {
+      problem: 'Time-Consuming Reporting',
+      solution: 'Automated Insights',
+      icon: ChartBarIcon,
+      description: 'Generate comprehensive reports in seconds, not hours'
+    }
+  ];
+
+  const howItWorks = [
+    {
+      step: 1,
+      title: 'Connect Your Accounts',
+      description: 'Securely connect your Facebook Ad accounts with one-click authentication',
+      icon: ShieldCheckIcon,
+      time: '2 minutes'
+    },
+    {
+      step: 2,
+      title: 'AI Analyzes Your Data',
+      description: 'Our AI processes your campaigns and creatives to identify optimization opportunities',
+      icon: CpuChipIcon,
+      time: 'Instant'
+    },
+    {
+      step: 3,
+      title: 'Optimize & Scale',
+      description: 'Get actionable insights to improve performance and scale successful campaigns',
+      icon: RocketLaunchIcon,
+      time: 'Ongoing'
+    }
+  ];
+
+  const testimonials = [
+    {
+      name: 'Sarah Johnson',
+      role: 'Marketing Director',
+      company: 'TechFlow Agency',
+      content: 'Intrend has transformed how we manage our Meta Ads campaigns. The AI creative analysis alone has increased our ROAS by 35%.',
+      rating: 5,
+      avatar: 'SJ'
+    },
+    {
+      name: 'Michael Chen',
+      role: 'Founder',
+      company: 'GrowthLab',
+      content: 'Finally, a dashboard that gives us real-time insights into all our Facebook and Instagram campaigns. The creative performance tracking is invaluable.',
+      rating: 5,
+      avatar: 'MC'
+    },
+    {
+      name: 'Emily Rodriguez',
+      role: 'Digital Marketing Manager',
+      company: 'BrandBoost',
+      content: 'The multi-account management and cross-platform analytics have streamlined our entire Meta Ads workflow. Game changer!',
+      rating: 5,
+      avatar: 'ER'
+    }
+  ];
+
+  const stats = [
+    { label: 'Ad Accounts Managed', value: '10,000+', icon: UsersIcon, color: 'from-blue-500 to-cyan-500' },
+    { label: 'Creative Assets Analyzed', value: '500,000+', icon: EyeIcon, color: 'from-emerald-500 to-teal-500' },
+    { label: 'Performance Improvement', value: '40% Avg.', icon: ChartBarIcon, color: 'from-violet-500 to-purple-500' },
+    { label: 'Customer Satisfaction', value: '98%', icon: StarIcon, color: 'from-amber-500 to-orange-500' }
+  ];
+
+  const faqs = [
+    {
+      question: 'How quickly can I get started?',
+      answer: 'You can be up and running in under 2 minutes. Simply connect your Facebook Ad account and our AI will start analyzing your data immediately.'
+    },
+    {
+      question: 'What if I have multiple ad accounts?',
+      answer: 'No problem! Intrend supports unlimited ad accounts. You can manage them all from a single dashboard with unified reporting.'
+    },
+    {
+      question: 'How does the AI creative analysis work?',
+      answer: 'Our AI analyzes your creative assets, identifies patterns in high-performing content, and provides specific recommendations to improve your ad performance.'
+    },
+    {
+      question: 'Is my data secure?',
+      answer: 'Absolutely. We use bank-level encryption and never store your Facebook access tokens. Your data is processed securely and never shared with third parties.'
+    },
+    {
+      question: 'Can I cancel my subscription anytime?',
+      answer: 'Yes, you can cancel your subscription at any time. There are no long-term contracts or hidden fees.'
+    },
+    {
+      question: 'Do you offer a free trial?',
+      answer: 'Yes! Start with our free plan that includes up to 3 ad accounts and basic features. Upgrade anytime to unlock advanced analytics and AI insights.'
     }
   ];
 
   const handlePlanSelection = async (planId: string) => {
-    if (planId === 'starter') {
-      // Redirect to dashboard for free plan
+    if (planId === 'free') {
       window.location.href = '/dashboard';
       return;
     }
@@ -67,8 +223,7 @@ const SaaSLandingPage: React.FC = () => {
       return;
     }
 
-    // Check if plan has Stripe integration
-    if (plan.price > 0 && !plan.hasStripeIntegration) {
+    if (plan.price !== 'FREE' && plan.stripePriceId === 'free') {
       alert('This plan is not available for online purchase. Please contact sales for more information.');
       return;
     }
@@ -84,7 +239,7 @@ const SaaSLandingPage: React.FC = () => {
         },
         body: JSON.stringify({
           planId,
-          billingCycle: billingCycle || 'monthly', // Default to monthly if not set
+          billingCycle: billingCycle || 'monthly',
           customerEmail: email,
           successUrl: `${window.location.origin}/dashboard?success=true&plan=${planId}`,
           cancelUrl: `${window.location.origin}?canceled=true`,
@@ -109,8 +264,8 @@ const SaaSLandingPage: React.FC = () => {
 
   const pricingPlans = [
     {
-      id: 'starter',
-      name: 'Starter',
+      id: 'free',
+      name: 'Free',
       price: 'FREE',
       period: '',
       description: 'Perfect for small agencies and businesses',
@@ -123,12 +278,12 @@ const SaaSLandingPage: React.FC = () => {
         'Basic reporting'
       ],
       popular: false,
-      stripePriceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID || 'price_starter_monthly'
+      stripePriceId: process.env.NEXT_PUBLIC_STRIPE_FREE_PRICE_ID || 'free'
     },
     {
-      id: 'professional',
-      name: 'Professional',
-      price: billingCycle === 'monthly' ? '$10' : '$100',
+      id: 'startup',
+      name: 'Startup',
+      price: billingCycle === 'monthly' ? '$10' : '$96',
       period: billingCycle === 'monthly' ? '/month' : '/year',
       description: 'Ideal for growing agencies and businesses',
       features: [
@@ -141,12 +296,12 @@ const SaaSLandingPage: React.FC = () => {
         'Campaign optimization tips'
       ],
       popular: true,
-      stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_PRICE_ID || 'price_professional_monthly'
+      stripePriceId: process.env.NEXT_PUBLIC_STRIPE_STARTUP_PRICE_ID || 'price_startup_monthly'
     },
     {
-      id: 'enterprise',
-      name: 'Enterprise',
-      price: billingCycle === 'monthly' ? '$20' : '$200',
+      id: 'pro',
+      name: 'Pro',
+      price: billingCycle === 'monthly' ? '$20' : '$192',
       period: billingCycle === 'monthly' ? '/month' : '/year',
       description: 'For large agencies and enterprise clients',
       features: [
@@ -158,76 +313,91 @@ const SaaSLandingPage: React.FC = () => {
         'Custom integrations',
         'Advanced AI insights'
       ],
-      popular: false
+      popular: false,
+      stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || 'price_pro_monthly'
     }
-  ];
-
-  const testimonials = [
-    {
-      name: 'Sarah Johnson',
-      role: 'Marketing Director',
-      company: 'TechFlow Agency',
-      content: 'Intrend has transformed how we manage our Meta Ads campaigns. The AI creative analysis alone has increased our ROAS by 35%.',
-      rating: 5
-    },
-    {
-      name: 'Michael Chen',
-      role: 'Founder',
-      company: 'GrowthLab',
-      content: 'Finally, a dashboard that gives us real-time insights into all our Facebook and Instagram campaigns. The creative performance tracking is invaluable.',
-      rating: 5
-    },
-    {
-      name: 'Emily Rodriguez',
-      role: 'Digital Marketing Manager',
-      company: 'BrandBoost',
-      content: 'The multi-account management and cross-platform analytics have streamlined our entire Meta Ads workflow. Game changer!',
-      rating: 5
-    }
-  ];
-
-  const stats = [
-    { label: 'Ad Accounts Managed', value: '10,000+' },
-    { label: 'Creative Assets Analyzed', value: '500,000+' },
-    { label: 'Performance Improvement', value: '40% Avg.' },
-    { label: 'Customer Satisfaction', value: '98%' }
   ];
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle email signup logic here
     console.log('Email submitted:', email);
     alert('Thank you! Your email has been saved. You can now proceed to select a plan.');
     setEmail('');
   };
 
+  const toggleFAQ = (index: number) => {
+    setActiveFAQ(activeFAQ === index ? null : index);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
       {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-blue-100 to-indigo-100 bg-clip-text text-transparent">
-            Intrend
+      <section 
+        data-section="0"
+        className={`relative overflow-hidden py-24 transition-all duration-1000 ${
+          isVisible[0] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
+        {/* Animated Background Elements */}
+        <div 
+          className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-200/20 to-indigo-200/20 rounded-full blur-3xl animate-pulse"
+          style={{
+            transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`
+          }}
+        />
+        <div 
+          className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-emerald-200/20 to-teal-200/20 rounded-full blur-3xl animate-pulse"
+          style={{
+            transform: `translate(${mousePosition.x * -0.015}px, ${mousePosition.y * -0.015}px)`
+          }}
+        />
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          {/* Floating Badge */}
+          <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-full px-6 py-3 mb-8 shadow-lg">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-slate-700">AI-Powered Meta Ads Management</span>
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-slate-900 via-blue-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
+            Transform Your Meta Ads with AI
           </h1>
-          <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto text-blue-200">
-            AI-Powered Creative Analysis & Facebook Ads Library
+          
+          <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto text-slate-600 leading-relaxed">
+            Unlock 40% better ROAS with AI-powered creative analysis and comprehensive Facebook Ads Library management
           </p>
+          
+          {/* Social Proof Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12 max-w-4xl mx-auto">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center group">
+                <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center mb-3 mx-auto group-hover:scale-110 transition-transform duration-300`}>
+                  <stat.icon className="w-6 h-6 text-white" />
+                </div>
+                <p className="text-2xl font-bold text-slate-900 mb-1">{stat.value}</p>
+                <p className="text-sm text-slate-600">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+          
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a 
               href="/dashboard" 
-              className="px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-blue-500/25"
+              className="group inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-blue-500/25"
             >
-              Get Started
+              <BoltIcon className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+              <span>Start Your Free Trial</span>
             </a>
             <a 
               href="/login" 
-              className="px-8 py-4 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-all duration-300 transform hover:scale-105 border border-white/20 backdrop-blur-sm"
+              className="group inline-flex items-center space-x-2 px-8 py-4 bg-white/80 backdrop-blur-sm text-slate-700 rounded-xl font-semibold hover:bg-white hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-slate-200/50"
             >
-              Sign In
+              <PlayIcon className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+              <span>Watch Demo</span>
             </a>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Features Section */}
       <div className="py-20 bg-gradient-to-b from-transparent to-slate-800/50">
@@ -252,6 +422,153 @@ const SaaSLandingPage: React.FC = () => {
                 </div>
                 <h3 className="text-xl font-semibold mb-4 text-white">{feature.title}</h3>
                 <p className="text-blue-200 leading-relaxed">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Problems Section */}
+      <div className="py-20 bg-gradient-to-b from-slate-800/50 to-slate-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+              Solve Common Advertising Challenges
+            </h2>
+            <p className="text-xl text-blue-200 max-w-2xl mx-auto">
+              We understand the pain points. Intrend provides solutions for scattered data, poor creative performance, and time-consuming reporting.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            {problems.map((problem, index) => (
+              <div key={index} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 flex flex-col items-start">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                  <problem.icon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-semibold mb-4 text-white">{problem.problem}</h3>
+                <p className="text-blue-200 leading-relaxed mb-6">{problem.description}</p>
+                <p className="text-blue-300 font-medium flex items-center">
+                  <ArrowRightIcon className="w-5 h-5 mr-2" />
+                  {problem.solution}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* How It Works Section */}
+      <div className="py-20 bg-gradient-to-b from-slate-900 to-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+              How It Works
+            </h2>
+            <p className="text-xl text-blue-200 max-w-2xl mx-auto">
+              Intrend's AI-powered platform makes Meta Ads management effortless.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            {howItWorks.map((step, index) => (
+              <div key={index} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 flex flex-col items-start">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                  <step.icon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-semibold mb-4 text-white">{step.title}</h3>
+                <p className="text-blue-200 leading-relaxed mb-6">{step.description}</p>
+                <p className="text-blue-300 font-medium flex items-center">
+                  <PlayIcon className="w-5 h-5 mr-2" />
+                  {step.time}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Testimonials Section */}
+      <div className="py-20 bg-gradient-to-b from-slate-800/50 to-slate-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+              What Our Users Say
+            </h2>
+            <p className="text-xl text-blue-200 max-w-2xl mx-auto">
+              Don't just take our word for it. See how Intrend has helped others achieve their goals.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            {testimonials.map((testimonial, index) => (
+              <div key={index} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 flex flex-col items-start">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                  <StarIcon className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-blue-200 leading-relaxed mb-6">"{testimonial.content}"</p>
+                <p className="text-blue-300 font-medium flex items-center">
+                  <StarIcon className="w-5 h-5 mr-2 text-yellow-400" />
+                  {testimonial.rating}/5
+                </p>
+                <p className="text-blue-200 mt-4 text-sm font-semibold">{testimonial.name}, {testimonial.role}</p>
+                <p className="text-blue-200 text-sm">{testimonial.company}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Section */}
+      <div className="py-20 bg-gradient-to-b from-slate-900 to-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+              Our Achievements
+            </h2>
+            <p className="text-xl text-blue-200 max-w-2xl mx-auto">
+              Data speaks for itself. See how Intrend has helped our users achieve remarkable results.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+            {stats.map((stat, index) => (
+              <div key={index} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 flex flex-col items-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                  <stat.icon className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-4xl font-bold text-white mb-2">{stat.value}</p>
+                <p className="text-blue-200 text-lg">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* FAQ Section */}
+      <div className="py-20 bg-gradient-to-b from-slate-800/50 to-slate-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-xl text-blue-200 max-w-2xl mx-auto">
+              Find answers to common questions about Intrend's features and pricing.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {faqs.map((faq, index) => (
+              <div key={index} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8">
+                <button
+                  onClick={() => toggleFAQ(index)}
+                  className="w-full text-left text-white font-semibold flex justify-between items-center"
+                >
+                  <span>{faq.question}</span>
+                  {activeFAQ === index ? (
+                    <ChevronUpIcon className="w-6 h-6 text-blue-400" />
+                  ) : (
+                    <ChevronDownIcon className="w-6 h-6 text-blue-400" />
+                  )}
+                </button>
+                {activeFAQ === index && (
+                  <p className="text-blue-200 mt-4">{faq.answer}</p>
+                )}
               </div>
             ))}
           </div>
@@ -289,49 +606,395 @@ const SaaSLandingPage: React.FC = () => {
       </div>
 
       {/* Pricing Section */}
-      <div className="py-20 bg-gradient-to-b from-slate-800/50 to-slate-900">
+      <section 
+        data-section="2"
+        className={`py-24 bg-white/60 backdrop-blur-sm transition-all duration-1000 ${
+          isVisible[2] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
-              Simple, Transparent Pricing
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center space-x-2 bg-amber-50 border border-amber-200 rounded-full px-6 py-3 mb-6">
+              <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-amber-700">Simple Pricing</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-slate-900">
+              Choose Your Perfect Plan
             </h2>
-            <p className="text-xl text-blue-200 max-w-2xl mx-auto">
-              Choose the plan that fits your business needs
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+              Start free and scale as you grow. No hidden fees, no surprises.
             </p>
           </div>
           
           <PricingSection
             onPlanSelect={handlePlanSelection}
-            className="text-white"
+            className="text-slate-900"
           />
         </div>
-      </div>
+      </section>
 
-      {/* CTA Section */}
-      <div className="py-20 bg-gradient-to-b from-slate-900 to-slate-800">
+      {/* Problem/Solution Section */}
+      <section 
+        data-section="3"
+        className={`py-24 bg-white/60 backdrop-blur-sm transition-all duration-1000 ${
+          isVisible[3] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center space-x-2 bg-blue-50 border border-blue-200 rounded-full px-6 py-3 mb-6">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-blue-700">Pain Points Solved</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-slate-900">
+              Stop Struggling with Scattered Data
+            </h2>
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+              We understand the challenges. Intrend provides intelligent solutions for the most common advertising pain points.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            {problems.map((problem, index) => (
+              <div 
+                key={index} 
+                className="group relative bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-3xl p-8 hover:bg-white hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 hover:scale-105 text-center overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative z-10">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:scale-110 transition-transform duration-300">
+                    <problem.icon className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-semibold mb-4 text-slate-900">{problem.problem}</h3>
+                  <p className="text-slate-600 leading-relaxed mb-6">{problem.description}</p>
+                  <div className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-full">
+                    <ArrowRightIcon className="w-4 h-4 text-blue-600" />
+                    <span className="text-blue-700 font-medium">{problem.solution}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Interactive Demo Section */}
+      <section 
+        data-section="4"
+        className={`py-24 bg-gradient-to-br from-slate-50 to-blue-50 transition-all duration-1000 ${
+          isVisible[4] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center space-x-2 bg-emerald-50 border border-emerald-200 rounded-full px-6 py-3 mb-6">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-emerald-700">See It In Action</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-slate-900">
+              Experience the Power of AI
+            </h2>
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+              Watch how Intrend transforms your Meta Ads workflow with intelligent insights and automated optimization.
+            </p>
+          </div>
+          
+          <div className="relative">
+            {/* Floating UI Elements */}
+            <div className="absolute top-10 left-10 w-32 h-32 bg-gradient-to-r from-blue-200/30 to-indigo-200/30 rounded-2xl blur-xl animate-pulse"></div>
+            <div className="absolute bottom-10 right-10 w-40 h-40 bg-gradient-to-r from-emerald-200/30 to-teal-200/30 rounded-2xl blur-xl animate-pulse"></div>
+            
+            <div className="relative bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-3xl p-12 text-center shadow-2xl">
+              <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-3xl flex items-center justify-center mb-8 mx-auto">
+                <PlayIcon className="w-12 h-12 text-white" />
+              </div>
+              <h3 className="text-2xl font-semibold mb-4 text-slate-900">Interactive Product Demo</h3>
+              <p className="text-slate-600 mb-8 max-w-2xl mx-auto">
+                Experience the intuitive interface, real-time analytics, and AI-powered insights that make Intrend the ultimate Meta Ads management platform.
+              </p>
+              <button className="inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-xl">
+                <PlayIcon className="w-5 h-5" />
+                <span>Launch Demo</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section 
+        data-section="5"
+        className={`py-24 bg-gradient-to-br from-blue-50 to-indigo-50 transition-all duration-1000 ${
+          isVisible[5] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center space-x-2 bg-emerald-50 border border-emerald-200 rounded-full px-6 py-3 mb-6">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-emerald-700">Simple Process</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-slate-900">
+              Get Started in Minutes
+            </h2>
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+              Our streamlined onboarding process gets you up and running with powerful insights in no time.
+            </p>
+          </div>
+          
+          <div className="relative">
+            {/* Connection Lines */}
+            <div className="hidden md:block absolute top-1/2 left-1/4 w-1/2 h-0.5 bg-gradient-to-r from-blue-200 to-indigo-200 transform -translate-y-1/2"></div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              {howItWorks.map((step, index) => (
+                <div key={index} className="relative text-center">
+                  <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mb-6 mx-auto text-white text-2xl font-bold shadow-xl">
+                    {step.step}
+                  </div>
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:scale-110 transition-transform duration-300">
+                    <step.icon className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-semibold mb-4 text-slate-900">{step.title}</h3>
+                  <p className="text-slate-600 leading-relaxed mb-4">{step.description}</p>
+                  <div className="inline-flex items-center space-x-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-full">
+                    <ClockIcon className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm text-blue-700 font-medium">{step.time}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Social Proof Section */}
+      <section 
+        data-section="6"
+        className={`py-24 bg-white/60 backdrop-blur-sm transition-all duration-1000 ${
+          isVisible[6] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center space-x-2 bg-indigo-50 border border-indigo-200 rounded-full px-6 py-3 mb-6">
+              <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-indigo-700">Trusted by Industry Leaders</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-slate-900">
+              Join Thousands of Successful Agencies
+            </h2>
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+              See how Intrend has transformed Meta Ads management for agencies and businesses worldwide.
+            </p>
+          </div>
+          
+          {/* Customer Logos */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16 opacity-60">
+            {['TechFlow', 'GrowthLab', 'BrandBoost', 'AdVantage'].map((company, index) => (
+              <div key={index} className="text-center">
+                <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                  <span className="text-lg font-bold text-slate-700">{company}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Testimonials */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <div 
+                key={index} 
+                className="group bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-3xl p-8 hover:bg-white hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2"
+              >
+                <div className="flex items-center mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <StarIcon key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                  ))}
+                </div>
+                <p className="text-slate-600 leading-relaxed mb-6 italic">"{testimonial.content}"</p>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
+                    {testimonial.avatar}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900">{testimonial.name}</p>
+                    <p className="text-sm text-slate-600">{testimonial.role}, {testimonial.company}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Core Features Section */}
+      <section 
+        data-section="7"
+        className={`py-24 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 transition-all duration-1000 ${
+          isVisible[7] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center space-x-2 bg-violet-50 border border-violet-200 rounded-full px-6 py-3 mb-6">
+              <div className="w-2 h-2 bg-violet-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-violet-700">Core Features</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-slate-900">
+              Everything You Need to Succeed
+            </h2>
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+              Powerful tools designed specifically for modern advertising agencies and businesses.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <div 
+                key={index}
+                className="group relative bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-3xl p-8 hover:bg-white hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 hover:scale-105 text-center overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative z-10">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:scale-110 transition-transform duration-300">
+                    <feature.icon className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-4 text-slate-900">{feature.title}</h3>
+                  <p className="text-slate-600 leading-relaxed mb-4">{feature.description}</p>
+                  <div className="inline-flex items-center space-x-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-full">
+                    <CheckCircleIcon className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm text-blue-700 font-medium">{feature.benefit}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section 
+        data-section="8"
+        className={`py-24 bg-white/60 backdrop-blur-sm transition-all duration-1000 ${
+          isVisible[8] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center space-x-2 bg-slate-50 border border-slate-200 rounded-full px-6 py-3 mb-6">
+              <div className="w-2 h-2 bg-slate-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-slate-700">Common Questions</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-slate-900">
+              Everything You Need to Know
+            </h2>
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+              Find answers to common questions about Intrend's features and pricing.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {faqs.map((faq, index) => (
+              <div 
+                key={index} 
+                className="group bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-3xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300"
+              >
+                <button
+                  onClick={() => toggleFAQ(index)}
+                  className="w-full text-left text-slate-900 font-semibold flex justify-between items-center group-hover:text-blue-600 transition-colors duration-300"
+                >
+                  <span className="text-lg">{faq.question}</span>
+                  {activeFAQ === index ? (
+                    <ChevronUpIcon className="w-6 h-6 text-blue-500" />
+                  ) : (
+                    <ChevronDownIcon className="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors duration-300" />
+                  )}
+                </button>
+                {activeFAQ === index && (
+                  <p className="text-slate-600 mt-4 leading-relaxed">{faq.answer}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Email Signup Section */}
+      <section 
+        data-section="9"
+        className={`py-24 bg-gradient-to-br from-blue-50 to-indigo-50 transition-all duration-1000 ${
+          isVisible[9] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center space-x-2 bg-blue-50 border border-blue-200 rounded-full px-6 py-3 mb-6">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-blue-700">Stay Updated</span>
+          </div>
+          <h3 className="text-3xl md:text-4xl font-bold mb-4 text-slate-900">
+            Get Started with Your Email
+          </h3>
+          <p className="text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
+            Enter your email to receive updates and get started with your chosen plan
+          </p>
+          <form onSubmit={handleEmailSubmit} className="max-w-md mx-auto">
+            <div className="flex gap-3">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email address"
+                className="flex-1 px-4 py-3 rounded-lg bg-white/80 backdrop-blur-sm border border-slate-200/50 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+              <button
+                type="submit"
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 font-medium transform hover:scale-105"
+              >
+                Subscribe
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section 
+        data-section="10"
+        className={`py-24 bg-gradient-to-br from-blue-50 to-indigo-50 transition-all duration-1000 ${
+          isVisible[10] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        }`}
+      >
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
-            Ready to Transform Your Advertising?
+          <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-full px-6 py-3 mb-6">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-blue-700">Ready to Transform?</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-slate-900">
+            Start Your Meta Ads Revolution Today
           </h2>
-          <p className="text-xl text-blue-200 mb-8">
-            Join thousands of agencies and businesses using Intrend to optimize their Meta Ads performance
+          <p className="text-xl text-slate-600 mb-8 leading-relaxed">
+            Join thousands of agencies and businesses using Intrend to optimize their Meta Ads performance and achieve remarkable results.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a 
               href="/signup" 
-              className="px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-blue-500/25"
+              className="group inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-blue-500/25"
             >
-              Start Your Free Trial
+              <RocketLaunchIcon className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+              <span>Start Your Free Trial</span>
             </a>
             <a 
               href="/login" 
-              className="px-8 py-4 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-all duration-300 transform hover:scale-105 border border-white/20 backdrop-blur-sm"
+              className="group inline-flex items-center space-x-2 px-8 py-4 bg-white/80 backdrop-blur-sm text-slate-700 rounded-xl font-semibold hover:bg-white hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-slate-200/50"
             >
-              Sign In
+              <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+              <span>Sign In</span>
             </a>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Footer */}
       <footer className="bg-slate-900 border-t border-white/10">
@@ -396,3 +1059,4 @@ const SaaSLandingPage: React.FC = () => {
 };
 
 export default SaaSLandingPage;
+

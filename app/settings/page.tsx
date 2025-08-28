@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, User, Bell, Shield, Palette, Globe, Database, Key, LogOut } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 

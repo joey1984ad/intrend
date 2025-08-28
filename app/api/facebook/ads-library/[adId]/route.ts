@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bizSdk from 'facebook-nodejs-business-sdk';
+import { FacebookAdsApi } from 'facebook-nodejs-business-sdk';
 
 export async function GET(
   request: NextRequest,
@@ -26,7 +26,7 @@ export async function GET(
     }
 
     // Initialize Facebook SDK
-    bizSdk.FacebookAdsApi.init(accessToken);
+    FacebookAdsApi.init(accessToken);
 
     // Make request to Facebook Ads Library API for specific ad
     const response = await fetch(

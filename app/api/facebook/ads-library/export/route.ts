@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bizSdk from 'facebook-nodejs-business-sdk';
+import { FacebookAdsApi } from 'facebook-nodejs-business-sdk';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Initialize Facebook SDK
-    bizSdk.FacebookAdsApi.init(accessToken);
+    FacebookAdsApi.init(accessToken);
 
     // Build search parameters for Facebook Ads Library
     const searchParams: any = {

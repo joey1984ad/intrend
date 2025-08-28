@@ -186,8 +186,8 @@ export default function BillingPage() {
           id: 'professional',
           name: 'Professional',
           currentPricing: billingCycle === 'monthly'
-            ? { price: 29, billingCycle: 'monthly' }
-            : { price: 290, billingCycle: 'annual' },
+            ? { price: 10, billingCycle: 'monthly' }
+            : { price: 100, billingCycle: 'annual' },
           features: [
             'Up to 10 ad accounts',
             'Advanced performance dashboard',
@@ -204,8 +204,8 @@ export default function BillingPage() {
           id: 'enterprise',
           name: 'Enterprise',
           currentPricing: billingCycle === 'monthly'
-            ? { price: 99, billingCycle: 'monthly' }
-            : { price: 990, billingCycle: 'annual' },
+            ? { price: 20, billingCycle: 'monthly' }
+            : { price: 200, billingCycle: 'annual' },
           features: [
             'Unlimited ad accounts',
             'Enterprise dashboard',

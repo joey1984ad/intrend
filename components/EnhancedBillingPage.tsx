@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Calendar, Download, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { CreditCard, Calendar, Download, AlertCircle, CheckCircle, XCircle, Star, Clock } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
+import { PRICING_PLANS, getPlansByBillingCycle, PLAN_LIMITS } from '@/lib/stripe';
 
 interface Subscription {
   id: string;
@@ -14,6 +15,7 @@ interface Subscription {
     price: number;
   };
   cancel_at_period_end: boolean;
+  billing_cycle: 'monthly' | 'annual';
 }
 
 interface Invoice {
@@ -22,52 +24,105 @@ interface Invoice {
   status: string;
   created: number;
   invoice_pdf?: string;
+  invoice_number?: string;
 }
 
-export default function BillingPage() {
+interface PaymentMethod {
+  id: number;
+  type: string;
+  last4?: string;
+  brand?: string;
+  expMonth?: number;
+  expYear?: number;
+  isDefault: boolean;
+}
+
+export default function EnhancedBillingPage() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [mounted, setMounted] = useState(false);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const [subscription, setSubscription] = useState<Subscription | null>({
-    id: 'sub_123',
-    status: 'active',
-    current_period_end: Date.now() + 30 * 24 * 60 * 60 * 1000,
-    plan: {
-      id: 'starter',
-      name: 'Starter',
-      price: 0
-    },
-    cancel_at_period_end: false
-  });
-  const [invoices, setInvoices] = useState<Invoice[]>([
-    {
-      id: 'inv_123',
-      amount_paid: 0,
-      status: 'paid',
-      created: Date.now() - 7 * 24 * 60 * 60 * 1000,
-      invoice_pdf: 'https://example.com/invoice.pdf'
-    }
-  ]);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>('');
+  const [selectedBillingCycle, setSelectedBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   
   // Safe theme handling with fallback
   const [theme, setTheme] = useState<'white' | 'dark'>('white');
   
   useEffect(() => {
-    // Try to get theme context safely
-    try {
-      const themeContext = useDashboardTheme();
-      if (themeContext?.theme) {
-        setTheme(themeContext.theme);
-      }
-    } catch (error) {
-      // If theme context is not available, keep default theme
-      console.log('Theme context not available, using default theme');
-    }
+    setMounted(true);
+    loadSubscriptionData();
   }, []);
 
-  const handleUpgrade = async (planId: string) => {
+  // Try to get theme context safely
+  useEffect(() => {
+    if (mounted) {
+      try {
+        const themeContext = useDashboardTheme();
+        if (themeContext?.theme) {
+          setTheme(themeContext.theme);
+        }
+      } catch (error) {
+        // If theme context is not available, keep default theme
+        console.log('Theme context not available, using default theme');
+      }
+    }
+  }, [mounted]);
+
+  const loadSubscriptionData = async () => {
+    try {
+      // Mock data for now - replace with actual API calls
+      setTimeout(() => {
+        setSubscription({
+          id: 'sub_123',
+          status: 'active',
+          current_period_end: Date.now() + 30 * 24 * 60 * 60 * 1000,
+          plan: {
+            id: 'starter',
+            name: 'Starter',
+            price: 0
+          },
+          cancel_at_period_end: false,
+          billing_cycle: 'monthly'
+        });
+        
+        setInvoices([
+          {
+            id: 'inv_123',
+            amount_paid: 0,
+            status: 'paid',
+            created: Date.now() - 7 * 24 * 60 * 60 * 1000,
+            invoice_pdf: 'https://example.com/invoice.pdf',
+            invoice_number: 'INV-001'
+          }
+        ]);
+        
+        setPaymentMethods([
+          {
+            id: 1,
+            type: 'card',
+            last4: '4242',
+            brand: 'visa',
+            expMonth: 12,
+            expYear: 2025,
+            isDefault: true
+          }
+        ]);
+        
+        setIsLoading(false);
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to load subscription data:', error);
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpgrade = async (planId: string, cycle: 'monthly' | 'annual') => {
     setSelectedPlan(planId);
+    setSelectedBillingCycle(cycle);
     setShowUpgradeModal(true);
   };
 
@@ -97,26 +152,19 @@ export default function BillingPage() {
   };
 
   const handleCheckout = async () => {
-    if (!selectedPlan) {
-      alert('Please select a plan first.');
-      return;
-    }
-
     try {
-      const requestBody = {
-        planId: selectedPlan,
-        billingCycle: billingCycle,
-        customerEmail: 'user@example.com',
-        successUrl: `${window.location.origin}/billing?success=true`,
-        cancelUrl: `${window.location.origin}/billing?canceled=true`,
-      };
-      
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          planId: selectedPlan,
+          billingCycle: selectedBillingCycle,
+          customerEmail: 'user@example.com', // Replace with actual user email
+          successUrl: `${window.location.origin}/billing?success=true`,
+          cancelUrl: `${window.location.origin}/billing?canceled=true`,
+        }),
       });
 
       const data = await response.json();
@@ -128,7 +176,7 @@ export default function BillingPage() {
           window.location.href = data.redirectUrl;
         }
       } else {
-        alert(`Failed to create checkout session: ${data.error || 'Unknown error'}`);
+        alert('Failed to create checkout session. Please try again.');
       }
     } catch (error) {
       console.error('Checkout error:', error);
@@ -144,6 +192,8 @@ export default function BillingPage() {
         return <XCircle className="w-5 h-5 text-red-500" />;
       case 'past_due':
         return <AlertCircle className="w-5 h-5 text-yellow-500" />;
+      case 'trialing':
+        return <Clock className="w-5 h-5 text-blue-500" />;
       default:
         return <AlertCircle className="w-5 h-5 text-gray-500" />;
     }
@@ -157,77 +207,24 @@ export default function BillingPage() {
         return 'text-red-600 bg-red-100';
       case 'past_due':
         return 'text-yellow-600 bg-yellow-100';
+      case 'trialing':
+        return 'text-blue-600 bg-blue-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
   };
 
   const getPlansForCurrentCycle = () => {
-    try {
-      // Direct access to pricing data for debugging
-      const plans = [
-        {
-          id: 'starter',
-          name: 'Starter',
-          currentPricing: billingCycle === 'monthly' 
-            ? { price: 0, billingCycle: 'monthly' }
-            : { price: 0, billingCycle: 'annual' },
-          features: [
-            'Up to 3 ad accounts',
-            'Basic performance dashboard',
-            'Creative gallery access',
-            'Email support',
-            'Basic analytics'
-          ],
-          description: 'Perfect for small agencies and freelancers',
-          savings: 0
-        },
-        {
-          id: 'professional',
-          name: 'Professional',
-          currentPricing: billingCycle === 'monthly'
-            ? { price: 29, billingCycle: 'monthly' }
-            : { price: 290, billingCycle: 'annual' },
-          features: [
-            'Up to 10 ad accounts',
-            'Advanced performance dashboard',
-            'Creative gallery access',
-            'Priority email support',
-            'Advanced analytics',
-            'Custom reporting',
-            'Team collaboration'
-          ],
-          description: 'Ideal for growing agencies and marketing teams',
-          savings: billingCycle === 'annual' ? 17 : 0
-        },
-        {
-          id: 'enterprise',
-          name: 'Enterprise',
-          currentPricing: billingCycle === 'monthly'
-            ? { price: 99, billingCycle: 'monthly' }
-            : { price: 990, billingCycle: 'annual' },
-          features: [
-            'Unlimited ad accounts',
-            'Enterprise dashboard',
-            'Creative gallery access',
-            '24/7 phone support',
-            'Advanced analytics',
-            'Custom reporting',
-            'Team collaboration',
-            'API access',
-            'Custom integrations'
-          ],
-          description: 'Built for large agencies and enterprise teams',
-          savings: billingCycle === 'annual' ? 17 : 0
-        }
-      ];
-      
-      return plans;
-    } catch (error) {
-      console.error('Error getting plans:', error);
-      return [];
-    }
+    return getPlansByBillingCycle(billingCycle);
   };
+
+  if (!mounted || isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
@@ -250,9 +247,7 @@ export default function BillingPage() {
             theme === 'white' ? 'bg-white border border-gray-200' : 'bg-slate-800 border border-slate-700'
           }`}>
             <button
-              onClick={() => {
-                setBillingCycle('monthly');
-              }}
+              onClick={() => setBillingCycle('monthly')}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                 billingCycle === 'monthly'
                   ? 'bg-blue-600 text-white shadow-sm'
@@ -264,9 +259,7 @@ export default function BillingPage() {
               Monthly
             </button>
             <button
-              onClick={() => {
-                setBillingCycle('annual');
-              }}
+              onClick={() => setBillingCycle('annual')}
               className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                 billingCycle === 'annual'
                   ? 'bg-blue-600 text-white shadow-sm'
@@ -295,6 +288,7 @@ export default function BillingPage() {
                 { id: 'overview', label: 'Overview', icon: CreditCard },
                 { id: 'plans', label: 'Plans & Pricing', icon: Calendar },
                 { id: 'invoices', label: 'Billing History', icon: Download },
+                { id: 'payment-methods', label: 'Payment Methods', icon: CreditCard },
               ].map((tab) => {
                 const IconComponent = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -332,7 +326,7 @@ export default function BillingPage() {
                     theme === 'white' ? 'text-gray-900' : 'text-gray-100'
                   }`}>Current Subscription</h2>
                   
-                  {subscription ? (
+                  {subscription && (
                     <div className={`p-4 rounded-lg border transition-colors duration-300 ${
                       theme === 'white' ? 'border-gray-200 bg-gray-50' : 'border-slate-700 bg-slate-700/50'
                     }`}>
@@ -346,7 +340,7 @@ export default function BillingPage() {
                             <p className={`text-sm transition-colors duration-300 ${
                               theme === 'white' ? 'text-gray-500' : 'text-gray-400'
                             }`}>
-                              {subscription.plan.price === 0 ? 'Free' : `$${subscription.plan.price}/${billingCycle === 'annual' ? 'year' : 'month'}`}
+                              {subscription.plan.price === 0 ? 'Free' : `$${subscription.plan.price}/${subscription.billing_cycle === 'annual' ? 'year' : 'month'}`}
                             </p>
                           </div>
                         </div>
@@ -369,10 +363,12 @@ export default function BillingPage() {
                         <div>
                           <p className={`transition-colors duration-300 ${
                             theme === 'white' ? 'text-gray-500' : 'text-gray-400'
-                          }`}>Subscription ID</p>
+                          }`}>Billing cycle</p>
                           <p className={`font-medium transition-colors duration-300 ${
                             theme === 'white' ? 'text-gray-900' : 'text-gray-100'
-                          }`}>{subscription.id}</p>
+                          }`}>
+                            {subscription.billing_cycle.charAt(0).toUpperCase() + subscription.billing_cycle.slice(1)}
+                          </p>
                         </div>
                       </div>
                       
@@ -391,11 +387,6 @@ export default function BillingPage() {
                         </button>
                       </div>
                     </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500">Loading subscription data...</p>
-                      <p className="text-sm text-gray-400 mt-2">Subscription state: {JSON.stringify(subscription)}</p>
-                    </div>
                   )}
                 </div>
               </div>
@@ -408,10 +399,6 @@ export default function BillingPage() {
                 <h2 className={`text-xl font-semibold mb-6 transition-colors duration-300 ${
                   theme === 'white' ? 'text-gray-900' : 'text-gray-100'
                 }`}>Available Plans</h2>
-                
-                <div className="text-sm text-gray-500 mb-4">
-                  Current tab: {activeTab} | Billing cycle: {billingCycle}
-                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {getPlansForCurrentCycle().map((plan) => (
@@ -471,7 +458,7 @@ export default function BillingPage() {
                           </button>
                         ) : (
                           <button
-                            onClick={() => handleUpgrade(plan.id)}
+                            onClick={() => handleUpgrade(plan.id, billingCycle)}
                             className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                           >
                             {plan.currentPricing.price === 0 ? 'Downgrade to Free' : 'Upgrade Plan'}
@@ -501,7 +488,9 @@ export default function BillingPage() {
                         <div>
                           <p className={`font-medium transition-colors duration-300 ${
                             theme === 'white' ? 'text-gray-900' : 'text-gray-100'
-                          }`}>Invoice #{invoice.id}</p>
+                          }`}>
+                            {invoice.invoice_number || `Invoice #${invoice.id}`}
+                          </p>
                           <p className={`text-sm transition-colors duration-300 ${
                             theme === 'white' ? 'text-gray-500' : 'text-gray-400'
                           }`}>
@@ -515,7 +504,7 @@ export default function BillingPage() {
                           <span className={`font-medium transition-colors duration-300 ${
                             theme === 'white' ? 'text-gray-900' : 'text-gray-100'
                           }`}>
-                            ${invoice.amount_paid}
+                            ${(invoice.amount_paid / 100).toFixed(2)}
                           </span>
                           {invoice.invoice_pdf && (
                             <a
@@ -534,6 +523,56 @@ export default function BillingPage() {
                 </div>
               </div>
             )}
+
+            {activeTab === 'payment-methods' && (
+              <div className={`rounded-lg p-6 transition-colors duration-300 ${
+                theme === 'white' ? 'bg-white border border-gray-200' : 'bg-slate-800 border border-slate-700'
+              }`}>
+                <h2 className={`text-xl font-semibold mb-4 transition-colors duration-300 ${
+                  theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                }`}>Payment Methods</h2>
+                
+                <div className="space-y-4">
+                  {paymentMethods.map((method) => (
+                    <div key={method.id} className={`p-4 rounded-lg border transition-colors duration-300 ${
+                      theme === 'white' ? 'border-gray-200 bg-gray-50' : 'border-slate-700 bg-slate-700/50'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <CreditCard className="w-5 h-5 text-gray-500" />
+                          <div>
+                            <p className={`font-medium transition-colors duration-300 ${
+                              theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                            }`}>
+                              {method.brand?.toUpperCase()} •••• {method.last4}
+                            </p>
+                            <p className={`text-sm transition-colors duration-300 ${
+                              theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+                            }`}>
+                              Expires {method.expMonth}/{method.expYear}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          {method.isDefault && (
+                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                              Default
+                            </span>
+                          )}
+                          <button className="text-red-600 hover:text-red-700 text-sm">
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <button className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:text-gray-800 hover:border-gray-400 transition-colors">
+                    + Add Payment Method
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -546,7 +585,15 @@ export default function BillingPage() {
           }`}>
             <h3 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
               theme === 'white' ? 'text-gray-900' : 'text-gray-100'
-            }`}>Upgrade to {getPlansForCurrentCycle().find(p => p.id === selectedPlan)?.name}</h3>
+            }`}>
+              Upgrade to {PRICING_PLANS[selectedPlan as keyof typeof PRICING_PLANS]?.name}
+            </h3>
+            
+            <p className={`mb-2 transition-colors duration-300 ${
+              theme === 'white' ? 'text-gray-600' : 'text-gray-400'
+            }`}>
+              {selectedBillingCycle === 'annual' ? 'Annual billing (save up to 17%)' : 'Monthly billing'}
+            </p>
             
             <p className={`mb-6 transition-colors duration-300 ${
               theme === 'white' ? 'text-gray-600' : 'text-gray-400'

@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Settings, User, Bell, Shield, Palette, Globe, Database, Key, LogOut } from 'lucide-react';
+import { Settings, User, Bell, Shield, Palette, Globe, Database, Key, LogOut, CreditCard } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
+import SimpleBillingPage from '@/components/SimpleBillingPage';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
@@ -49,6 +50,7 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
+    { id: 'billing', label: 'Billing & Subscription', icon: CreditCard },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'security', label: 'Security', icon: Shield },
     { id: 'appearance', label: 'Appearance', icon: Palette },
@@ -101,6 +103,9 @@ export default function SettingsPage() {
             </div>
           </div>
         );
+
+      case 'billing':
+        return <SimpleBillingPage />;
 
       case 'notifications':
         return (
@@ -215,6 +220,11 @@ export default function SettingsPage() {
         );
     }
   };
+
+  // If billing tab is active, render the simple billing page
+  if (activeTab === 'billing') {
+    return <SimpleBillingPage />;
+  }
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${

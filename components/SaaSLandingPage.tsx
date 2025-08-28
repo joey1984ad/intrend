@@ -13,9 +13,13 @@ import {
   CpuChipIcon,
   PresentationChartLineIcon
 } from '@heroicons/react/24/outline';
+import PricingSection from './PricingSection';
 
 const SaaSLandingPage: React.FC = () => {
   const [email, setEmail] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
   const features = [
     {
@@ -50,8 +54,62 @@ const SaaSLandingPage: React.FC = () => {
     }
   ];
 
+  const handlePlanSelection = async (planId: string) => {
+    if (planId === 'starter') {
+      // Redirect to dashboard for free plan
+      window.location.href = '/dashboard';
+      return;
+    }
+
+    const plan = pricingPlans.find(p => p.id === planId);
+    if (!plan) {
+      alert('Plan not found. Please try again.');
+      return;
+    }
+
+    // Check if plan has Stripe integration
+    if (plan.price > 0 && !plan.hasStripeIntegration) {
+      alert('This plan is not available for online purchase. Please contact sales for more information.');
+      return;
+    }
+
+    setSelectedPlan(planId);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          planId,
+          billingCycle: billingCycle || 'monthly', // Default to monthly if not set
+          customerEmail: email,
+          successUrl: `${window.location.origin}/dashboard?success=true&plan=${planId}`,
+          cancelUrl: `${window.location.origin}?canceled=true`,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error('Failed to create checkout session:', data.error);
+        alert(data.error || 'Failed to start checkout process. Please try again.');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const pricingPlans = [
     {
+      id: 'starter',
       name: 'Starter',
       price: 'FREE',
       period: '',
@@ -64,14 +122,14 @@ const SaaSLandingPage: React.FC = () => {
         '7-day data retention',
         'Basic reporting'
       ],
-      popular: false
+      popular: false,
+      stripePriceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID || 'price_starter_monthly'
     },
     {
+      id: 'professional',
       name: 'Professional',
-      price: '$10',
-      period: '/month',
-      annualPrice: '$100',
-      annualPeriod: '/year',
+      price: billingCycle === 'monthly' ? '$10' : '$100',
+      period: billingCycle === 'monthly' ? '/month' : '/year',
       description: 'Ideal for growing agencies and businesses',
       features: [
         'Up to 10 ad accounts',
@@ -82,14 +140,14 @@ const SaaSLandingPage: React.FC = () => {
         'Custom reporting',
         'Campaign optimization tips'
       ],
-      popular: true
+      popular: true,
+      stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_PRICE_ID || 'price_professional_monthly'
     },
     {
+      id: 'enterprise',
       name: 'Enterprise',
-      price: '$20',
-      period: '/month',
-      annualPrice: '$200',
-      annualPeriod: '/year',
+      price: billingCycle === 'monthly' ? '$20' : '$200',
+      period: billingCycle === 'monthly' ? '/month' : '/year',
       description: 'For large agencies and enterprise clients',
       features: [
         'Unlimited ad accounts',
@@ -139,6 +197,7 @@ const SaaSLandingPage: React.FC = () => {
     e.preventDefault();
     // Handle email signup logic here
     console.log('Email submitted:', email);
+    alert('Thank you! Your email has been saved. You can now proceed to select a plan.');
     setEmail('');
   };
 
@@ -199,6 +258,36 @@ const SaaSLandingPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Email Signup Section */}
+      <div className="py-16 bg-gradient-to-b from-slate-800/50 to-slate-900">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h3 className="text-2xl font-bold mb-4 text-white">
+            Get Started with Your Email
+          </h3>
+          <p className="text-lg text-blue-200 mb-8">
+            Enter your email to receive updates and get started with your chosen plan
+          </p>
+          <form onSubmit={handleEmailSubmit} className="max-w-md mx-auto">
+            <div className="flex gap-3">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email address"
+                className="flex-1 px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+              <button
+                type="submit"
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Subscribe
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       {/* Pricing Section */}
       <div className="py-20 bg-gradient-to-b from-slate-800/50 to-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -211,72 +300,10 @@ const SaaSLandingPage: React.FC = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <div 
-                key={index}
-                className={`relative bg-white/5 backdrop-blur-sm border rounded-2xl p-8 ${
-                  plan.popular 
-                    ? 'border-blue-500 bg-gradient-to-br from-blue-500/10 to-indigo-500/10' 
-                    : 'border-white/10'
-                } hover:bg-white/10 transition-all duration-300 transform hover:-translate-y-2`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-                
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold mb-2 text-white">{plan.name}</h3>
-                  <div className="mb-4">
-                    <span className="text-4xl font-bold text-white">{plan.price}</span>
-                    <span className="text-blue-200">{plan.period}</span>
-                    {plan.annualPrice && (
-                      <div className="mt-2">
-                        <span className="text-2xl font-bold text-green-400">{plan.annualPrice}</span>
-                        <span className="text-green-300 text-sm">{plan.annualPeriod}</span>
-                        <div className="text-xs text-green-300 mt-1">Save 17% with annual billing</div>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-blue-200">{plan.description}</p>
-                  {plan.annualPrice && (
-                    <div className="mt-2 text-center">
-                      <span className="inline-block bg-green-500/20 text-green-300 text-xs px-2 py-1 rounded-full border border-green-500/30">
-                        💰 Save 17% with annual billing
-                      </span>
-                    </div>
-                  )}
-                </div>
-                
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center text-blue-100">
-                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                
-                <a 
-                  href="/billing"
-                  className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-300 inline-block text-center ${
-                    plan.popular
-                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105'
-                      : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
-                  }`}>
-                  {plan.name === 'Starter' ? 'Get Started Free' : 'Choose Plan'}
-                </a>
-              </div>
-            ))}
-          </div>
+          <PricingSection
+            onPlanSelect={handlePlanSelection}
+            className="text-white"
+          />
         </div>
       </div>
 

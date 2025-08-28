@@ -6,11 +6,88 @@ const sql = neon(process.env.DATABASE_URL!);
 // Database schema and initialization
 export async function initDatabase() {
   try {
-    // Create tables if they don't exist
+    // Create users table
+    await sql`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        first_name VARCHAR(100),
+        last_name VARCHAR(100),
+        company VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    // Create Stripe customers table
+    await sql`
+      CREATE TABLE IF NOT EXISTS stripe_customers (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        stripe_customer_id VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    // Create subscriptions table
+    await sql`
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        stripe_subscription_id VARCHAR(255) UNIQUE NOT NULL,
+        stripe_customer_id VARCHAR(255) NOT NULL,
+        plan_id VARCHAR(100) NOT NULL,
+        plan_name VARCHAR(100) NOT NULL,
+        billing_cycle VARCHAR(20) NOT NULL CHECK (billing_cycle IN ('monthly', 'annual')),
+        status VARCHAR(50) NOT NULL,
+        current_period_start TIMESTAMP NOT NULL,
+        current_period_end TIMESTAMP NOT NULL,
+        cancel_at_period_end BOOLEAN DEFAULT FALSE,
+        trial_end TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    // Create invoices table
+    await sql`
+      CREATE TABLE IF NOT EXISTS invoices (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        stripe_invoice_id VARCHAR(255) UNIQUE NOT NULL,
+        subscription_id INTEGER REFERENCES subscriptions(id) ON DELETE CASCADE,
+        amount_paid INTEGER NOT NULL,
+        currency VARCHAR(3) DEFAULT 'usd',
+        status VARCHAR(50) NOT NULL,
+        invoice_pdf_url TEXT,
+        invoice_number VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    // Create payment methods table
+    await sql`
+      CREATE TABLE IF NOT EXISTS payment_methods (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        stripe_payment_method_id VARCHAR(255) UNIQUE NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        last4 VARCHAR(4),
+        brand VARCHAR(50),
+        exp_month INTEGER,
+        exp_year INTEGER,
+        is_default BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    // Create Facebook sessions table
     await sql`
       CREATE TABLE IF NOT EXISTS facebook_sessions (
         id SERIAL PRIMARY KEY,
-        user_id VARCHAR(255) NOT NULL UNIQUE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         access_token TEXT NOT NULL,
         ad_account_id VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -18,6 +95,7 @@ export async function initDatabase() {
       )
     `;
 
+    // Create campaign data table
     await sql`
       CREATE TABLE IF NOT EXISTS campaign_data (
         id SERIAL PRIMARY KEY,
@@ -38,6 +116,7 @@ export async function initDatabase() {
       )
     `;
 
+    // Create metrics cache table
     await sql`
       CREATE TABLE IF NOT EXISTS metrics_cache (
         id SERIAL PRIMARY KEY,
@@ -49,7 +128,7 @@ export async function initDatabase() {
       )
     `;
 
-    // Cache creatives payloads per ad account and date range
+    // Create creatives cache table
     await sql`
       CREATE TABLE IF NOT EXISTS creatives_cache (
         id SERIAL PRIMARY KEY,
@@ -60,10 +139,7 @@ export async function initDatabase() {
       )
     `;
 
-    // Helpful index for TTL lookups
-    await sql`CREATE INDEX IF NOT EXISTS idx_creatives_cache_key ON creatives_cache (ad_account_id, date_range)`;
-
-    // AI Creative Scores table for storing ChatGPT Vision analysis results
+    // Create AI creative scores table
     await sql`
       CREATE TABLE IF NOT EXISTS ai_creative_scores (
         id SERIAL PRIMARY KEY,
@@ -76,13 +152,308 @@ export async function initDatabase() {
       )
     `;
 
-    // Index for fast lookups by creative ID
+    // Create indexes for performance
+    await sql`CREATE INDEX IF NOT EXISTS idx_stripe_customers_user_id ON stripe_customers (user_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions (user_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions (status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices (user_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_payment_methods_user_id ON payment_methods (user_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_creatives_cache_key ON creatives_cache (ad_account_id, date_range)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_ai_creative_scores_creative_id ON ai_creative_scores (creative_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_ai_creative_scores_ad_account_id ON ai_creative_scores (ad_account_id)`;
 
-    console.log('✅ Database initialized successfully');
+    console.log('✅ Database initialized successfully with new schema');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
+    throw error;
+  }
+}
+
+// User management functions
+export async function createUser(email: string, firstName?: string, lastName?: string, company?: string) {
+  try {
+    const result = await sql`
+      INSERT INTO users (email, first_name, last_name, company)
+      VALUES (${email}, ${firstName}, ${lastName}, ${company})
+      RETURNING id, email, first_name, last_name, company, created_at
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error creating user:', error);
+    throw error;
+  }
+}
+
+export async function getUserById(userId: number) {
+  try {
+    const result = await sql`
+      SELECT * FROM users WHERE id = ${userId}
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error('Error getting user by ID:', error);
+    return null;
+  }
+}
+
+export async function getUserByEmail(email: string) {
+  try {
+    const result = await sql`
+      SELECT * FROM users WHERE email = ${email}
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error('Error getting user by email:', error);
+    return null;
+  }
+}
+
+export async function updateUser(userId: number, updates: Partial<{ firstName: string; lastName: string; company: string }>) {
+  try {
+    const result = await sql`
+      UPDATE users 
+      SET 
+        first_name = COALESCE(${updates.firstName}, first_name),
+        last_name = COALESCE(${updates.lastName}, last_name),
+        company = COALESCE(${updates.company}, company),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${userId}
+      RETURNING *
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw error;
+  }
+}
+
+// Stripe customer management
+export async function createStripeCustomer(userId: number, stripeCustomerId: string, email: string) {
+  try {
+    const result = await sql`
+      INSERT INTO stripe_customers (user_id, stripe_customer_id, email)
+      VALUES (${userId}, ${stripeCustomerId}, ${email})
+      RETURNING *
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error creating Stripe customer:', error);
+    throw error;
+  }
+}
+
+export async function getStripeCustomerByUserId(userId: number) {
+  try {
+    const result = await sql`
+      SELECT * FROM stripe_customers WHERE user_id = ${userId}
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error('Error getting Stripe customer:', error);
+    return null;
+  }
+}
+
+// Subscription management
+export async function createSubscription(subscriptionData: {
+  userId: number;
+  stripeSubscriptionId: string;
+  stripeCustomerId: string;
+  planId: string;
+  planName: string;
+  billingCycle: 'monthly' | 'annual';
+  status: string;
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+  trialEnd?: Date;
+}) {
+  try {
+    const result = await sql`
+      INSERT INTO subscriptions (
+        user_id, stripe_subscription_id, stripe_customer_id, plan_id, plan_name,
+        billing_cycle, status, current_period_start, current_period_end, trial_end
+      )
+      VALUES (
+        ${subscriptionData.userId}, ${subscriptionData.stripeSubscriptionId},
+        ${subscriptionData.stripeCustomerId}, ${subscriptionData.planId},
+        ${subscriptionData.planName}, ${subscriptionData.billingCycle},
+        ${subscriptionData.status}, ${subscriptionData.currentPeriodStart},
+        ${subscriptionData.currentPeriodEnd}, ${subscriptionData.trialEnd}
+      )
+      RETURNING *
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error creating subscription:', error);
+    throw error;
+  }
+}
+
+export async function updateSubscription(stripeSubscriptionId: string, updates: Partial<{
+  status: string;
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+  cancelAtPeriodEnd: boolean;
+  trialEnd?: Date;
+}>) {
+  try {
+    const result = await sql`
+      UPDATE subscriptions 
+      SET 
+        status = COALESCE(${updates.status}, status),
+        current_period_start = COALESCE(${updates.currentPeriodStart}, current_period_start),
+        current_period_end = COALESCE(${updates.currentPeriodEnd}, current_period_end),
+        cancel_at_period_end = COALESCE(${updates.cancelAtPeriodEnd}, cancel_at_period_end),
+        trial_end = COALESCE(${updates.trialEnd}, trial_end),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE stripe_subscription_id = ${stripeSubscriptionId}
+      RETURNING *
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error('Error updating subscription:', error);
+    throw error;
+  }
+}
+
+export async function getSubscriptionByUserId(userId: number) {
+  try {
+    const result = await sql`
+      SELECT * FROM subscriptions 
+      WHERE user_id = ${userId} 
+      ORDER BY created_at DESC 
+      LIMIT 1
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error('Error getting subscription:', error);
+    return null;
+  }
+}
+
+export async function getSubscriptionByStripeId(stripeSubscriptionId: string) {
+  try {
+    const result = await sql`
+      SELECT * FROM subscriptions 
+      WHERE stripe_subscription_id = ${stripeSubscriptionId}
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error('Error getting subscription by Stripe ID:', error);
+    return null;
+  }
+}
+
+// Invoice management
+export async function createInvoice(invoiceData: {
+  userId: number;
+  stripeInvoiceId: string;
+  subscriptionId: number;
+  amountPaid: number;
+  currency: string;
+  status: string;
+  invoicePdfUrl?: string;
+  invoiceNumber?: string;
+}) {
+  try {
+    const result = await sql`
+      INSERT INTO invoices (
+        user_id, stripe_invoice_id, subscription_id, amount_paid, currency,
+        status, invoice_pdf_url, invoice_number
+      )
+      VALUES (
+        ${invoiceData.userId}, ${invoiceData.stripeInvoiceId},
+        ${invoiceData.subscriptionId}, ${invoiceData.amountPaid},
+        ${invoiceData.currency}, ${invoiceData.status},
+        ${invoiceData.invoicePdfUrl}, ${invoiceData.invoiceNumber}
+      )
+      RETURNING *
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error creating invoice:', error);
+    throw error;
+  }
+}
+
+export async function getInvoicesByUserId(userId: number) {
+  try {
+    const result = await sql`
+      SELECT * FROM invoices 
+      WHERE user_id = ${userId} 
+      ORDER BY created_at DESC
+    `;
+    return result;
+  } catch (error) {
+    console.error('Error getting invoices:', error);
+    return [];
+  }
+}
+
+// Payment method management
+export async function createPaymentMethod(paymentMethodData: {
+  userId: number;
+  stripePaymentMethodId: string;
+  type: string;
+  last4?: string;
+  brand?: string;
+  expMonth?: number;
+  expYear?: number;
+  isDefault?: boolean;
+}) {
+  try {
+    // If this is the first payment method, make it default
+    if (paymentMethodData.isDefault !== false) {
+      const existingMethods = await sql`
+        SELECT COUNT(*) as count FROM payment_methods WHERE user_id = ${paymentMethodData.userId}
+      `;
+      if (existingMethods[0]?.count === 0) {
+        paymentMethodData.isDefault = true;
+      }
+    }
+
+    const result = await sql`
+      INSERT INTO payment_methods (
+        user_id, stripe_payment_method_id, type, last4, brand, exp_month, exp_year, is_default
+      )
+      VALUES (
+        ${paymentMethodData.userId}, ${paymentMethodData.stripePaymentMethodId},
+        ${paymentMethodData.type}, ${paymentMethodData.last4}, ${paymentMethodData.brand},
+        ${paymentMethodData.expMonth}, ${paymentMethodData.expYear}, ${paymentMethodData.isDefault || false}
+      )
+      RETURNING *
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error creating payment method:', error);
+    throw error;
+  }
+}
+
+export async function getPaymentMethodsByUserId(userId: number) {
+  try {
+    const result = await sql`
+      SELECT * FROM payment_methods 
+      WHERE user_id = ${userId} 
+      ORDER BY is_default DESC, created_at DESC
+    `;
+    return result;
+  } catch (error) {
+    console.error('Error getting payment methods:', error);
+    return [];
+  }
+}
+
+export async function deletePaymentMethod(paymentMethodId: number) {
+  try {
+    const result = await sql`
+      DELETE FROM payment_methods 
+      WHERE id = ${paymentMethodId}
+      RETURNING *
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error('Error deleting payment method:', error);
     throw error;
   }
 }

@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { DashboardThemeProvider } from '@/contexts/DashboardThemeContext'
+import { UserProvider } from '@/contexts/UserContext'
 
 export const metadata: Metadata = {
   title: 'Facebook Ads Dashboard - Intrend',
@@ -15,9 +16,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <DashboardThemeProvider>
-          {children}
-        </DashboardThemeProvider>
+        <UserProvider>
+          <DashboardThemeProvider>
+            {children}
+          </DashboardThemeProvider>
+        </UserProvider>
       </body>
     </html>
   )

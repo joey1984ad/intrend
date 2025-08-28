@@ -85,14 +85,14 @@ export const PRICING_PLANS = {
     id: 'professional',
     name: 'Professional',
     monthly: {
-      price: 10,
+      price: 29, // Updated to match Stripe: $29/month
       priceId: 'price_professional_monthly',
       stripePriceId: process.env.STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID || null,
       billingCycle: 'monthly' as const,
       hasStripeIntegration: !!process.env.STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID
     },
     annual: {
-      price: 100, // 2 months free
+      price: 290, // Updated to match Stripe: $290/year (2 months free)
       priceId: 'price_professional_annual',
       stripePriceId: process.env.STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID || null,
       billingCycle: 'annual' as const,
@@ -113,14 +113,14 @@ export const PRICING_PLANS = {
     id: 'enterprise',
     name: 'Enterprise',
     monthly: {
-      price: 20,
+      price: 99, // Updated to match Stripe: $99/month
       priceId: 'price_enterprise_monthly',
       stripePriceId: process.env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID || null,
       billingCycle: 'monthly' as const,
       hasStripeIntegration: !!process.env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID
     },
     annual: {
-      price: 200, // 2 months free
+      price: 990, // Updated to match Stripe: $990/year (2 months free)
       priceId: 'price_enterprise_annual',
       stripePriceId: process.env.STRIPE_ENTERPRISE_ANNUAL_PRICE_ID || null,
       billingCycle: 'annual' as const,

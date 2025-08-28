@@ -3,13 +3,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
+  firstName?: string;
+  lastName?: string;
+  company?: string;
   image?: string;
   provider?: 'google' | 'facebook' | 'email';
-  createdAt?: Date;
-  lastLogin?: Date;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface UserContextType {
@@ -39,47 +42,46 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user data from localStorage on mount
+  // Load user data from session on mount
   useEffect(() => {
-    const loadUserFromStorage = () => {
+    const loadUserFromSession = async () => {
       try {
-        const storedUser = localStorage.getItem('intrend_user');
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          setUser(userData);
+        const response = await fetch('/api/auth/session');
+        const { user: sessionUser, isAuthenticated } = await response.json();
+        
+        if (isAuthenticated && sessionUser) {
+          setUser(sessionUser);
+          console.log('User loaded from session:', sessionUser);
+        } else {
+          console.log('No valid session found');
         }
       } catch (error) {
-        console.error('Failed to load user from storage:', error);
-        localStorage.removeItem('intrend_user');
+        console.error('Failed to load user from session:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadUserFromStorage();
+    loadUserFromSession();
   }, []);
-
-  // Save user data to localStorage whenever user changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('intrend_user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('intrend_user');
-    }
-  }, [user]);
 
   const login = (userData: User) => {
     setUser(userData);
     console.log('User logged in:', userData);
   };
 
-  const logout = () => {
-    setUser(null);
-    // Clear any other auth-related data
-    localStorage.removeItem('intrend_user');
-    localStorage.removeItem('intrend_token');
-    localStorage.removeItem('intrend_refresh_token');
-    console.log('User logged out');
+  const logout = async () => {
+    try {
+      // Call logout API to clear session cookie
+      await fetch('/api/auth/session', { method: 'DELETE' });
+      console.log('Session cleared successfully');
+    } catch (error) {
+      console.error('Failed to clear session:', error);
+    } finally {
+      // Clear local state regardless of API call success
+      setUser(null);
+      console.log('User logged out');
+    }
   };
 
   const updateUser = (updates: Partial<User>) => {

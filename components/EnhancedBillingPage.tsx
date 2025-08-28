@@ -128,12 +128,16 @@ export default function EnhancedBillingPage() {
 
   const handleCustomerPortal = async () => {
     try {
+      // For now, use a placeholder email - in production this should come from user context
+      const customerEmail = subscription?.plan.id === 'starter' ? null : 'user@example.com';
+      
       const response = await fetch('/api/stripe/customer-portal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          customerEmail: customerEmail,
           returnUrl: `${window.location.origin}/billing`,
         }),
       });
@@ -143,7 +147,8 @@ export default function EnhancedBillingPage() {
       if (data.success && data.url) {
         window.location.href = data.url;
       } else {
-        alert('Failed to access customer portal. Please try again.');
+        console.error('Customer portal error:', data.error);
+        alert(data.error || 'Failed to access customer portal. Please try again.');
       }
     } catch (error) {
       console.error('Customer portal error:', error);

@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev --experimental-https --port 3000",
+    "dev-3001": "next dev --experimental-https --port 3001",
     "dev-https": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",

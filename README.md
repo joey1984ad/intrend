@@ -19,6 +19,14 @@ A comprehensive digital marketing dashboard for agencies to showcase Meta Ads pe
 - **Real-time Processing**: Instant analysis results for faster decision making
 - **Creative Optimization**: Data-driven suggestions for improving ad performance
 
+### Subscription & Billing Management
+- **Stripe Integration**: Complete payment processing and subscription management
+- **Multiple Pricing Plans**: Starter (Free), Professional ($29/$290), Enterprise ($99/$990)
+- **Billing Cycles**: Monthly and annual options with savings
+- **Customer Portal**: Self-service subscription management
+- **Webhook Processing**: Real-time subscription lifecycle management
+- **Invoice Management**: Complete billing history and PDF downloads
+
 ### Key Components
 - **Account Summary**: Overview of selected client account
 - **Performance Charts**: Visual representation of key metrics

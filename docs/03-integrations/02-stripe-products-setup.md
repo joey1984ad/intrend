@@ -17,7 +17,7 @@ npm run setup:stripe
 ```
 
 This script will:
-- Create 3 products (Starter, Professional, Enterprise)
+- Create 3 products (Free, Startup, Pro)
 - Create 6 prices (monthly/annual for each paid plan)
 - Output all the price IDs you need to add to `.env.local`
 
@@ -30,52 +30,52 @@ If you prefer to set up manually through the Stripe Dashboard:
 1. Go to [Stripe Dashboard](https://dashboard.stripe.com/products)
 2. Click **"Add Product"**
 
-#### **Starter Plan Product**
-- **Name**: `Starter Plan`
+#### **Free Plan Product**
+- **Name**: `Free Plan`
 - **Description**: `Perfect for small agencies and freelancers`
 - **Metadata**: 
-  - `plan_id`: `starter`
+  - `plan_id`: `free`
   - `features`: `Up to 3 ad accounts, Basic performance dashboard, Creative gallery access, Email support, Basic analytics`
 
-#### **Professional Plan Product**
-- **Name**: `Professional Plan`
+#### **Startup Plan Product**
+- **Name**: `Startup Plan`
 - **Description**: `Ideal for growing agencies and marketing teams`
 - **Metadata**:
-  - `plan_id`: `professional`
+  - `plan_id`: `startup`
   - `features`: `Up to 10 ad accounts, Advanced performance dashboard, Creative gallery access, Priority email support, Advanced analytics, Custom reporting, Team collaboration`
 
-#### **Enterprise Plan Product**
-- **Name**: `Enterprise Plan`
+#### **Pro Plan Product**
+- **Name**: `Pro Plan`
 - **Description**: `Built for large agencies and enterprise teams`
 - **Metadata**:
-  - `plan_id`: `enterprise`
+  - `plan_id`: `pro`
   - `features`: `Unlimited ad accounts, Enterprise dashboard, Creative gallery access, 24/7 phone support, Advanced analytics, Custom reporting, Team collaboration, API access, Custom integrations`
 
 ### **Step 2: Create Prices**
 
 For each product, create two prices:
 
-#### **Professional Plan Prices**
+#### **Startup Plan Prices**
 - **Monthly Price**:
-  - Amount: `$29.00`
+  - Amount: `$10.00`
   - Billing: `Recurring monthly`
   - Metadata: `billing_cycle: monthly`
 - **Annual Price**:
-  - Amount: `$290.00`
+  - Amount: `$96.00` (20% discount)
   - Billing: `Recurring yearly`
   - Metadata: `billing_cycle: annual`
 
-#### **Enterprise Plan Prices**
+#### **Pro Plan Prices**
 - **Monthly Price**:
-  - Amount: `$99.00`
+  - Amount: `$20.00`
   - Billing: `Recurring monthly`
   - Metadata: `billing_cycle: monthly`
 - **Annual Price**:
-  - Amount: `$990.00`
+  - Amount: `$192.00` (20% discount)
   - Billing: `Recurring yearly`
   - Metadata: `billing_cycle: annual`
 
-**Note**: Starter Plan is free, so no Stripe price is needed.
+**Note**: Free Plan is free, so no Stripe price is needed.
 
 ### **Step 3: Copy Price IDs**
 
@@ -87,12 +87,12 @@ Add these lines to your `.env.local` file:
 
 ```bash
 # Stripe Price IDs
-STRIPE_STARTER_MONTHLY_PRICE_ID=free
-STRIPE_STARTER_ANNUAL_PRICE_ID=free
-STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID=price_xxxxxxxxxxxxx
-STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID=price_xxxxxxxxxxxxx
-STRIPE_ENTERPRISE_MONTHLY_PRICE_ID=price_xxxxxxxxxxxxx
-STRIPE_ENTERPRISE_ANNUAL_PRICE_ID=price_xxxxxxxxxxxxx
+STRIPE_FREE_MONTHLY_PRICE_ID=free
+STRIPE_FREE_ANNUAL_PRICE_ID=free
+STRIPE_STARTUP_MONTHLY_PRICE_ID=price_xxxxxxxxxxxxx
+STRIPE_STARTUP_ANNUAL_PRICE_ID=price_xxxxxxxxxxxxx
+STRIPE_PRO_MONTHLY_PRICE_ID=price_xxxxxxxxxxxxx
+STRIPE_PRO_ANNUAL_PRICE_ID=price_xxxxxxxxxxxxx
 ```
 
 **Important**: Replace `price_xxxxxxxxxxxxx` with the actual price IDs from Stripe.
@@ -103,7 +103,7 @@ After setup:
 
 1. **Restart your development server**
 2. **Test the billing page**: Visit `/billing`
-3. **Try upgrading a plan**: Click on Professional or Enterprise plan
+3. **Try upgrading a plan**: Click on Startup or Pro plan
 4. **Check checkout flow**: Should redirect to Stripe checkout
 
 ## 🚨 **Troubleshooting**

@@ -45,14 +45,31 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    console.log('Logout request received');
+    
     const response = NextResponse.json({ success: true });
+    
+    // Clear the session token cookie
     response.cookies.set('session_token', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 0,
-      path: '/'
+      path: '/',
+      expires: new Date(0) // Expire immediately
     });
+    
+    // Also clear any other auth-related cookies
+    response.cookies.set('auth_token', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0,
+      path: '/',
+      expires: new Date(0)
+    });
+    
+    console.log('Session cookies cleared successfully');
     return response;
   } catch (error) {
     console.error('Logout error:', error);

@@ -54,20 +54,22 @@ export const PLAN_LIMITS = {
 } as const;
 
 // Pricing plans configuration with monthly and annual options
+// Note: hasStripeIntegration is set to true for paid plans since we have the price IDs configured
 export const PRICING_PLANS = {
-  starter: {
-    id: 'starter',
-    name: 'Starter',
+  free: {
+    id: 'free',
+    name: 'Free',
+    popular: false,
     monthly: {
       price: 0,
-      priceId: 'price_starter_monthly',
+      priceId: 'price_free_monthly',
       stripePriceId: 'free', // Free plan - no Stripe integration needed
       billingCycle: 'monthly' as const,
       hasStripeIntegration: false
     },
     annual: {
       price: 0,
-      priceId: 'price_starter_annual',
+      priceId: 'price_free_annual',
       stripePriceId: 'free', // Free plan - no Stripe integration needed
       billingCycle: 'annual' as const,
       hasStripeIntegration: false
@@ -81,22 +83,23 @@ export const PRICING_PLANS = {
     ],
     description: 'Perfect for small agencies and freelancers'
   },
-  professional: {
-    id: 'professional',
-    name: 'Professional',
+  startup: {
+    id: 'startup',
+    name: 'Startup',
+    popular: true,
     monthly: {
-      price: 29, // Updated to match Stripe: $29/month
-      priceId: 'price_professional_monthly',
-      stripePriceId: process.env.STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID || null,
+      price: 10, // $10/month
+      priceId: 'price_startup_monthly',
+      stripePriceId: process.env.STRIPE_STARTUP_MONTHLY_PRICE_ID || null,
       billingCycle: 'monthly' as const,
-      hasStripeIntegration: !!process.env.STRIPE_PROFESSIONAL_MONTHLY_PRICE_ID
+      hasStripeIntegration: !!process.env.STRIPE_STARTUP_MONTHLY_PRICE_ID
     },
     annual: {
-      price: 290, // Updated to match Stripe: $290/year (2 months free)
-      priceId: 'price_professional_annual',
-      stripePriceId: process.env.STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID || null,
+      price: 96, // $10 * 12 * 0.8 = $96/year (20% discount)
+      priceId: 'price_startup_annual',
+      stripePriceId: process.env.STRIPE_STARTUP_ANNUAL_PRICE_ID || null,
       billingCycle: 'annual' as const,
-      hasStripeIntegration: !!process.env.STRIPE_PROFESSIONAL_ANNUAL_PRICE_ID
+      hasStripeIntegration: !!process.env.STRIPE_STARTUP_ANNUAL_PRICE_ID
     },
     features: [
       'Up to 10 ad accounts',
@@ -109,22 +112,23 @@ export const PRICING_PLANS = {
     ],
     description: 'Ideal for growing agencies and marketing teams'
   },
-  enterprise: {
-    id: 'enterprise',
-    name: 'Enterprise',
+  pro: {
+    id: 'pro',
+    name: 'Pro',
+    popular: false,
     monthly: {
-      price: 99, // Updated to match Stripe: $99/month
-      priceId: 'price_enterprise_monthly',
-      stripePriceId: process.env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID || null,
+      price: 20, // $20/month
+      priceId: 'price_pro_monthly',
+      stripePriceId: process.env.STRIPE_PRO_MONTHLY_PRICE_ID || null,
       billingCycle: 'monthly' as const,
-      hasStripeIntegration: !!process.env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID
+      hasStripeIntegration: !!process.env.STRIPE_PRO_MONTHLY_PRICE_ID
     },
     annual: {
-      price: 990, // Updated to match Stripe: $990/year (2 months free)
-      priceId: 'price_enterprise_annual',
-      stripePriceId: process.env.STRIPE_ENTERPRISE_ANNUAL_PRICE_ID || null,
+      price: 192, // $20 * 12 * 0.8 = $192/year (20% discount)
+      priceId: 'price_pro_annual',
+      stripePriceId: process.env.STRIPE_PRO_ANNUAL_PRICE_ID || null,
       billingCycle: 'annual' as const,
-      hasStripeIntegration: !!process.env.STRIPE_ENTERPRISE_ANNUAL_PRICE_ID
+      hasStripeIntegration: !!process.env.STRIPE_PRO_ANNUAL_PRICE_ID
     },
     features: [
       'Unlimited ad accounts',

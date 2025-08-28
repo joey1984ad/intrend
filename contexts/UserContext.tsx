@@ -22,6 +22,7 @@ interface UserContextType {
   login: (userData: User) => void;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
+  setUser: (user: User | null) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -99,6 +100,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     login,
     logout,
     updateUser,
+    setUser,
   };
 
   return (

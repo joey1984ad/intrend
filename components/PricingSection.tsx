@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle, Star } from 'lucide-react';
 import { PRICING_PLANS } from '@/lib/stripe';
+import { useStripeIntegration } from '@/hooks/useStripeIntegration';
 
 interface PricingSectionProps {
   showBillingToggle?: boolean;
@@ -18,19 +19,54 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   className = ''
 }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [mounted, setMounted] = useState(false);
+  const { isStripeConfigured, isLoading: isStripeLoading } = useStripeIntegration();
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const getPlanPrice = (plan: any) => {
-    if (plan.price === 0) return 'FREE';
     if (billingCycle === 'annual') {
-      const annualPrice = Math.round(plan.price * 12 * 0.8); // 20% discount
-      return `$${annualPrice}`;
+      return plan.annual.price === 0 ? 'FREE' : `$${plan.annual.price}`;
+    } else {
+      return plan.monthly.price === 0 ? 'FREE' : `$${plan.monthly.price}`;
     }
-    return `$${plan.price}`;
   };
 
   const getPlanPeriod = (plan: any) => {
-    if (plan.price === 0) return '';
-    return billingCycle === 'annual' ? '/year' : '/month';
+    if (billingCycle === 'annual') {
+      return plan.annual.price === 0 ? '' : '/year';
+    } else {
+      return plan.monthly.price === 0 ? '' : '/month';
+    }
+  };
+
+  const getButtonText = (plan: any) => {
+    if (currentPlan === plan.id) {
+      return 'Current Plan';
+    }
+    
+    if (billingCycle === 'annual') {
+      if (plan.annual.price === 0) return 'Get Started Free';
+      if (plan.annual.price > 0 && !isStripeConfigured) return 'Contact Sales';
+    } else {
+      if (plan.monthly.price === 0) return 'Get Started Free';
+      if (plan.monthly.price > 0 && !isStripeConfigured) return 'Contact Sales';
+    }
+    
+    return 'Choose Plan';
+  };
+
+  const isPlanDisabled = (plan: any) => {
+    if (currentPlan === plan.id) return true;
+    
+    if (billingCycle === 'annual') {
+      return plan.annual.price > 0 && !isStripeConfigured;
+    } else {
+      return plan.monthly.price > 0 && !isStripeConfigured;
+    }
   };
 
   const handlePlanClick = (planId: string) => {
@@ -38,6 +74,24 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       onPlanSelect(planId);
     }
   };
+
+  // Don't render until mounted and Stripe status is determined to prevent hydration mismatch
+  if (!mounted || isStripeLoading) {
+    return (
+      <div className={className}>
+        <div className="text-center">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded mb-4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-96 bg-gray-200 rounded-2xl"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={className}>
@@ -122,33 +176,27 @@ const PricingSection: React.FC<PricingSectionProps> = ({
               ))}
             </ul>
 
-                                  <button
-                        onClick={() => handlePlanClick(planId)}
-                        disabled={currentPlan === plan.id || (plan.price > 0 && !plan.hasStripeIntegration)}
-                        className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-300 ${
-                          currentPlan === plan.id
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : plan.price > 0 && !plan.hasStripeIntegration
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : plan.popular
-                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105'
-                            : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100'
-                        }`}
-                      >
-                        {currentPlan === plan.id
-                          ? 'Current Plan'
-                          : plan.price === 0
-                          ? 'Get Started Free'
-                          : plan.price > 0 && !plan.hasStripeIntegration
-                          ? 'Contact Sales'
-                          : 'Choose Plan'}
-                      </button>
-                      
-                      {plan.price > 0 && !plan.hasStripeIntegration && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
-                          Stripe not configured for this plan
-                        </p>
-                      )}
+                                              <button
+              onClick={() => handlePlanClick(planId)}
+              disabled={isPlanDisabled(plan)}
+              className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-300 ${
+                currentPlan === plan.id
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : isPlanDisabled(plan)
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : plan.popular
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105'
+                  : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100'
+              }`}
+            >
+              {getButtonText(plan)}
+            </button>
+            
+            {isPlanDisabled(plan) && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+                Stripe not configured for this plan
+              </p>
+            )}
           </div>
         ))}
       </div>

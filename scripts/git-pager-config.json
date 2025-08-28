@@ -1,0 +1,49 @@
+{
+  "git_pager_fix": {
+    "version": "1.0.0",
+    "description": "Configuration for Git Pager Issue Fix",
+    "settings": {
+      "core_pager": {
+        "primary": "",
+        "fallback": "cat",
+        "description": "Disable pager completely, with cat as fallback"
+      },
+      "aliases": {
+        "log": "log --no-pager",
+        "diff": "diff --no-pager",
+        "show": "show --no-pager",
+        "blame": "blame --no-pager",
+        "status": "status --no-pager",
+        "branch": "branch --no-pager",
+        "tag": "tag --no-pager"
+      },
+      "environment_variables": {
+        "GIT_PAGER": "",
+        "LESS": "",
+        "MORE": ""
+      }
+    },
+    "best_practices": {
+      "security": {
+        "execution_policy": "RemoteSigned",
+        "scope": "CurrentUser",
+        "validation": true
+      },
+      "error_handling": {
+        "graceful_fallback": true,
+        "detailed_logging": true,
+        "exit_codes": true
+      },
+      "testing": {
+        "verify_config": true,
+        "test_commands": ["log", "diff", "show"],
+        "sample_output": true
+      }
+    },
+    "compatibility": {
+      "platforms": ["Windows", "PowerShell", "Command Prompt"],
+      "git_versions": ["2.0.0", "2.51.0"],
+      "shells": ["PowerShell", "cmd", "Git Bash"]
+    }
+  }
+}

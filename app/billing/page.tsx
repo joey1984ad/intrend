@@ -167,9 +167,9 @@ export default function BillingPage() {
       // Direct access to pricing data for debugging
       const plans = [
         {
-          id: 'starter',
-          name: 'Starter',
-          currentPricing: billingCycle === 'monthly' 
+          id: 'free',
+          name: 'Free',
+          currentPricing: billingCycle === 'monthly'
             ? { price: 0, billingCycle: 'monthly' }
             : { price: 0, billingCycle: 'annual' },
           features: [
@@ -183,11 +183,11 @@ export default function BillingPage() {
           savings: 0
         },
         {
-          id: 'professional',
-          name: 'Professional',
+          id: 'startup',
+          name: 'Startup',
           currentPricing: billingCycle === 'monthly'
             ? { price: 10, billingCycle: 'monthly' }
-            : { price: 100, billingCycle: 'annual' },
+            : { price: 96, billingCycle: 'annual' },
           features: [
             'Up to 10 ad accounts',
             'Advanced performance dashboard',
@@ -198,14 +198,14 @@ export default function BillingPage() {
             'Team collaboration'
           ],
           description: 'Ideal for growing agencies and marketing teams',
-          savings: billingCycle === 'annual' ? 17 : 0
+          savings: billingCycle === 'annual' ? 20 : 0
         },
         {
-          id: 'enterprise',
-          name: 'Enterprise',
+          id: 'pro',
+          name: 'Pro',
           currentPricing: billingCycle === 'monthly'
             ? { price: 20, billingCycle: 'monthly' }
-            : { price: 200, billingCycle: 'annual' },
+            : { price: 192, billingCycle: 'annual' },
           features: [
             'Unlimited ad accounts',
             'Enterprise dashboard',
@@ -218,7 +218,7 @@ export default function BillingPage() {
             'Custom integrations'
           ],
           description: 'Built for large agencies and enterprise teams',
-          savings: billingCycle === 'annual' ? 17 : 0
+          savings: billingCycle === 'annual' ? 20 : 0
         }
       ];
       

@@ -123,6 +123,7 @@ export async function POST(request: NextRequest) {
       search_terms: searchQuery.trim(),
       limit: pageSize,
       offset: (page - 1) * pageSize,
+      ad_reached_countries: ['US'], // Required parameter - default to US
     };
 
     // Apply filters
@@ -132,6 +133,10 @@ export async function POST(request: NextRequest) {
       if (filters.region && filters.region !== 'all') {
         searchParams.ad_reached_countries = [filters.region];
         debugLog('POST', 'Region filter applied', { region: filters.region });
+      } else {
+        // Ensure default country is set if no region filter
+        searchParams.ad_reached_countries = ['US'];
+        debugLog('POST', 'Default region applied', { region: 'US' });
       }
 
       if (filters.mediaType && filters.mediaType !== 'all') {

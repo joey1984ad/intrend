@@ -6,6 +6,7 @@ import AdsLibrarySearch from './AdsLibrarySearch';
 import AdsLibraryFilters from './AdsLibraryFilters';
 import AdsLibraryGrid from './AdsLibraryGrid';
 import AdsLibraryDetailModal from './AdsLibraryDetailModal';
+import AdsLibraryDemo from './AdsLibraryDemo';
 
 // Debug utility function
 const debugLog = (component: string, functionName: string, message: string, data?: any) => {
@@ -98,6 +99,7 @@ const AdsLibraryTab: React.FC<AdsLibraryTabProps> = ({
     totalPages: 1,
     totalResults: 0
   });
+  const [showDemo, setShowDemo] = useState(false);
 
   // Debug state changes
   useEffect(() => {
@@ -359,85 +361,172 @@ const AdsLibraryTab: React.FC<AdsLibraryTabProps> = ({
           <div>
             <h2 className={`text-2xl font-bold transition-colors duration-300 ${
               theme === 'white' ? 'text-gray-900' : 'text-gray-100'
-            }`}>Facebook Ads Library</h2>
+            }`}>
+              {showDemo ? 'Your Ads Demo' : 'Facebook Ads Library'}
+            </h2>
             <p className={`transition-colors duration-300 ${
               theme === 'white' ? 'text-gray-600' : 'text-gray-400'
             }`}>
-              Search and analyze ads from Facebook's public Ads Library
+              {showDemo 
+                ? 'View and analyze your own Facebook ads from the Marketing API'
+                : 'Search and analyze ads from Facebook\'s public Ads Library'
+              }
             </p>
           </div>
-          <div className="flex space-x-3">
-            <button
-              onClick={() => exportResults('csv')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Export CSV
-            </button>
-            <button
-              onClick={() => exportResults('json')}
-              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-            >
-              Export JSON
-            </button>
-          </div>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="mb-4">
-          {/* Connection Status Indicator */}
-          <div className={`flex items-center gap-2 mb-3 p-3 rounded-md text-sm transition-colors duration-300 ${
-            theme === 'white' ? 'bg-gray-50' : 'bg-slate-700'
-          }`}>
-            {connectionStatus === 'checking' && (
-              <div className="flex items-center gap-2 text-blue-600">
-                <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>
-                <span>Checking Facebook connection...</span>
-              </div>
-            )}
-            {connectionStatus === 'connected' && (
-              <div className="flex items-center gap-2 text-green-600">
-                <div className="w-3 h-3 bg-green-600 rounded-full"></div>
-                <span>Connected to Facebook Ads Library</span>
-              </div>
-            )}
-            {connectionStatus === 'error' && (
-              <div className="flex items-center gap-2 text-red-600">
-                <div className="w-3 h-3 bg-red-600 rounded-full"></div>
-                <span>Connection error - check permissions or reconnect</span>
-              </div>
-            )}
-            {connectionStatus === 'disconnected' && (
-              <div className="flex items-center gap-2 text-gray-600">
-                <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                <span>Not connected to Facebook</span>
+          
+          <div className="flex items-center space-x-3">
+            {/* Demo Toggle */}
+            <div className="flex items-center space-x-2">
+              <span className={`text-sm font-medium transition-colors duration-300 ${
+                theme === 'white' ? 'text-gray-700' : 'text-gray-300'
+              }`}>
+                {showDemo ? 'Demo Mode' : 'Public Library'}
+              </span>
+              <button
+                onClick={() => setShowDemo(!showDemo)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  showDemo 
+                    ? 'bg-blue-600' 
+                    : theme === 'white' ? 'bg-gray-200' : 'bg-gray-600'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    showDemo ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+            
+            {/* Export Buttons */}
+            {!showDemo && (
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => exportResults('csv')}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Export CSV
+                </button>
+                <button
+                  onClick={() => exportResults('json')}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  Export JSON
+                </button>
               </div>
             )}
           </div>
         </div>
-
-        <AdsLibrarySearch
-          searchTerm={searchTerm}
-          onSearch={handleSearch}
-          isLoading={isLoading}
-        />
-
-        <AdsLibraryFilters
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-        />
       </div>
 
-      {/* Results */}
-      <AdsLibraryGrid
-        ads={ads}
-        isLoading={isLoading}
-        error={error}
-        onAdClick={handleAdClick}
-        pagination={pagination}
-        onPageChange={handlePageChange}
-      />
+      {/* Demo Section */}
+      {showDemo && (
+        <AdsLibraryDemo 
+          facebookAccessToken={facebookAccessToken}
+          adAccountId={adAccountId}
+        />
+      )}
 
-      {/* Token Expired Help Message */}
+      {/* Public Ads Library Section */}
+      {!showDemo && (
+          <div className="space-y-6">
+            {/* Search and Filters */}
+            <div className="mb-4">
+              {/* Connection Status Indicator */}
+              <div className={`flex items-center gap-2 mb-3 p-3 rounded-md text-sm transition-colors duration-300 ${
+                theme === 'white' ? 'bg-gray-50' : 'bg-slate-700'
+              }`}>
+                {connectionStatus === 'checking' && (
+                  <div className="flex items-center gap-2 text-blue-600">
+                    <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>
+                    <span>Checking Facebook connection...</span>
+                  </div>
+                )}
+                {connectionStatus === 'connected' && (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                    <span>Connected to Facebook Ads Library</span>
+                  </div>
+                )}
+                {connectionStatus === 'error' && (
+                  <div className="flex items-center gap-2 text-red-600">
+                    <div className="w-3 h-3 bg-red-600 rounded-full"></div>
+                    <span>Connection error - check permissions or reconnect</span>
+                  </div>
+                )}
+                {connectionStatus === 'disconnected' && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                    <span>Not connected to Facebook</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <AdsLibrarySearch
+              searchTerm={searchTerm}
+              onSearch={handleSearch}
+              isLoading={isLoading}
+            />
+
+            <AdsLibraryFilters
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+            />
+
+            {/* Results */}
+            <AdsLibraryGrid
+              ads={ads}
+              isLoading={isLoading}
+              error={error}
+              onAdClick={handleAdClick}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+            />
+
+            {/* Token Expired Help Message */}
+            {error && error.includes('expired') && (
+              <div className={`rounded-lg shadow p-6 transition-colors duration-300 ${
+                theme === 'white' ? 'bg-yellow-50 border border-yellow-200' : 'bg-yellow-900/20 border border-yellow-700'
+              }`}>
+                <div className="text-center">
+                  <h3 className={`text-lg font-medium mb-3 transition-colors duration-300 ${
+                    theme === 'white' ? 'text-yellow-800' : 'text-yellow-200'
+                  }`}>
+                    🔑 Facebook Access Token Expired
+                  </h3>
+                  <p className={`mb-4 transition-colors duration-300 ${
+                    theme === 'white' ? 'text-yellow-700' : 'text-yellow-300'
+                  }`}>
+                    Your Facebook access token has expired and needs to be refreshed to continue using the Ads Library.
+                  </p>
+                  <div className={`space-y-3 text-sm transition-colors duration-300 ${
+                    theme === 'white' ? 'text-yellow-600' : 'text-yellow-400'
+                  }`}>
+                    <p><strong>To fix this:</strong></p>
+                    <ol className="list-decimal list-inside space-y-1 text-left max-w-md mx-auto">
+                      <li>Go to <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">Facebook Graph API Explorer</a></li>
+                      <li>Select your app from the dropdown</li>
+                      <li>Choose permissions: <code className="bg-yellow-100 px-1 rounded">ads_read</code>, <code className="bg-yellow-100 px-1 rounded">ads_management</code></li>
+                      <li>Click "Generate Access Token"</li>
+                      <li>Copy the new token and update your environment</li>
+                    </ol>
+                  </div>
+                  <div className="mt-4">
+                    <button
+                      onClick={() => window.open('https://developers.facebook.com/tools/explorer/', '_blank')}
+                      className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
+                    >
+                      Open Facebook Graph API Explorer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+      {/* Token Expired Help Message - Show for both demo and public library */}
       {error && error.includes('expired') && (
         <div className={`rounded-lg shadow p-6 transition-colors duration-300 ${
           theme === 'white' ? 'bg-yellow-50 border border-yellow-200' : 'bg-yellow-900/20 border border-yellow-700'

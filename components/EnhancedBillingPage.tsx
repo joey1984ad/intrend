@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Calendar, Download, AlertCircle, CheckCircle, XCircle, Star, Clock } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
+import { useUser } from '@/contexts/UserContext';
 import { PRICING_PLANS, getPlansByBillingCycle, PLAN_LIMITS } from '@/lib/stripe';
 
 interface Subscription {
@@ -52,6 +53,9 @@ export default function EnhancedBillingPage() {
   // Safe theme handling with fallback
   const [theme, setTheme] = useState<'white' | 'dark'>('white');
   
+  // Get user from context
+  const { user, isLoggedIn } = useUser();
+
   useEffect(() => {
     setMounted(true);
     loadSubscriptionData();
@@ -128,16 +132,24 @@ export default function EnhancedBillingPage() {
 
   const handleCustomerPortal = async () => {
     try {
-      // For now, use a placeholder email - in production this should come from user context
-      const customerEmail = subscription?.plan.id === 'starter' ? null : 'user@example.com';
-      
+      // Check if user is logged in and has a subscription
+      if (!isLoggedIn || !user) {
+        alert('Please log in to manage your subscription.');
+        return;
+      }
+
+      if (!subscription || subscription.plan.id === 'starter') {
+        alert('You need an active subscription to access the customer portal.');
+        return;
+      }
+
       const response = await fetch('/api/stripe/customer-portal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          customerEmail: customerEmail,
+          customerEmail: user.email,
           returnUrl: `${window.location.origin}/billing`,
         }),
       });
@@ -158,6 +170,12 @@ export default function EnhancedBillingPage() {
 
   const handleCheckout = async () => {
     try {
+      // Check if user is logged in
+      if (!isLoggedIn || !user) {
+        alert('Please log in to upgrade your subscription.');
+        return;
+      }
+
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -166,7 +184,7 @@ export default function EnhancedBillingPage() {
         body: JSON.stringify({
           planId: selectedPlan,
           billingCycle: selectedBillingCycle,
-          customerEmail: 'user@example.com', // Replace with actual user email
+          customerEmail: user.email,
           successUrl: `${window.location.origin}/billing?success=true`,
           cancelUrl: `${window.location.origin}/billing?canceled=true`,
         }),

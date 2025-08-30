@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Calendar, Download, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
+import { useUser } from '@/contexts/UserContext';
 
 interface Subscription {
   id: string;
@@ -53,6 +54,9 @@ export default function BillingPage() {
   // Safe theme handling with fallback
   const [theme, setTheme] = useState<'white' | 'dark'>('white');
   
+  // Get user from context
+  const { user, isLoggedIn } = useUser();
+
   useEffect(() => {
     // Try to get theme context safely
     try {
@@ -73,12 +77,24 @@ export default function BillingPage() {
 
   const handleCustomerPortal = async () => {
     try {
+      // Check if user is logged in and has a subscription
+      if (!isLoggedIn || !user) {
+        alert('Please log in to manage your subscription.');
+        return;
+      }
+
+      if (!subscription || subscription.plan.id === 'starter') {
+        alert('You need an active subscription to access the customer portal.');
+        return;
+      }
+
       const response = await fetch('/api/stripe/customer-portal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          customerEmail: user.email,
           returnUrl: `${window.location.origin}/billing`,
         }),
       });
@@ -102,11 +118,17 @@ export default function BillingPage() {
       return;
     }
 
+    // Check if user is logged in
+    if (!isLoggedIn || !user) {
+      alert('Please log in to upgrade your subscription.');
+      return;
+    }
+
     try {
       const requestBody = {
         planId: selectedPlan,
         billingCycle: billingCycle,
-        customerEmail: 'user@example.com',
+        customerEmail: user.email,
         successUrl: `${window.location.origin}/billing?success=true`,
         cancelUrl: `${window.location.origin}/billing?canceled=true`,
       };

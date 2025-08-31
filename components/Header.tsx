@@ -177,7 +177,7 @@ const Header: React.FC<HeaderProps> = ({
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 whitespace-nowrap ${
                         isActive
                           ? theme === 'white'
                             ? 'text-blue-700 border-b-2 border-blue-600'
@@ -187,10 +187,10 @@ const Header: React.FC<HeaderProps> = ({
                             : 'text-gray-300 hover:text-white hover:bg-slate-700 hover:shadow-md'
                       }`}
                     >
-                      <IconComponent className="w-4 h-4" />
-                      <span>{tab.label}</span>
+                      <IconComponent className="w-4 h-4 flex-shrink-0" />
+                      <span className="flex-shrink-0">{tab.label}</span>
                       {tab.loading && (
-                        <Loader2 className={`w-3.5 h-3.5 animate-spin transition-colors duration-300 ${
+                        <Loader2 className={`w-3.5 h-3.5 animate-spin transition-colors duration-300 flex-shrink-0 ${
                           theme === 'white' ? 'text-blue-500' : 'text-blue-400'
                         }`} />
                       )}

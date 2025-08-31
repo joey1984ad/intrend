@@ -107,10 +107,10 @@ const LandingPageHeader: React.FC = () => {
             <div className="relative dropdown-container">
               <button
                 onClick={() => setIsFeaturesDropdownOpen(!isFeaturesDropdownOpen)}
-                className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors font-medium"
+                className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors font-medium whitespace-nowrap"
               >
-                <span>Features</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${isFeaturesDropdownOpen ? 'rotate-180' : ''}`} />
+                <span className="flex-shrink-0">Features</span>
+                <ChevronDown className={`w-4 h-4 transition-transform flex-shrink-0 ${isFeaturesDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               
               {isFeaturesDropdownOpen && (
@@ -135,10 +135,10 @@ const LandingPageHeader: React.FC = () => {
             <div className="relative dropdown-container">
               <button
                 onClick={() => setIsSolutionsDropdownOpen(!isSolutionsDropdownOpen)}
-                className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors font-medium"
+                className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors font-medium whitespace-nowrap"
               >
-                <span>Solutions</span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${isSolutionsDropdownOpen ? 'rotate-180' : ''}`} />
+                <span className="flex-shrink-0">Solutions</span>
+                <ChevronDown className={`w-4 h-4 transition-transform flex-shrink-0 ${isSolutionsDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               
               {isSolutionsDropdownOpen && (
@@ -161,16 +161,16 @@ const LandingPageHeader: React.FC = () => {
 
             <button
               onClick={() => scrollToSection('pricing')}
-              className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
+              className="text-gray-700 hover:text-blue-600 transition-colors font-medium whitespace-nowrap"
             >
-              Pricing
+              <span className="flex-shrink-0">Pricing</span>
             </button>
 
             <button
               onClick={() => scrollToSection('faq')}
-              className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
+              className="text-gray-700 hover:text-blue-600 transition-colors font-medium whitespace-nowrap"
             >
-              FAQ
+              <span className="flex-shrink-0">FAQ</span>
             </button>
 
             {/* Auth Buttons */}
@@ -191,15 +191,15 @@ const LandingPageHeader: React.FC = () => {
                 <>
                   <button
                     onClick={handleSignInClick}
-                    className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+                    className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium whitespace-nowrap"
                   >
-                    Sign In
+                    <span className="flex-shrink-0">Sign In</span>
                   </button>
                   <button
                     onClick={() => scrollToSection('pricing')}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium whitespace-nowrap"
                   >
-                    Get Started
+                    <span className="flex-shrink-0">Get Started</span>
                   </button>
                 </>
               )}

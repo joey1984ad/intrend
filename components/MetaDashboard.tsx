@@ -8,6 +8,8 @@ import ChartsSection from './ChartsSection';
 import CreativesTab from './CreativesTab';
 import CampaignsTab from './CampaignsTab';
 import AdsetsTab from './AdsetsTab';
+import AdsetsChartsSection from './AdsetsChartsSection';
+import AdsetsMetricsGrid from './AdsetsMetricsGrid';
 import AdsTab from './AdsTab';
 import DemographicsTab from './DemographicsTab';
 import AdsLibraryTab from './AdsLibraryTab';
@@ -63,6 +65,11 @@ const MetaDashboardRefactored: React.FC = () => {
   const [currentAccountInfo, setCurrentAccountInfo] = useState<any>(null);
   const [campaignsData, setCampaignsData] = useState<any[]>([]);
 
+  // Dynamic data state for ad sets
+  const [adsetPerformanceData, setAdsetPerformanceData] = useState<any[]>([]);
+  const [adsetClicks, setAdsetClicks] = useState<any[]>([]);
+  const [adsetSpendData, setAdsetSpendData] = useState<any[]>([]);
+
   // Sample data
   const sampleClicksData = [
     { date: '16 Jun', clicks: 160, impressions: 12000, spend: 280 },
@@ -101,6 +108,41 @@ const MetaDashboardRefactored: React.FC = () => {
     { name: 'Instagram', value: 119, color: '#E4405F' },
     { name: 'Messenger', value: 114, color: '#00B2FF' },
     { name: 'Audience Network', value: 110, color: '#8B5CF6' }
+  ];
+
+  // Sample ad sets data
+  const sampleAdsetPerformanceData = [
+    { date: '16 Jun', clicks: 45, spend: 85 },
+    { date: '17 Jun', clicks: 52, spend: 95 },
+    { date: '18 Jun', clicks: 48, spend: 88 },
+    { date: '19 Jun', clicks: 55, spend: 102 },
+    { date: '20 Jun', clicks: 58, spend: 108 },
+    { date: '21 Jun', clicks: 51, spend: 96 },
+    { date: '22 Jun', clicks: 62, spend: 115 },
+    { date: '23 Jun', clicks: 65, spend: 120 },
+    { date: '24 Jun', clicks: 59, spend: 110 },
+    { date: '25 Jun', clicks: 68, spend: 125 },
+    { date: '26 Jun', clicks: 71, spend: 130 },
+    { date: '27 Jun', clicks: 74, spend: 135 },
+    { date: '28 Jun', clicks: 67, spend: 122 },
+    { date: '29 Jun', clicks: 70, spend: 128 },
+    { date: '30 Jun', clicks: 73, spend: 132 }
+  ];
+
+  const sampleAdsetClicks = [
+    { name: 'Ad Set A - Core', clicks: 245, color: '#6366F1', percentage: 28.5 },
+    { name: 'Ad Set B - Lookalike', clicks: 218, color: '#8B5CF6', percentage: 25.4 },
+    { name: 'Ad Set C - Interest', clicks: 195, color: '#06B6D4', percentage: 22.7 },
+    { name: 'Ad Set D - Retarget', clicks: 178, color: '#F59E0B', percentage: 20.7 },
+    { name: 'Ad Set E - Broad', clicks: 162, color: '#10B981', percentage: 18.8 }
+  ].filter(adset => adset.clicks > 0);
+
+  const sampleAdsetSpendData = [
+    { name: 'Ad Set A - Core', spend: 425, color: '#7C3AED' },
+    { name: 'Ad Set B - Lookalike', spend: 385, color: '#EC4899' },
+    { name: 'Ad Set C - Interest', spend: 345, color: '#06B6D4' },
+    { name: 'Ad Set D - Retarget', spend: 315, color: '#10B981' },
+    { name: 'Ad Set E - Broad', spend: 285, color: '#F59E0B' }
   ];
 
   const [metrics, setMetrics] = useState<Metric[]>([]);
@@ -778,24 +820,43 @@ const MetaDashboardRefactored: React.FC = () => {
         )}
 
         {activeTab === 'adsets' && (
-          <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
-            theme === 'white' 
-              ? 'bg-white border-gray-200' 
-              : 'bg-slate-800 border-slate-700'
-          }`}>
-            <AdsetsTab
-              adsetsData={adsetsData}
-              isLoading={isLoadingAdsets}
-              searchTerm={adsetsSearchTerm}
-              setSearchTerm={setAdsetsSearchTerm}
-              sortField={sortField}
-              sortDirection={sortDirection}
-              handleSort={handleSort}
-              selectedItems={selectedCampaigns}
-              handleSelectItem={handleSelectCampaign}
-              handleBulkAction={handleBulkAction}
-            />
-          </div>
+          <>
+            <div className={`rounded-xl shadow-sm border p-6 mb-6 transition-colors duration-300 ${
+              theme === 'white' 
+                ? 'bg-white border-gray-200' 
+                : 'bg-slate-800 border-slate-700'
+            }`}>
+              <AdsetsChartsSection
+                adsetPerformanceData={adsetPerformanceData}
+                adsetClicks={adsetClicks}
+                adsetSpendData={adsetSpendData}
+                sampleAdsetPerformanceData={sampleAdsetPerformanceData}
+                sampleAdsetClicks={sampleAdsetClicks}
+                sampleAdsetSpendData={sampleAdsetSpendData}
+              />
+            </div>
+
+            <AdsetsMetricsGrid metrics={metrics} />
+
+            <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+              theme === 'white' 
+                ? 'bg-white border-gray-200' 
+                : 'bg-slate-800 border-slate-700'
+            }`}>
+              <AdsetsTab
+                adsetsData={adsetsData}
+                isLoading={isLoadingAdsets}
+                searchTerm={adsetsSearchTerm}
+                setSearchTerm={setAdsetsSearchTerm}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                handleSort={handleSort}
+                selectedItems={selectedCampaigns}
+                handleSelectItem={handleSelectCampaign}
+                handleBulkAction={handleBulkAction}
+              />
+            </div>
+          </>
         )}
 
         {activeTab === 'ads' && (

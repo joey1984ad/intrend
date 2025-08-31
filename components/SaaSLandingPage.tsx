@@ -22,6 +22,7 @@ import {
   ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import PricingSection from './PricingSection';
+import LandingPageHeader from './LandingPageHeader';
 
 const SaaSLandingPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -331,10 +332,14 @@ const SaaSLandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-slate-900">
+      {/* Header */}
+      <LandingPageHeader />
+      
       {/* Hero Section */}
       <section 
+        id="hero"
         data-section="0"
-        className={`relative overflow-hidden py-24 transition-all duration-1000 ${
+        className={`relative overflow-hidden pt-32 pb-24 transition-all duration-1000 ${
           isVisible[0] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}
       >
@@ -401,6 +406,7 @@ const SaaSLandingPage: React.FC = () => {
 
       {/* AI Ad Optimization Mockup Section */}
       <section 
+        id="ai-analysis"
         data-section="1"
         className={`py-24 bg-white/60 backdrop-blur-sm transition-all duration-1000 ${
           isVisible[1] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
@@ -594,6 +600,7 @@ const SaaSLandingPage: React.FC = () => {
 
       {/* Pricing Section */}
       <section 
+        id="pricing"
         data-section="2"
         className={`py-24 bg-white/60 backdrop-blur-sm transition-all duration-1000 ${
           isVisible[2] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
@@ -616,12 +623,15 @@ const SaaSLandingPage: React.FC = () => {
           <PricingSection
             onPlanSelect={handlePlanSelection}
             className="text-slate-900"
+            billingCycle={billingCycle}
+            onBillingCycleChange={setBillingCycle}
           />
         </div>
       </section>
 
       {/* Problem/Solution Section */}
       <section 
+        id="features"
         data-section="3"
         className={`py-24 bg-white/60 backdrop-blur-sm transition-all duration-1000 ${
           isVisible[3] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
@@ -862,6 +872,7 @@ const SaaSLandingPage: React.FC = () => {
 
       {/* FAQ Section */}
       <section 
+        id="faq"
         data-section="8"
         className={`py-24 bg-white/60 backdrop-blur-sm transition-all duration-1000 ${
           isVisible[8] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'

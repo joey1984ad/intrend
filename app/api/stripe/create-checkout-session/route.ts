@@ -6,6 +6,8 @@ import { createUser, createStripeCustomer, getUserByEmail } from '@/lib/db';
 export async function POST(request: NextRequest) {
   try {
     const { planId, billingCycle, customerEmail, successUrl, cancelUrl } = await request.json();
+    
+    console.log('Checkout session request:', { planId, billingCycle, customerEmail, successUrl, cancelUrl });
 
     // Validate billing cycle
     if (!billingCycle || !['monthly', 'annual'].includes(billingCycle)) {
@@ -17,7 +19,10 @@ export async function POST(request: NextRequest) {
 
     // Get plan details
     const plan = getPlan(planId, billingCycle as 'monthly' | 'annual');
+    console.log('Plan lookup result:', { planId, billingCycle, plan: plan ? { id: plan.id, name: plan.name, price: plan.currentPricing.price } : null });
+    
     if (!plan) {
+      console.log('Plan not found for:', { planId, billingCycle });
       return NextResponse.json(
         { error: 'Invalid plan selected' },
         { status: 400 }
@@ -99,7 +104,7 @@ export async function POST(request: NextRequest) {
           billingCycle: billingCycle,
           userId: userId?.toString() || 'unknown'
         },
-        trial_period_days: plan.id === 'professional' ? 7 : undefined, // 7-day trial for professional plan
+        trial_period_days: plan.id === 'pro' ? 7 : undefined, // 7-day trial for pro plan
       },
     };
 

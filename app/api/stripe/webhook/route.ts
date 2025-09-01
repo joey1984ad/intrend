@@ -8,7 +8,8 @@ import {
   createPaymentMethod,
   getUserByEmail,
   createStripeCustomer,
-  getStripeCustomerByUserId
+  getStripeCustomerByUserId,
+  getSubscriptionByStripeId
 } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
@@ -132,16 +133,35 @@ async function handleSubscriptionCreated(subscription: any) {
 async function handleSubscriptionUpdated(subscription: any) {
   try {
     console.log('Handling subscription updated:', subscription.id);
+    console.log('Full subscription object:', JSON.stringify(subscription, null, 2));
+    
+    // Extract plan information from subscription metadata
+    const planId = subscription.metadata?.planId;
+    const planName = subscription.metadata?.planName;
+    const billingCycle = subscription.metadata?.billingCycle;
+    
+    console.log('Plan update info:', { planId, planName, billingCycle });
+    
+    // Get current subscription from database to compare
+    const currentSubscription = await getSubscriptionByStripeId(subscription.id);
+    console.log('Current subscription in database:', currentSubscription);
     
     await updateSubscription(subscription.id, {
       status: subscription.status,
       currentPeriodStart: new Date(subscription.current_period_start * 1000),
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : undefined
+      trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : undefined,
+      planId: planId,
+      planName: planName,
+      billingCycle: billingCycle
     });
 
-    console.log('Subscription updated successfully in database');
+    // Get updated subscription to verify changes
+    const updatedSubscription = await getSubscriptionByStripeId(subscription.id);
+    console.log('Updated subscription in database:', updatedSubscription);
+    
+    console.log('Subscription updated successfully in database with plan info');
   } catch (error) {
     console.error('Error handling subscription updated:', error);
   }

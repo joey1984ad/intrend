@@ -13,6 +13,7 @@ import AdsetsMetricsGrid from './AdsetsMetricsGrid';
 import AdsTab from './AdsTab';
 import DemographicsTab from './DemographicsTab';
 import AdsLibraryTab from './AdsLibraryTab';
+import AdAccountManager from './AdAccountManager';
 import Modals from './Modals';
 import InsightsGraph from './InsightsGraph';
 import DashboardThemeToggle from './DashboardThemeToggle';
@@ -915,6 +916,16 @@ const MetaDashboardRefactored: React.FC = () => {
               dateRange={selectedDateRange}
               selectedAdAccounts={facebookAdAccounts}
             />
+          </div>
+        )}
+
+        {activeTab === 'accounts' && (
+          <div className={`rounded-xl shadow-sm border p-6 transition-colors duration-300 ${
+            theme === 'white' 
+              ? 'bg-white border-gray-200' 
+              : 'bg-slate-800 border-slate-700'
+          }`}>
+            <AdAccountManager />
           </div>
         )}
       </div>

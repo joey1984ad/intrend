@@ -295,6 +295,9 @@ export async function updateSubscription(stripeSubscriptionId: string, updates: 
   currentPeriodEnd: Date;
   cancelAtPeriodEnd: boolean;
   trialEnd?: Date;
+  planId?: string;
+  planName?: string;
+  billingCycle?: string;
 }>) {
   try {
     const result = await sql`
@@ -305,6 +308,9 @@ export async function updateSubscription(stripeSubscriptionId: string, updates: 
         current_period_end = COALESCE(${updates.currentPeriodEnd}, current_period_end),
         cancel_at_period_end = COALESCE(${updates.cancelAtPeriodEnd}, cancel_at_period_end),
         trial_end = COALESCE(${updates.trialEnd}, trial_end),
+        plan_id = COALESCE(${updates.planId}, plan_id),
+        plan_name = COALESCE(${updates.planName}, plan_name),
+        billing_cycle = COALESCE(${updates.billingCycle}, billing_cycle),
         updated_at = CURRENT_TIMESTAMP
       WHERE stripe_subscription_id = ${stripeSubscriptionId}
       RETURNING *
@@ -592,8 +598,6 @@ export async function getMetricsCache(sessionId: number, dateRange: string) {
   }
 }
 
-export { sql }; 
-
 // --- Creatives cache (persistent) ---
 export async function saveCreativesCache(adAccountId: string, dateRange: string, payload: any) {
   try {
@@ -677,3 +681,150 @@ export async function getAICreativeScore(creativeId: string, adAccountId: string
     return null;
   }
 }
+
+// --- Multi-Account Billing Functions ---
+
+export async function createAdAccount(userId: number, accountName: string, accountId?: string, platform: string = 'facebook') {
+  try {
+    const result = await sql`
+      INSERT INTO ad_accounts (user_id, account_name, account_id, platform, status)
+      VALUES (${userId}, ${accountName}, ${accountId || null}, ${platform}, 'active')
+      RETURNING id, account_name, account_id, platform, status, created_at
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error creating ad account:', error);
+    throw error;
+  }
+}
+
+export async function getAdAccounts(userId: number) {
+  try {
+    const result = await sql`
+      SELECT id, account_name, account_id, platform, status, created_at
+      FROM ad_accounts 
+      WHERE user_id = ${userId} AND status = 'active'
+      ORDER BY created_at DESC
+    `;
+    return result;
+  } catch (error) {
+    console.error('Error getting ad accounts:', error);
+    return [];
+  }
+}
+
+export async function updateAdAccount(accountId: number, updates: any) {
+  try {
+    const result = await sql`
+      UPDATE ad_accounts 
+      SET 
+        account_name = COALESCE(${updates.account_name}, account_name),
+        status = COALESCE(${updates.status}, status),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${accountId}
+      RETURNING id, account_name, account_id, platform, status, updated_at
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error updating ad account:', error);
+    throw error;
+  }
+}
+
+export async function deleteAdAccount(accountId: number) {
+  try {
+    const result = await sql`
+      UPDATE ad_accounts 
+      SET status = 'deleted', updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${accountId}
+      RETURNING id, account_name
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error deleting ad account:', error);
+    throw error;
+  }
+}
+
+export async function getActiveAdAccounts(userId: number) {
+  try {
+    const result = await sql`
+      SELECT id, account_name, account_id, platform, status, created_at
+      FROM ad_accounts 
+      WHERE user_id = ${userId} AND status = 'active'
+      ORDER BY created_at DESC
+    `;
+    return result;
+  } catch (error) {
+    console.error('Error getting active ad accounts:', error);
+    return [];
+  }
+}
+
+export async function createBillingCycle(userId: number, periodStart: Date, periodEnd: Date, totalAccounts: number, amountCharged: number) {
+  try {
+    const result = await sql`
+      INSERT INTO billing_cycles (user_id, period_start, period_end, total_accounts, amount_charged, status)
+      VALUES (${userId}, ${periodStart}, ${periodEnd}, ${totalAccounts}, ${amountCharged}, 'pending')
+      RETURNING id, period_start, period_end, total_accounts, amount_charged, status, created_at
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error creating billing cycle:', error);
+    throw error;
+  }
+}
+
+export async function updateBillingCycle(billingCycleId: number, updates: any) {
+  try {
+    const result = await sql`
+      UPDATE billing_cycles 
+      SET 
+        total_accounts = COALESCE(${updates.total_accounts}, total_accounts),
+        amount_charged = COALESCE(${updates.amount_charged}, amount_charged),
+        status = COALESCE(${updates.status}, status),
+        stripe_invoice_id = COALESCE(${updates.stripe_invoice_id}, stripe_invoice_id),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${billingCycleId}
+      RETURNING id, period_start, period_end, total_accounts, amount_charged, status, stripe_invoice_id, updated_at
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error updating billing cycle:', error);
+    throw error;
+  }
+}
+
+export async function getLatestBillingCycle(userId: number) {
+  try {
+    const result = await sql`
+      SELECT id, period_start, period_end, total_accounts, amount_charged, status, stripe_invoice_id, created_at
+      FROM billing_cycles 
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error('Error getting latest billing cycle:', error);
+    return null;
+  }
+}
+
+export async function getBillingHistory(userId: number, limit: number = 10) {
+  try {
+    const result = await sql`
+      SELECT id, period_start, period_end, total_accounts, amount_charged, status, stripe_invoice_id, created_at
+      FROM billing_cycles 
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+      LIMIT ${limit}
+    `;
+    return result;
+  } catch (error) {
+    console.error('Error getting billing history:', error);
+    return [];
+  }
+}
+
+export { sql };

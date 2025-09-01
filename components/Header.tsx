@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, BarChart3, Target, Grid3X3, Users, Image, Library, User, ChevronDown, Settings, LogOut, CreditCard, Menu, X } from 'lucide-react';
+import { Loader2, BarChart3, Target, Grid3X3, Users, Image, Library, User, ChevronDown, Settings, LogOut, CreditCard, Menu, X, Building2 } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 import { useUser } from '@/contexts/UserContext';
 import { ConnectedAccount } from './types';
@@ -118,7 +118,8 @@ const Header: React.FC<HeaderProps> = ({
     { id: 'ads', label: 'Ads', icon: Grid3X3, loading: isLoadingAds },
     { id: 'demographics', label: 'Demographics', icon: Users, loading: isLoadingDemographics },
     { id: 'creatives', label: 'Creatives', icon: Image, loading: isLoadingCreatives },
-    { id: 'ads-library', label: 'Ads Library', icon: Library, loading: false }
+    { id: 'ads-library', label: 'Ads Library', icon: Library, loading: false },
+    { id: 'accounts', label: 'Accounts', icon: Building2, loading: false }
   ];
 
   // User display information

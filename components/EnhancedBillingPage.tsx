@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { CreditCard, Calendar, Download, AlertCircle, CheckCircle, XCircle, Star, Clock } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
 import { useUser } from '@/contexts/UserContext';
-import { PRICING_PLANS, getPlansByBillingCycle, PLAN_LIMITS } from '@/lib/stripe';
+import { PRICING_PLANS, getPlansByBillingCycle, PLAN_LIMITS, getPlan } from '@/lib/stripe';
 
 interface Subscription {
   id: string;
@@ -239,6 +239,67 @@ export default function EnhancedBillingPage() {
 
   const getPlansForCurrentCycle = () => {
     return getPlansByBillingCycle(billingCycle);
+  };
+
+  // EXACT COPY FROM FRONT PAGE - handlePlanSelection function
+  const handlePlanSelection = async (planId: string) => {
+    if (planId === 'free') {
+      window.location.href = '/dashboard';
+      return;
+    }
+
+    const plan = getPlan(planId, billingCycle);
+    if (!plan) {
+      alert('Plan not found. Please try again.');
+      return;
+    }
+
+    if (plan.currentPricing.price === 0 || plan.currentPricing.stripePriceId === 'free') {
+      alert('This plan is not available for online purchase. Please contact sales for more information.');
+      return;
+    }
+
+    setSelectedPlan(planId);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          planId,
+          billingCycle: billingCycle || 'monthly',
+          customerEmail: user?.email,
+          successUrl: `${window.location.origin}/dashboard?success=true&plan=${planId}`,
+          cancelUrl: `${window.location.origin}/billing?canceled=true`,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error('Failed to create checkout session:', data.error);
+        alert(data.error || 'Failed to start checkout process. Please try again.');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getButtonText = (plan: any) => {
+    if (plan.currentPricing.price === 0) return 'Get Started Free';
+    return 'Choose Plan';
+  };
+
+  const isPlanDisabled = (plan: any) => {
+    return false; // Always enabled for now
   };
 
   if (!mounted || isLoading) {

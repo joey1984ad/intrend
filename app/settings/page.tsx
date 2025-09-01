@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, User, Bell, Shield, Palette, Globe, Database, Key, LogOut, CreditCard } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
-import SimpleBillingPage from '@/components/SimpleBillingPage';
+import EnhancedBillingPage from '@/components/EnhancedBillingPage';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
@@ -105,7 +105,7 @@ export default function SettingsPage() {
         );
 
       case 'billing':
-        return <SimpleBillingPage />;
+        return <EnhancedBillingPage />;
 
       case 'notifications':
         return (
@@ -221,9 +221,9 @@ export default function SettingsPage() {
     }
   };
 
-  // If billing tab is active, render the simple billing page
+  // If billing tab is active, render the enhanced billing page with full menu structure
   if (activeTab === 'billing') {
-    return <SimpleBillingPage />;
+    return <EnhancedBillingPage />;
   }
 
   return (

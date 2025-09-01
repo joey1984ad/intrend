@@ -14,6 +14,10 @@ export async function initDatabase() {
         first_name VARCHAR(100),
         last_name VARCHAR(100),
         company VARCHAR(255),
+        current_plan_id VARCHAR(100) DEFAULT 'free',
+        current_plan_name VARCHAR(100) DEFAULT 'Free',
+        current_billing_cycle VARCHAR(20) DEFAULT 'monthly',
+        subscription_status VARCHAR(50) DEFAULT 'inactive',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -223,6 +227,31 @@ export async function updateUser(userId: number, updates: Partial<{ firstName: s
     return result[0] || null;
   } catch (error) {
     console.error('Error updating user:', error);
+    throw error;
+  }
+}
+
+export async function updateUserPlan(userId: number, planData: {
+  planId: string;
+  planName: string;
+  billingCycle: 'monthly' | 'annual';
+  status: string;
+}) {
+  try {
+    const result = await sql`
+      UPDATE users 
+      SET 
+        current_plan_id = ${planData.planId},
+        current_plan_name = ${planData.planName},
+        current_billing_cycle = ${planData.billingCycle},
+        subscription_status = ${planData.status},
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${userId}
+      RETURNING *
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error('Error updating user plan:', error);
     throw error;
   }
 }

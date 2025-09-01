@@ -9,7 +9,8 @@ import {
   getUserByEmail,
   createStripeCustomer,
   getStripeCustomerByUserId,
-  getSubscriptionByStripeId
+  getSubscriptionByStripeId,
+  updateUserPlan
 } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
@@ -124,7 +125,15 @@ async function handleSubscriptionCreated(subscription: any) {
       trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : undefined
     });
 
-    console.log('Subscription created successfully in database');
+    // Update user's plan in the users table
+    await updateUserPlan(user.id, {
+      planId: subscription.metadata.planId || 'unknown',
+      planName: subscription.metadata.planName || 'Unknown Plan',
+      billingCycle: subscription.metadata.billingCycle || 'monthly',
+      status: subscription.status
+    });
+
+    console.log('Subscription created successfully in database and user plan updated');
   } catch (error) {
     console.error('Error handling subscription created:', error);
   }
@@ -157,6 +166,21 @@ async function handleSubscriptionUpdated(subscription: any) {
       billingCycle: billingCycle
     });
 
+    // Update user's plan in the users table
+    const customerEmail = subscription.customer_details?.email || subscription.customer?.email;
+    if (customerEmail) {
+      const user = await getUserByEmail(customerEmail);
+      if (user) {
+        await updateUserPlan(user.id, {
+          planId: planId || 'unknown',
+          planName: planName || 'Unknown Plan',
+          billingCycle: billingCycle || 'monthly',
+          status: subscription.status
+        });
+        console.log('User plan updated in users table');
+      }
+    }
+
     // Get updated subscription to verify changes
     const updatedSubscription = await getSubscriptionByStripeId(subscription.id);
     console.log('Updated subscription in database:', updatedSubscription);
@@ -175,6 +199,21 @@ async function handleSubscriptionDeleted(subscription: any) {
     await updateSubscription(subscription.id, {
       status: 'canceled'
     });
+
+    // Update user's plan to free when subscription is canceled
+    const customerEmail = subscription.customer_details?.email || subscription.customer?.email;
+    if (customerEmail) {
+      const user = await getUserByEmail(customerEmail);
+      if (user) {
+        await updateUserPlan(user.id, {
+          planId: 'free',
+          planName: 'Free',
+          billingCycle: 'monthly',
+          status: 'canceled'
+        });
+        console.log('User plan reset to free after subscription cancellation');
+      }
+    }
 
     console.log('Subscription marked as canceled in database');
   } catch (error) {

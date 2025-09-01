@@ -108,13 +108,11 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    // Add customer email and customer ID if available
-    if (customerEmail && customerEmail.trim() && customerEmail.includes('@')) {
-      sessionConfig.customer_email = customerEmail;
-    }
-
+    // Add customer email OR customer ID (not both)
     if (stripeCustomerId) {
       sessionConfig.customer = stripeCustomerId;
+    } else if (customerEmail && customerEmail.trim() && customerEmail.includes('@')) {
+      sessionConfig.customer_email = customerEmail;
     }
 
     const session = await stripe.checkout.sessions.create(sessionConfig);

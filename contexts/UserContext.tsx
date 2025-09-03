@@ -53,6 +53,26 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   useEffect(() => {
     const loadUserFromSession = async () => {
       try {
+        // First check localStorage for session token (from signup)
+        const sessionToken = localStorage.getItem('sessionToken');
+        const storedUser = localStorage.getItem('user');
+        
+        if (sessionToken && storedUser) {
+          try {
+            const userData = JSON.parse(storedUser);
+            setUser(userData);
+            console.log('User loaded from localStorage:', userData);
+            setIsLoading(false);
+            return;
+          } catch (error) {
+            console.error('Failed to parse stored user data:', error);
+            // Clear invalid data
+            localStorage.removeItem('sessionToken');
+            localStorage.removeItem('user');
+          }
+        }
+        
+        // Fallback to session API
         const response = await fetch('/api/auth/session');
         const { user: sessionUser, isAuthenticated } = await response.json();
         
@@ -85,8 +105,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Failed to clear session:', error);
     } finally {
-      // Clear local state regardless of API call success
+      // Clear local state and localStorage
       setUser(null);
+      localStorage.removeItem('sessionToken');
+      localStorage.removeItem('user');
       console.log('User logged out');
     }
   };

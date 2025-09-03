@@ -76,10 +76,32 @@ import { useSearchParams } from 'next/navigation';
     setIsLoading(true);
     
     try {
-      // Simulate API call for signup
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Create user account via API
+      const signupResponse = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          company: formData.company,
+        }),
+      });
       
-      console.log('Form submitted:', formData);
+      const signupData = await signupResponse.json();
+      
+      if (!signupData.success) {
+        throw new Error(signupData.error || 'Failed to create account');
+      }
+      
+      console.log('Account created successfully:', signupData.user);
+      
+      // Store session token in localStorage (in production, use secure cookies)
+      localStorage.setItem('sessionToken', signupData.sessionToken);
+      localStorage.setItem('user', JSON.stringify(signupData.user));
       
       // If there's a checkout intent, redirect to complete the payment
       if (checkoutIntent) {
@@ -108,8 +130,8 @@ import { useSearchParams } from 'next/navigation';
           window.location.href = data.redirectUrl;
         } else {
           console.error('Failed to create checkout session:', data.error);
-          alert('Account created successfully! Please log in to complete your purchase.');
-          window.location.href = '/login';
+          alert('Account created successfully! Redirecting to billing page.');
+          window.location.href = '/billing';
         }
       } else {
         // No checkout intent, redirect to billing page
@@ -117,7 +139,7 @@ import { useSearchParams } from 'next/navigation';
       }
     } catch (error) {
       console.error('Signup error:', error);
-      alert('Failed to create account. Please try again.');
+      alert(error instanceof Error ? error.message : 'Failed to create account. Please try again.');
     } finally {
       setIsLoading(false);
     }

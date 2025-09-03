@@ -31,7 +31,8 @@
     "test:image-proxy": "node scripts/test-image-proxy.js",
     "init:stripe-db": "node scripts/init-stripe-db.js",
     "setup:stripe": "node scripts/setup-stripe-products.js",
-    "cleanup:stripe": "node scripts/cleanup-stripe-products.js"
+    "cleanup:stripe": "node scripts/cleanup-stripe-products.js",
+    "test:webhook-endpoint": "node scripts/test-webhook-endpoint.js"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

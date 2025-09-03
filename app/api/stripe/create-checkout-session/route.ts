@@ -38,15 +38,55 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Check if Stripe is configured and price ID exists
+    // Check if Stripe is configured
     if (!stripe) {
+      console.error('Stripe is not configured. STRIPE_SECRET_KEY is missing.');
+      
+      // For development/testing, simulate a successful checkout
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Development mode: Simulating successful checkout');
+        return NextResponse.json({
+          success: true,
+          redirectUrl: successUrl,
+          message: 'Development mode: Stripe not configured, simulating successful checkout',
+          development: true,
+          planId: plan.id,
+          billingCycle: billingCycle,
+          price: plan.currentPricing.price
+        });
+      }
+      
       return NextResponse.json(
         { error: 'Stripe is not configured. Please contact support.' },
         { status: 500 }
       );
     }
 
+    // Check if price ID is configured
     if (!plan.currentPricing.stripePriceId || plan.currentPricing.stripePriceId === 'free') {
+      console.error(`Stripe price ID not configured for ${plan.name} ${billingCycle} plan.`);
+      console.error('Environment variables:', {
+        STRIPE_STARTUP_MONTHLY_PRICE_ID: process.env.STRIPE_STARTUP_MONTHLY_PRICE_ID,
+        STRIPE_STARTUP_ANNUAL_PRICE_ID: process.env.STRIPE_STARTUP_ANNUAL_PRICE_ID,
+        STRIPE_PRO_MONTHLY_PRICE_ID: process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
+        STRIPE_PRO_ANNUAL_PRICE_ID: process.env.STRIPE_PRO_ANNUAL_PRICE_ID,
+      });
+      
+      // For development/testing, simulate a successful checkout
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Development mode: Simulating successful checkout despite missing price IDs');
+        return NextResponse.json({
+          success: true,
+          redirectUrl: successUrl,
+          message: 'Development mode: Price IDs not configured, simulating successful checkout',
+          development: true,
+          sessionId: 'cs_test_development_mode',
+          planId: plan.id,
+          billingCycle: billingCycle,
+          price: plan.currentPricing.price
+        });
+      }
+      
       return NextResponse.json(
         { error: `Stripe price ID not configured for ${plan.name} ${billingCycle} plan. Please contact support.` },
         { status: 400 }
@@ -58,26 +98,37 @@ export async function POST(request: NextRequest) {
     let stripeCustomerId: string | null = null;
 
     if (customerEmail && customerEmail.trim() && customerEmail.includes('@')) {
-      // Check if user exists
-      let user = await getUserByEmail(customerEmail);
-      
-      if (!user) {
-        // Create new user
-        user = await createUser(customerEmail);
-      }
-      
-      userId = user.id;
+      try {
+        // Check if user exists
+        let user = await getUserByEmail(customerEmail);
+        
+        if (!user) {
+          // Create new user
+          user = await createUser(customerEmail);
+        }
+        
+        userId = user.id;
 
-      // Check if user has Stripe customer
-      const stripeCustomer = await stripe.customers.list({
-        email: customerEmail,
-        limit: 1
-      });
+        // Check if user has Stripe customer
+        const stripeCustomer = await stripe.customers.list({
+          email: customerEmail,
+          limit: 1
+        });
 
-      if (stripeCustomer.data.length > 0) {
-        stripeCustomerId = stripeCustomer.data[0].id;
+        if (stripeCustomer.data.length > 0) {
+          stripeCustomerId = stripeCustomer.data[0].id;
+        }
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        // Continue without user creation - Stripe can handle this
       }
     }
+
+    // Helper function to properly construct success URL with session_id
+    const constructSuccessUrl = (baseUrl: string) => {
+      const separator = baseUrl.includes('?') ? '&' : '?';
+      return `${baseUrl}${separator}session_id={CHECKOUT_SESSION_ID}`;
+    };
 
     // Create Stripe checkout session
     const sessionConfig: any = {
@@ -89,7 +140,7 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'subscription',
-      success_url: successUrl,
+      success_url: constructSuccessUrl(successUrl),
       cancel_url: cancelUrl,
       metadata: {
         planId: plan.id,
@@ -115,6 +166,14 @@ export async function POST(request: NextRequest) {
       sessionConfig.customer_email = customerEmail;
     }
 
+    console.log('Creating Stripe session with config:', {
+      price: plan.currentPricing.stripePriceId,
+      planId: plan.id,
+      billingCycle: billingCycle,
+      customerEmail: customerEmail,
+      stripeCustomerId: stripeCustomerId
+    });
+
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
     return NextResponse.json({
@@ -127,6 +186,15 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Stripe checkout error:', error);
+    
+    // Return more specific error information
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: `Failed to create checkout session: ${error.message}` },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Failed to create checkout session' },
       { status: 500 }

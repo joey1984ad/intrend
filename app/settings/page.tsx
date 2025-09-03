@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Settings, User, Bell, Shield, Palette, Globe, Database, Key, LogOut, CreditCard } from 'lucide-react';
+import { Settings, User, Bell, Shield, Palette, Globe, Database, Key, LogOut, CreditCard, Crown, Calendar } from 'lucide-react';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
+import { useUser } from '@/contexts/UserContext';
 import EnhancedBillingPage from '@/components/EnhancedBillingPage';
 
 export default function SettingsPage() {
@@ -11,6 +12,9 @@ export default function SettingsPage() {
   
   // Always call hooks first, then handle theme context safely
   const [theme, setTheme] = useState<'white' | 'dark'>('white');
+  
+  // Get user from context
+  const { user } = useUser();
   
   useEffect(() => {
     setMounted(true);
@@ -71,7 +75,7 @@ export default function SettingsPage() {
                   <label className="block text-sm font-medium mb-2">First Name</label>
                   <input
                     type="text"
-                    defaultValue="John"
+                    defaultValue={user?.firstName || "John"}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -79,7 +83,7 @@ export default function SettingsPage() {
                   <label className="block text-sm font-medium mb-2">Last Name</label>
                   <input
                     type="text"
-                    defaultValue="Doe"
+                    defaultValue={user?.lastName || "Doe"}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -87,18 +91,77 @@ export default function SettingsPage() {
                   <label className="block text-sm font-medium mb-2">Email</label>
                   <input
                     type="email"
-                    defaultValue="john.doe@example.com"
+                    defaultValue={user?.email || "john.doe@example.com"}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    readOnly
                   />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium mb-2">Company</label>
                   <input
                     type="text"
-                    defaultValue="Intrend Agency"
+                    defaultValue={user?.company || "Intrend Agency"}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+              </div>
+            </div>
+            
+            {/* Subscription Information */}
+            <div>
+              <h3 className="text-lg font-medium mb-4">Subscription Information</h3>
+              <div className={`p-4 rounded-lg border transition-colors duration-300 ${
+                theme === 'white' ? 'bg-gray-50 border-gray-200' : 'bg-slate-800 border-slate-700'
+              }`}>
+                <div className="flex items-center space-x-3 mb-3">
+                  <Crown className={`w-5 h-5 ${
+                    theme === 'white' ? 'text-blue-600' : 'text-blue-400'
+                  }`} />
+                  <div>
+                    <p className={`font-medium transition-colors duration-300 ${
+                      theme === 'white' ? 'text-gray-900' : 'text-gray-100'
+                    }`}>
+                      {user?.currentPlanName || 'Free'} Plan
+                    </p>
+                    <p className={`text-sm transition-colors duration-300 ${
+                      theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+                    }`}>
+                      {user?.currentBillingCycle === 'annual' ? 'Annual Billing' : 'Monthly Billing'}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <Calendar className={`w-4 h-4 ${
+                    theme === 'white' ? 'text-gray-500' : 'text-gray-400'
+                  }`} />
+                  <span className={`text-sm transition-colors duration-300 ${
+                    theme === 'white' ? 'text-gray-600' : 'text-gray-300'
+                  }`}>
+                    Status: <span className={`font-medium ${
+                      user?.subscriptionStatus === 'active' 
+                        ? theme === 'white' ? 'text-green-600' : 'text-green-400'
+                        : theme === 'white' ? 'text-orange-600' : 'text-orange-400'
+                    }`}>
+                      {user?.subscriptionStatus || 'Inactive'}
+                    </span>
+                  </span>
+                </div>
+                
+                {user?.currentPlanName && user.currentPlanName !== 'Free' && (
+                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
+                    <button
+                      onClick={() => setActiveTab('billing')}
+                      className={`text-sm font-medium transition-colors duration-200 ${
+                        theme === 'white' 
+                          ? 'text-blue-600 hover:text-blue-700' 
+                          : 'text-blue-400 hover:text-blue-300'
+                      }`}
+                    >
+                      Manage Subscription →
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -30,7 +30,12 @@ export async function GET(request: NextRequest) {
         lastName: user.last_name,
         company: user.company,
         createdAt: user.created_at,
-        updatedAt: user.updated_at
+        updatedAt: user.updated_at,
+        // Include subscription/plan information
+        currentPlanId: user.current_plan_id,
+        currentPlanName: user.current_plan_name,
+        currentBillingCycle: user.current_billing_cycle,
+        subscriptionStatus: user.subscription_status
       }
     });
   } catch (error) {
@@ -75,7 +80,12 @@ export async function PUT(request: NextRequest) {
         lastName: updatedUser.last_name,
         company: updatedUser.company,
         createdAt: updatedUser.created_at,
-        updatedAt: updatedUser.updated_at
+        updatedAt: updatedUser.updated_at,
+        // Include subscription/plan information
+        currentPlanId: updatedUser.current_plan_id,
+        currentPlanName: updatedUser.current_plan_name,
+        currentBillingCycle: updatedUser.current_billing_cycle,
+        subscriptionStatus: updatedUser.subscription_status
       }
     });
   } catch (error) {

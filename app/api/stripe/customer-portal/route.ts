@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '@/lib/db';
+import { stripe } from '@/lib/stripe';
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,19 +49,29 @@ export async function POST(request: NextRequest) {
       success: true,
       url: session.url,
     });
-  } catch (error) {
-    console.error('Stripe customer portal error:', error);
-    
-    if (error.type === 'StripeInvalidRequestError') {
-      return NextResponse.json(
-        { error: 'Invalid customer information. Please contact support.' },
-        { status: 400 }
-      );
-    }
-    
-    return NextResponse.json(
-      { error: 'Failed to create customer portal session. Please try again.' },
-      { status: 500 }
-    );
-  }
+     } catch (error) {
+     console.error('Stripe customer portal error:', error);
+     
+     if (error.type === 'StripeInvalidRequestError') {
+       // Check if it's a configuration error
+       if (error.message?.includes('No configuration provided')) {
+         return NextResponse.json(
+           { 
+             error: 'Customer portal not configured. Please configure the Customer Portal in your Stripe dashboard at https://dashboard.stripe.com/test/settings/billing/portal',
+             needsConfiguration: true
+           },
+           { status: 400 }
+         );
+       }
+       return NextResponse.json(
+         { error: 'Invalid customer information. Please contact support.' },
+         { status: 400 }
+       );
+     }
+     
+     return NextResponse.json(
+       { error: 'Failed to create customer portal session. Please try again.' },
+       { status: 500 }
+     );
+   }
 }

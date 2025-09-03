@@ -54,11 +54,50 @@ export default function EnhancedBillingPage() {
   const [theme, setTheme] = useState<'white' | 'dark'>('white');
   
   // Get user from context
-  const { user, isLoggedIn } = useUser();
+  const { user, isLoggedIn, refreshUser } = useUser();
 
   useEffect(() => {
     setMounted(true);
-    loadSubscriptionData();
+  }, []);
+
+  // Load subscription data when user is available
+  useEffect(() => {
+    if (user?.id) {
+      loadSubscriptionData();
+    }
+  }, [user?.id]);
+
+  // Check for successful payment return
+  useEffect(() => {
+    const currentUrl = window.location.href;
+    let success = null;
+    let sessionId = null;
+    
+    // Try standard URLSearchParams first
+    const urlParams = new URLSearchParams(window.location.search);
+    success = urlParams.get('success');
+    sessionId = urlParams.get('session_id');
+    
+    // If session_id not found, try parsing the URL manually for the double question mark format
+    if (!sessionId) {
+      const match = currentUrl.match(/session_id=([^&?]+)/);
+      if (match) {
+        sessionId = match[1];
+        console.log('🔧 Found session_id using regex:', sessionId);
+      }
+    }
+    
+    console.log('🔍 Checking URL parameters:', { success, sessionId, currentUrl });
+    
+    if (success === 'true' && sessionId) {
+      console.log('🔄 Detected successful payment return, verifying subscription...');
+      // Add a small delay to ensure the component is fully mounted
+      setTimeout(() => {
+        verifySubscriptionAfterPayment(sessionId);
+      }, 1000);
+    } else if (success === 'true' && !sessionId) {
+      console.log('⚠️ Success parameter found but no session_id');
+    }
   }, []);
 
   // Try to get theme context safely
@@ -76,48 +115,114 @@ export default function EnhancedBillingPage() {
     }
   }, [mounted]);
 
+  const verifySubscriptionAfterPayment = async (sessionId: string) => {
+    try {
+      console.log('🔍 Verifying subscription after payment...');
+      
+      const verifyResponse = await fetch('/api/subscription/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId })
+      });
+      
+      const verifyData = await verifyResponse.json();
+      
+      if (verifyData.success) {
+        console.log('✅ Subscription verified successfully');
+        // Update local user state
+        await refreshUser();
+        await loadSubscriptionData();
+        alert(`Successfully upgraded to ${verifyData.planTier} plan!`);
+        
+        // Clean up URL parameters
+        const url = new URL(window.location.href);
+        url.searchParams.delete('success');
+        url.searchParams.delete('session_id');
+        window.history.replaceState({}, '', url.toString());
+      } else {
+        console.error('❌ Subscription verification failed:', verifyData.error);
+        alert('Payment successful but subscription verification failed. Please refresh the page.');
+      }
+    } catch (error) {
+      console.error('❌ Error verifying subscription:', error);
+      alert('Payment successful but verification failed. Please refresh the page.');
+    }
+  };
+
   const loadSubscriptionData = async () => {
     try {
-      // Mock data for now - replace with actual API calls
-      setTimeout(() => {
+      if (!user?.id) {
+        console.log('No user ID available, skipping data load');
+        setIsLoading(false);
+        return;
+      }
+
+      // Fetch subscription data
+      const subscriptionResponse = await fetch(`/api/users/subscription?userId=${user.id}`);
+      const subscriptionData = await subscriptionResponse.json();
+      
+      if (subscriptionData.success && subscriptionData.subscription) {
+        const sub = subscriptionData.subscription;
         setSubscription({
-          id: 'sub_123',
+          id: sub.id.toString(),
+          status: sub.status,
+          current_period_end: new Date(sub.currentPeriodEnd).getTime(),
+          plan: {
+            id: sub.planId,
+            name: sub.planName,
+            price: getPlan(sub.planId, sub.billingCycle)?.currentPricing.price || 0
+          },
+          cancel_at_period_end: sub.cancelAtPeriodEnd,
+          billing_cycle: sub.billingCycle
+        });
+      } else {
+        // If no subscription found, set default free plan
+        setSubscription({
+          id: 'free',
           status: 'active',
           current_period_end: Date.now() + 30 * 24 * 60 * 60 * 1000,
           plan: {
-            id: 'starter',
-            name: 'Starter',
+            id: 'free',
+            name: 'Free',
             price: 0
           },
           cancel_at_period_end: false,
           billing_cycle: 'monthly'
         });
-        
-        setInvoices([
-          {
-            id: 'inv_123',
-            amount_paid: 0,
-            status: 'paid',
-            created: Date.now() - 7 * 24 * 60 * 60 * 1000,
-            invoice_pdf: 'https://example.com/invoice.pdf',
-            invoice_number: 'INV-001'
-          }
-        ]);
-        
-        setPaymentMethods([
-          {
-            id: 1,
-            type: 'card',
-            last4: '4242',
-            brand: 'visa',
-            expMonth: 12,
-            expYear: 2025,
-            isDefault: true
-          }
-        ]);
-        
-        setIsLoading(false);
-      }, 1000);
+      }
+
+      // Fetch invoices
+      const invoicesResponse = await fetch(`/api/users/invoices?userId=${user.id}`);
+      const invoicesData = await invoicesResponse.json();
+      
+      if (invoicesData.success) {
+        setInvoices(invoicesData.invoices.map((invoice: any) => ({
+          id: invoice.id.toString(),
+          amount_paid: invoice.amountPaid,
+          status: invoice.status,
+          created: new Date(invoice.createdAt).getTime(),
+          invoice_pdf: invoice.invoicePdfUrl,
+          invoice_number: invoice.invoiceNumber
+        })));
+      }
+
+      // Fetch payment methods
+      const paymentMethodsResponse = await fetch(`/api/users/payment-methods?userId=${user.id}`);
+      const paymentMethodsData = await paymentMethodsResponse.json();
+      
+      if (paymentMethodsData.success) {
+        setPaymentMethods(paymentMethodsData.paymentMethods.map((pm: any) => ({
+          id: pm.id,
+          type: pm.type,
+          last4: pm.last4,
+          brand: pm.brand,
+          expMonth: pm.expMonth,
+          expYear: pm.expYear,
+          isDefault: pm.isDefault
+        })));
+      }
+      
+      setIsLoading(false);
     } catch (error) {
       console.error('Failed to load subscription data:', error);
       setIsLoading(false);
@@ -138,7 +243,7 @@ export default function EnhancedBillingPage() {
         return;
       }
 
-      if (!subscription || subscription.plan.id === 'starter') {
+      if (!subscription || (subscription.plan.id === 'free' && user?.currentPlanId === 'free')) {
         alert('You need an active subscription to access the customer portal.');
         return;
       }
@@ -160,7 +265,13 @@ export default function EnhancedBillingPage() {
         window.location.href = data.url;
       } else {
         console.error('Customer portal error:', data.error);
-        alert(data.error || 'Failed to access customer portal. Please try again.');
+        
+        // Check if it's a configuration error
+        if (data.needsConfiguration) {
+          alert('Customer portal needs to be configured in Stripe. Please contact support or configure it at https://dashboard.stripe.com/test/settings/billing/portal');
+        } else {
+          alert(data.error || 'Failed to access customer portal. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Customer portal error:', error);
@@ -197,6 +308,37 @@ export default function EnhancedBillingPage() {
           window.location.href = data.url;
         } else if (data.redirectUrl) {
           window.location.href = data.redirectUrl;
+        } else if (data.development) {
+          // Development mode: simulate successful subscription
+          alert('Development mode: Subscription simulated successfully! In production, this would redirect to Stripe checkout.');
+          // Refresh user data to show updated plan status
+          await refreshUser();
+          // Reload subscription data
+          await loadSubscriptionData();
+        } else if (data.sessionId) {
+          // Production mode: verify subscription with backend
+          try {
+            const verifyResponse = await fetch('/api/subscription/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sessionId: data.sessionId })
+            });
+            
+            const verifyData = await verifyResponse.json();
+            
+            if (verifyData.success) {
+              // Update local user state
+              await refreshUser();
+              await loadSubscriptionData();
+              alert(`Successfully upgraded to ${verifyData.planTier} plan!`);
+            } else {
+              console.error('Subscription verification failed:', verifyData.error);
+              alert('Payment successful but subscription verification failed. Please refresh the page.');
+            }
+          } catch (error) {
+            console.error('Error verifying subscription:', error);
+            alert('Payment successful but verification failed. Please refresh the page.');
+          }
         }
       } else {
         alert('Failed to create checkout session. Please try again.');
@@ -279,8 +421,43 @@ export default function EnhancedBillingPage() {
 
       const data = await response.json();
 
-      if (data.success && data.url) {
-        window.location.href = data.url;
+      if (data.success) {
+        if (data.url) {
+          window.location.href = data.url;
+        } else if (data.redirectUrl) {
+          window.location.href = data.redirectUrl;
+        } else if (data.development) {
+          // Development mode: simulate successful subscription
+          alert('Development mode: Subscription simulated successfully! In production, this would redirect to Stripe checkout.');
+          // Refresh user data to show updated plan status
+          await refreshUser();
+          // Reload subscription data
+          await loadSubscriptionData();
+        } else if (data.sessionId) {
+          // Production mode: verify subscription with backend
+          try {
+            const verifyResponse = await fetch('/api/subscription/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sessionId: data.sessionId })
+            });
+            
+            const verifyData = await verifyResponse.json();
+            
+            if (verifyData.success) {
+              // Update local user state
+              await refreshUser();
+              await loadSubscriptionData();
+              alert(`Successfully upgraded to ${verifyData.planTier} plan!`);
+            } else {
+              console.error('Subscription verification failed:', verifyData.error);
+              alert('Payment successful but subscription verification failed. Please refresh the page.');
+            }
+          } catch (error) {
+            console.error('Error verifying subscription:', error);
+            alert('Payment successful but verification failed. Please refresh the page.');
+          }
+        }
       } else {
         console.error('Failed to create checkout session:', data.error);
         alert(data.error || 'Failed to start checkout process. Please try again.');
@@ -300,6 +477,15 @@ export default function EnhancedBillingPage() {
 
   const isPlanDisabled = (plan: any) => {
     return false; // Always enabled for now
+  };
+
+  // Helper function to check if a plan is the current plan (considering billing cycle)
+  const isCurrentPlan = (planId: string, planBillingCycle: 'monthly' | 'annual') => {
+    const currentPlanId = subscription?.plan.id || user?.currentPlanId;
+    const currentBillingCycle = subscription?.billing_cycle || user?.currentBillingCycle;
+    
+    // Only consider it the same plan if both plan ID AND billing cycle match
+    return currentPlanId === planId && currentBillingCycle === planBillingCycle;
   };
 
   if (!mounted || isLoading) {
@@ -410,26 +596,26 @@ export default function EnhancedBillingPage() {
                     theme === 'white' ? 'text-gray-900' : 'text-gray-100'
                   }`}>Current Subscription</h2>
                   
-                  {subscription && (
+                  {(subscription || user?.currentPlanId) && (
                     <div className={`p-4 rounded-lg border transition-colors duration-300 ${
                       theme === 'white' ? 'border-gray-200 bg-gray-50' : 'border-slate-700 bg-slate-700/50'
                     }`}>
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-3">
-                          {getStatusIcon(subscription.status)}
+                          {getStatusIcon(subscription?.status || user?.subscriptionStatus || 'active')}
                           <div>
                             <h3 className={`font-medium transition-colors duration-300 ${
                               theme === 'white' ? 'text-gray-900' : 'text-gray-100'
-                            }`}>{subscription.plan.name} Plan</h3>
+                            }`}>{subscription?.plan.name || user?.currentPlanName || 'Free'} Plan</h3>
                             <p className={`text-sm transition-colors duration-300 ${
                               theme === 'white' ? 'text-gray-500' : 'text-gray-400'
                             }`}>
-                              {subscription.plan.price === 0 ? 'Free' : `$${subscription.plan.price}/${subscription.billing_cycle === 'annual' ? 'year' : 'month'}`}
+                              {subscription?.plan.price === 0 ? 'Free' : `$${subscription?.plan.price}/${subscription?.billing_cycle === 'annual' ? 'year' : 'month'}`}
                             </p>
                           </div>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(subscription.status)}`}>
-                          {subscription.status}
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(subscription?.status || user?.subscriptionStatus || 'active')}`}>
+                          {subscription?.status || user?.subscriptionStatus || 'active'}
                         </span>
                       </div>
                       
@@ -441,7 +627,7 @@ export default function EnhancedBillingPage() {
                           <p className={`font-medium transition-colors duration-300 ${
                             theme === 'white' ? 'text-gray-900' : 'text-gray-100'
                           }`}>
-                            {new Date(subscription.current_period_end).toLocaleDateString()}
+                            {subscription?.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : 'N/A'}
                           </p>
                         </div>
                         <div>
@@ -451,25 +637,66 @@ export default function EnhancedBillingPage() {
                           <p className={`font-medium transition-colors duration-300 ${
                             theme === 'white' ? 'text-gray-900' : 'text-gray-100'
                           }`}>
-                            {subscription.billing_cycle.charAt(0).toUpperCase() + subscription.billing_cycle.slice(1)}
+                            {(subscription?.billing_cycle || user?.currentBillingCycle || 'monthly').charAt(0).toUpperCase() + (subscription?.billing_cycle || user?.currentBillingCycle || 'monthly').slice(1)}
                           </p>
                         </div>
                       </div>
                       
-                      <div className="mt-4 flex space-x-3">
-                        <button
-                          onClick={handleCustomerPortal}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                          Manage Subscription
-                        </button>
-                        <button
-                          onClick={() => setActiveTab('plans')}
-                          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                          Change Plan
-                        </button>
-                      </div>
+                                             <div className="mt-4 flex space-x-3">
+                         <button
+                           onClick={handleCustomerPortal}
+                           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                         >
+                           Manage Subscription
+                         </button>
+                         <button
+                           onClick={() => setActiveTab('plans')}
+                           className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                         >
+                           Change Plan
+                         </button>
+                                                   <button
+                            onClick={async () => {
+                              await refreshUser();
+                              await loadSubscriptionData();
+                            }}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                          >
+                            Refresh Data
+                          </button>
+                                                     <button
+                             onClick={() => {
+                               // Handle both correct URL format (?success=true&session_id=...) and incorrect format (?success=true?session_id=...)
+                               const currentUrl = window.location.href;
+                               let sessionId = null;
+                               
+                               // Try standard URLSearchParams first
+                               const urlParams = new URLSearchParams(window.location.search);
+                               sessionId = urlParams.get('session_id');
+                               
+                               // If not found, try parsing the URL manually for the double question mark format
+                               if (!sessionId) {
+                                 const match = currentUrl.match(/session_id=([^&?]+)/);
+                                 if (match) {
+                                   sessionId = match[1];
+                                   console.log('🔧 Found session_id using regex:', sessionId);
+                                 }
+                               }
+                               
+                               if (sessionId) {
+                                 console.log('🔧 Manually triggering verification for session:', sessionId);
+                                 verifySubscriptionAfterPayment(sessionId);
+                               } else {
+                                 console.log('🔍 Current URL:', currentUrl);
+                                 console.log('🔍 URL search params:', window.location.search);
+                                 alert('No session_id found in URL. Please complete a payment first.');
+                               }
+                             }}
+                            className="px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
+                          >
+                            Verify Payment
+                          </button>
+                       </div>
                     </div>
                   )}
                 </div>
@@ -489,12 +716,12 @@ export default function EnhancedBillingPage() {
                     <div 
                       key={plan.id}
                       className={`relative p-6 rounded-xl border transition-all duration-300 ${
-                        subscription?.plan.id === plan.id
+                        isCurrentPlan(plan.id, billingCycle)
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                           : 'border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600'
                       }`}
                     >
-                      {subscription?.plan.id === plan.id && (
+                      {isCurrentPlan(plan.id, billingCycle) && (
                         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                           <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-medium">
                             Current Plan
@@ -533,7 +760,7 @@ export default function EnhancedBillingPage() {
                       </ul>
                       
                       <div className="text-center">
-                        {subscription?.plan.id === plan.id ? (
+                        {isCurrentPlan(plan.id, billingCycle) ? (
                           <button
                             disabled
                             className="w-full py-2 px-4 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed"
@@ -545,7 +772,10 @@ export default function EnhancedBillingPage() {
                             onClick={() => handleUpgrade(plan.id, billingCycle)}
                             className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                           >
-                            {plan.currentPricing.price === 0 ? 'Downgrade to Free' : 'Upgrade Plan'}
+                            {plan.currentPricing.price === 0 ? 'Downgrade to Free' : 
+                             (subscription?.plan.id === plan.id || user?.currentPlanId === plan.id) ? 
+                             `Switch to ${billingCycle === 'annual' ? 'Annual' : 'Monthly'}` : 
+                             'Upgrade Plan'}
                           </button>
                         )}
                       </div>
@@ -670,7 +900,10 @@ export default function EnhancedBillingPage() {
             <h3 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
               theme === 'white' ? 'text-gray-900' : 'text-gray-100'
             }`}>
-              Upgrade to {PRICING_PLANS[selectedPlan as keyof typeof PRICING_PLANS]?.name}
+              {isCurrentPlan(selectedPlan, selectedBillingCycle) ? 
+                `Switch to ${selectedBillingCycle === 'annual' ? 'Annual' : 'Monthly'} Billing` :
+                `Upgrade to ${PRICING_PLANS[selectedPlan as keyof typeof PRICING_PLANS]?.name}`
+              }
             </h3>
             
             <p className={`mb-2 transition-colors duration-300 ${
@@ -690,7 +923,7 @@ export default function EnhancedBillingPage() {
                 onClick={handleCheckout}
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Continue to Payment
+                {isCurrentPlan(selectedPlan, selectedBillingCycle) ? 'Switch Billing Cycle' : 'Continue to Payment'}
               </button>
               <button
                 onClick={() => setShowUpgradeModal(false)}

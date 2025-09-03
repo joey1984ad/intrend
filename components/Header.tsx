@@ -345,6 +345,17 @@ const Header: React.FC<HeaderProps> = ({
                           <p className={`text-sm transition-colors duration-300 ${
                             theme === 'white' ? 'text-gray-500' : 'text-gray-400'
                           }`}>{userEmail}</p>
+                          {/* Subscription Status */}
+                          {user?.currentPlanName && (
+                            <p className={`text-xs transition-colors duration-300 ${
+                              theme === 'white' ? 'text-green-600' : 'text-green-400'
+                            }`}>
+                              {user.currentPlanName} Plan
+                              {user.currentBillingCycle && user.currentBillingCycle !== 'monthly' && (
+                                <span className="ml-1">({user.currentBillingCycle})</span>
+                              )}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -17,7 +17,14 @@ export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = headers().get('stripe-signature');
 
+  console.log('🔔 Webhook received:', {
+    hasSignature: !!signature,
+    bodyLength: body.length,
+    timestamp: new Date().toISOString()
+  });
+
   if (!signature) {
+    console.log('❌ Missing stripe signature');
     return NextResponse.json(
       { error: 'Missing stripe signature' },
       { status: 400 }
@@ -32,8 +39,9 @@ export async function POST(request: NextRequest) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
+    console.log('✅ Webhook signature verified, event type:', event.type);
   } catch (err) {
-    console.error('Webhook signature verification failed:', err);
+    console.error('❌ Webhook signature verification failed:', err);
     return NextResponse.json(
       { error: 'Invalid signature' },
       { status: 400 }

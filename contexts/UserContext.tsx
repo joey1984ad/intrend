@@ -13,6 +13,11 @@ interface User {
   provider?: 'google' | 'facebook' | 'email';
   createdAt?: string;
   updatedAt?: string;
+  // Subscription/plan information
+  currentPlanId?: string;
+  currentPlanName?: string;
+  currentBillingCycle?: string;
+  subscriptionStatus?: string;
 }
 
 interface UserContextType {
@@ -23,6 +28,7 @@ interface UserContextType {
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   setUser: (user: User | null) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -93,6 +99,23 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const response = await fetch('/api/auth/session');
+      const { user: sessionUser, isAuthenticated } = await response.json();
+      if (isAuthenticated && sessionUser) {
+        setUser(sessionUser);
+        console.log('User refreshed from session:', sessionUser);
+      } else {
+        setUser(null);
+        console.log('Session expired or invalid, user logged out.');
+      }
+    } catch (error) {
+      console.error('Failed to refresh user from session:', error);
+      setUser(null);
+    }
+  };
+
   const value: UserContextType = {
     user,
     isLoggedIn: !!user,
@@ -101,6 +124,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     logout,
     updateUser,
     setUser,
+    refreshUser,
   };
 
   return (

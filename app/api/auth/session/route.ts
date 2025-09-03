@@ -30,7 +30,12 @@ export async function GET(request: NextRequest) {
         company: user.company,
         provider: payload.provider,
         createdAt: user.created_at,
-        updatedAt: user.updated_at
+        updatedAt: user.updated_at,
+        // Include subscription/plan information
+        currentPlanId: user.current_plan_id,
+        currentPlanName: user.current_plan_name,
+        currentBillingCycle: user.current_billing_cycle,
+        subscriptionStatus: user.subscription_status
       },
       isAuthenticated: true
     });

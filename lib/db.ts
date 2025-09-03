@@ -437,8 +437,7 @@ export async function updateInvoice(stripeInvoiceId: string, updateData: {
         amount_paid = COALESCE(${updateData.amountPaid}, amount_paid),
         status = COALESCE(${updateData.status}, status),
         invoice_number = COALESCE(${updateData.invoiceNumber}, invoice_number),
-        invoice_pdf_url = COALESCE(${updateData.invoicePdfUrl}, invoice_pdf_url),
-        updated_at = NOW()
+        invoice_pdf_url = COALESCE(${updateData.invoicePdfUrl}, invoice_pdf_url)
       WHERE stripe_invoice_id = ${stripeInvoiceId}
       RETURNING *
     `;

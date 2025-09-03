@@ -236,18 +236,34 @@ export async function POST(request: NextRequest) {
             return;
           }
           
-          // Create new invoice
-          await createInvoice({
-            userId: user.id,
-            stripeInvoiceId: stripeInvoice.id,
-            subscriptionId: dbSubscription.id,
-            amountPaid: stripeInvoice.amount_paid,
-            status: stripeInvoice.status,
-            invoiceNumber: stripeInvoice.number,
-            invoicePdfUrl: stripeInvoice.invoice_pdf,
-            createdAt: new Date(stripeInvoice.created * 1000)
-          });
-          console.log('Created new invoice record:', stripeInvoice.id);
+          // Create new invoice with duplicate handling
+          try {
+            await createInvoice({
+              userId: user.id,
+              stripeInvoiceId: stripeInvoice.id,
+              subscriptionId: dbSubscription.id,
+              amountPaid: stripeInvoice.amount_paid,
+              status: stripeInvoice.status,
+              invoiceNumber: stripeInvoice.number,
+              invoicePdfUrl: stripeInvoice.invoice_pdf,
+              createdAt: new Date(stripeInvoice.created * 1000)
+            });
+            console.log('Created new invoice record:', stripeInvoice.id);
+          } catch (invoiceError: any) {
+            // If it's a duplicate key error, just update the existing one
+            if (invoiceError.code === '23505' && invoiceError.detail?.includes('stripe_invoice_id')) {
+              console.log('Invoice already exists, updating instead:', stripeInvoice.id);
+              await updateInvoice(stripeInvoice.id, {
+                amountPaid: stripeInvoice.amount_paid,
+                status: stripeInvoice.status,
+                invoiceNumber: stripeInvoice.number,
+                invoicePdfUrl: stripeInvoice.invoice_pdf
+              });
+              console.log('Updated existing invoice record:', stripeInvoice.id);
+            } else {
+              throw invoiceError;
+            }
+          }
         }
       } else {
         // Create a placeholder invoice for trial subscriptions
@@ -262,17 +278,27 @@ export async function POST(request: NextRequest) {
             return;
           }
           
-          await createInvoice({
-            userId: user.id,
-            stripeInvoiceId: trialInvoiceId,
-            subscriptionId: dbSubscription.id,
-            amountPaid: 0,
-            status: 'paid',
-            invoiceNumber: `TRIAL-${Date.now()}`,
-            invoicePdfUrl: null,
-            createdAt: new Date()
-          });
-          console.log('Created trial invoice record');
+          // Create trial invoice with duplicate handling
+          try {
+            await createInvoice({
+              userId: user.id,
+              stripeInvoiceId: trialInvoiceId,
+              subscriptionId: dbSubscription.id,
+              amountPaid: 0,
+              status: 'paid',
+              invoiceNumber: `TRIAL-${Date.now()}`,
+              invoicePdfUrl: null,
+              createdAt: new Date()
+            });
+            console.log('Created trial invoice record');
+          } catch (trialInvoiceError: any) {
+            // If it's a duplicate key error, just log it
+            if (trialInvoiceError.code === '23505' && trialInvoiceError.detail?.includes('stripe_invoice_id')) {
+              console.log('Trial invoice already exists, skipping creation');
+            } else {
+              throw trialInvoiceError;
+            }
+          }
         } else {
           console.log('Trial invoice already exists');
         }

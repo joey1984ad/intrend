@@ -287,6 +287,24 @@ export default function EnhancedBillingPage() {
         return;
       }
 
+      // Check if this is a downgrade
+      const currentPlan = subscription?.plan?.id;
+      const currentBillingCycle = subscription?.billing_cycle;
+      const currentPlanPrice = currentPlan && currentBillingCycle ? (getPlan(currentPlan, currentBillingCycle)?.currentPricing.price || 0) : 0;
+      const newPlanPrice = getPlan(selectedPlan, selectedBillingCycle)?.currentPricing.price || 0;
+      const isDowngrade = currentPlan && currentBillingCycle && 
+        (selectedPlan !== currentPlan || selectedBillingCycle !== currentBillingCycle) &&
+        newPlanPrice < currentPlanPrice;
+
+      if (isDowngrade) {
+        const newPlanName = getPlan(selectedPlan, selectedBillingCycle)?.name || 'Unknown Plan';
+        const confirmed = confirm(
+          `You're downgrading from ${subscription?.plan?.name} to ${newPlanName}. ` +
+          `Your remaining balance will be applied as credit to your new plan. Continue?`
+        );
+        if (!confirmed) return;
+      }
+
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -305,6 +323,11 @@ export default function EnhancedBillingPage() {
       
       if (data.success) {
         if (data.url) {
+          // Show downgrade information if applicable
+          if (data.isDowngrade && data.prorationCredit > 0) {
+            const creditAmount = (data.prorationCredit / 100).toFixed(2);
+            alert(`Downgrade detected! Your remaining balance of $${creditAmount} will be applied as credit to your new plan.`);
+          }
           window.location.href = data.url;
         } else if (data.redirectUrl) {
           window.location.href = data.redirectUrl;

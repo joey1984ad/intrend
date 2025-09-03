@@ -1,7 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { PRICING_PLANS, getPlan } from '@/lib/stripe';
-import { createUser, createStripeCustomer, getUserByEmail } from '@/lib/db';
+import { createUser, createStripeCustomer, getUserByEmail, getSubscriptionByUserId } from '@/lib/db';
+
+// Helper function to create a proration coupon for downgrades
+async function createProrationCoupon(amountOff: number) {
+  try {
+    if (!stripe) {
+      console.error('Stripe is not configured');
+      return null;
+    }
+    
+    const couponId = `proration_${Date.now()}`;
+    const coupon = await stripe.coupons.create({
+      id: couponId,
+      amount_off: amountOff,
+      currency: 'usd',
+      duration: 'once',
+      name: `Proration Credit - $${(amountOff / 100).toFixed(2)}`,
+      metadata: {
+        type: 'proration_credit',
+        amount_off: amountOff.toString()
+      }
+    });
+    return coupon.id;
+  } catch (error) {
+    console.error('Error creating proration coupon:', error);
+    // If coupon creation fails, return null to continue without discount
+    return null;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -96,6 +124,8 @@ export async function POST(request: NextRequest) {
     // Handle user creation/retrieval
     let userId: number | undefined;
     let stripeCustomerId: string | null = null;
+    let isDowngrade = false;
+    let prorationCredit = 0;
 
     if (customerEmail && customerEmail.trim() && customerEmail.includes('@')) {
       try {
@@ -117,6 +147,43 @@ export async function POST(request: NextRequest) {
 
         if (stripeCustomer.data.length > 0) {
           stripeCustomerId = stripeCustomer.data[0].id;
+        }
+
+        // Check if this is a downgrade and calculate proration credit
+        const currentSubscription = await getSubscriptionByUserId(user.id);
+        if (currentSubscription && currentSubscription.status === 'active') {
+          const currentPlan = getPlan(currentSubscription.plan_id, currentSubscription.billing_cycle as 'monthly' | 'annual');
+          const newPlan = getPlan(planId, billingCycle as 'monthly' | 'annual');
+          
+          if (currentPlan && newPlan) {
+            // Check if this is a downgrade (new plan is cheaper)
+            if (newPlan.currentPricing.price < currentPlan.currentPricing.price) {
+              isDowngrade = true;
+              console.log('Downgrade detected:', {
+                from: currentPlan.name,
+                to: newPlan.name,
+                currentPrice: currentPlan.currentPricing.price,
+                newPrice: newPlan.currentPricing.price
+              });
+
+              // Calculate proration credit based on remaining time
+              const now = new Date();
+              const periodEnd = new Date(currentSubscription.current_period_end);
+              const remainingDays = Math.max(0, (periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+              const totalDays = (periodEnd.getTime() - new Date(currentSubscription.current_period_start).getTime()) / (1000 * 60 * 60 * 24);
+              
+              if (remainingDays > 0 && totalDays > 0) {
+                const dailyRate = currentPlan.currentPricing.price / totalDays;
+                prorationCredit = Math.floor(dailyRate * remainingDays);
+                console.log('Proration credit calculated:', {
+                  remainingDays,
+                  totalDays,
+                  dailyRate,
+                  prorationCredit
+                });
+              }
+            }
+          }
         }
       } catch (dbError) {
         console.error('Database error:', dbError);
@@ -146,18 +213,37 @@ export async function POST(request: NextRequest) {
         planId: plan.id,
         planName: plan.name,
         billingCycle: billingCycle,
-        userId: userId?.toString() || 'unknown'
+        userId: userId?.toString() || 'unknown',
+        isDowngrade: isDowngrade.toString(),
+        prorationCredit: prorationCredit.toString()
       },
       subscription_data: {
         metadata: {
           planId: plan.id,
           planName: plan.name,
           billingCycle: billingCycle,
-          userId: userId?.toString() || 'unknown'
+          userId: userId?.toString() || 'unknown',
+          isDowngrade: isDowngrade.toString(),
+          prorationCredit: prorationCredit.toString()
         },
         trial_period_days: plan.id === 'pro' ? 7 : undefined, // 7-day trial for pro plan
       },
     };
+
+    // If this is a downgrade with proration credit, add it as a discount
+    if (isDowngrade && prorationCredit > 0) {
+      const couponId = await createProrationCoupon(prorationCredit);
+      if (couponId) {
+        sessionConfig.discounts = [
+          {
+            coupon: couponId
+          }
+        ];
+        console.log('Applied proration discount:', prorationCredit);
+      } else {
+        console.log('Failed to create proration coupon, proceeding without discount');
+      }
+    }
 
     // Add customer email OR customer ID (not both)
     if (stripeCustomerId) {
@@ -182,7 +268,9 @@ export async function POST(request: NextRequest) {
       url: session.url,
       planId: plan.id,
       billingCycle: billingCycle,
-      price: plan.currentPricing.price
+      price: plan.currentPricing.price,
+      isDowngrade: isDowngrade,
+      prorationCredit: prorationCredit
     });
   } catch (error) {
     console.error('Stripe checkout error:', error);

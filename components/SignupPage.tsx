@@ -19,8 +19,23 @@ import { useSearchParams } from 'next/navigation';
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [checkoutIntent, setCheckoutIntent] = useState<any>(null);
   
   const searchParams = useSearchParams();
+  
+  // Check for checkout intent from URL parameters
+  useEffect(() => {
+    const checkoutParam = searchParams.get('checkout');
+    if (checkoutParam) {
+      try {
+        const decoded = JSON.parse(atob(checkoutParam));
+        setCheckoutIntent(decoded);
+        console.log('Checkout intent found:', decoded);
+      } catch (error) {
+        console.error('Failed to decode checkout intent:', error);
+      }
+    }
+  }, [searchParams]);
   
   // Check for OAuth errors from URL parameters
   useEffect(() => {
@@ -60,14 +75,52 @@ import { useSearchParams } from 'next/navigation';
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    console.log('Form submitted:', formData);
-    setIsLoading(false);
-    
-    // Redirect to dashboard after successful signup
-    window.location.href = '/dashboard';
+    try {
+      // Simulate API call for signup
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      console.log('Form submitted:', formData);
+      
+      // If there's a checkout intent, redirect to complete the payment
+      if (checkoutIntent) {
+        console.log('Redirecting to complete checkout:', checkoutIntent);
+        
+        // Create checkout session with the user's email
+        const response = await fetch('/api/stripe/create-checkout-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            planId: checkoutIntent.planId,
+            billingCycle: checkoutIntent.billingCycle,
+            customerEmail: formData.email,
+            successUrl: checkoutIntent.successUrl,
+            cancelUrl: checkoutIntent.cancelUrl,
+          }),
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.url) {
+          window.location.href = data.url;
+        } else if (data.success && data.redirectUrl) {
+          window.location.href = data.redirectUrl;
+        } else {
+          console.error('Failed to create checkout session:', data.error);
+          alert('Account created successfully! Please log in to complete your purchase.');
+          window.location.href = '/login';
+        }
+      } else {
+        // No checkout intent, redirect to dashboard
+        window.location.href = '/dashboard';
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      alert('Failed to create account. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleSignup = async () => {
@@ -114,11 +167,21 @@ import { useSearchParams } from 'next/navigation';
             </svg>
           </div>
           <h2 className="mt-6 text-3xl font-extrabold text-white">
-            Create your account
+            {checkoutIntent ? 'Complete Your Purchase' : 'Create your account'}
           </h2>
           <p className="mt-2 text-sm text-blue-200">
-            Start your free trial with Intrend
+            {checkoutIntent 
+              ? `Sign up to continue with your ${checkoutIntent.planId} plan selection`
+              : 'Start your free trial with Intrend'
+            }
           </p>
+          {checkoutIntent && (
+            <div className="mt-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+              <p className="text-blue-200 text-sm">
+                You're signing up for the <strong>{checkoutIntent.planId}</strong> plan ({checkoutIntent.billingCycle} billing)
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Google Sign In Button */}
@@ -293,10 +356,10 @@ import { useSearchParams } from 'next/navigation';
               {isLoading ? (
                 <div className="flex items-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Creating account...
+                  {checkoutIntent ? 'Creating account & redirecting to payment...' : 'Creating account...'}
                 </div>
               ) : (
-                'Create Account'
+                checkoutIntent ? 'Create Account & Continue to Payment' : 'Create Account'
               )}
             </button>
           </div>

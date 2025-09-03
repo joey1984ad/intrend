@@ -127,6 +127,30 @@ export async function POST(request: NextRequest) {
     let isDowngrade = false;
     let prorationCredit = 0;
 
+    // Check if user is logged out (no customer email provided)
+    if (!customerEmail || !customerEmail.trim() || !customerEmail.includes('@')) {
+      console.log('No customer email provided - user is logged out');
+      
+      // Store checkout intent in session/cookie and redirect to signup
+      const checkoutIntent = {
+        planId,
+        billingCycle,
+        successUrl,
+        cancelUrl,
+        timestamp: Date.now()
+      };
+      
+      // For now, we'll encode this in the response and handle it in the frontend
+      // In a production app, you might want to store this in a database or session
+      return NextResponse.json({
+        success: false,
+        requiresSignup: true,
+        checkoutIntent: btoa(JSON.stringify(checkoutIntent)), // Base64 encode for URL safety
+        redirectUrl: `/signup?checkout=${btoa(JSON.stringify(checkoutIntent))}`,
+        message: 'Please sign up to continue with your purchase'
+      });
+    }
+
     if (customerEmail && customerEmail.trim() && customerEmail.includes('@')) {
       try {
         // Check if user exists

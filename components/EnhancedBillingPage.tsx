@@ -283,7 +283,17 @@ export default function EnhancedBillingPage() {
     try {
       // Check if user is logged in
       if (!isLoggedIn || !user) {
-        alert('Please log in to upgrade your subscription.');
+        // User is not logged in, redirect to signup with checkout intent
+        const checkoutIntent = {
+          planId: selectedPlan,
+          billingCycle: selectedBillingCycle,
+          successUrl: `${window.location.origin}/billing?success=true`,
+          cancelUrl: `${window.location.origin}/billing?canceled=true`,
+          timestamp: Date.now()
+        };
+        
+        const encodedIntent = btoa(JSON.stringify(checkoutIntent));
+        window.location.href = `/signup?checkout=${encodedIntent}`;
         return;
       }
 
@@ -424,6 +434,22 @@ export default function EnhancedBillingPage() {
       return;
     }
 
+    // Check if user is logged in
+    if (!isLoggedIn || !user) {
+      // User is not logged in, redirect to signup with checkout intent
+      const checkoutIntent = {
+        planId,
+        billingCycle: billingCycle || 'monthly',
+        successUrl: `${window.location.origin}/dashboard?success=true&plan=${planId}`,
+        cancelUrl: `${window.location.origin}/billing?canceled=true`,
+        timestamp: Date.now()
+      };
+      
+      const encodedIntent = btoa(JSON.stringify(checkoutIntent));
+      window.location.href = `/signup?checkout=${encodedIntent}`;
+      return;
+    }
+
     setSelectedPlan(planId);
     setIsLoading(true);
 
@@ -481,6 +507,9 @@ export default function EnhancedBillingPage() {
             alert('Payment successful but verification failed. Please refresh the page.');
           }
         }
+      } else if (data.requiresSignup) {
+        // User needs to sign up first
+        window.location.href = data.redirectUrl;
       } else {
         console.error('Failed to create checkout session:', data.error);
         alert(data.error || 'Failed to start checkout process. Please try again.');

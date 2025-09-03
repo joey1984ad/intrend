@@ -41,7 +41,7 @@ export default function SimpleBillingPage() {
       const checkoutIntent = {
         planId,
         billingCycle: billingCycle || 'monthly',
-        successUrl: `${window.location.origin}/dashboard?success=true&plan=${planId}`,
+        successUrl: `${window.location.origin}/billing?success=true&plan=${planId}`,
         cancelUrl: `${window.location.origin}/billing?canceled=true`,
         timestamp: Date.now()
       };
@@ -64,7 +64,7 @@ export default function SimpleBillingPage() {
           planId,
           billingCycle: billingCycle || 'monthly',
           customerEmail: email,
-          successUrl: `${window.location.origin}/dashboard?success=true&plan=${planId}`,
+          successUrl: `${window.location.origin}/billing?success=true&plan=${planId}`,
           cancelUrl: `${window.location.origin}/billing?canceled=true`,
         }),
       });

@@ -112,8 +112,8 @@ import { useSearchParams } from 'next/navigation';
           window.location.href = '/login';
         }
       } else {
-        // No checkout intent, redirect to dashboard
-        window.location.href = '/dashboard';
+        // No checkout intent, redirect to billing page
+        window.location.href = '/billing';
       }
     } catch (error) {
       console.error('Signup error:', error);

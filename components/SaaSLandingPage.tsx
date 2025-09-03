@@ -235,8 +235,8 @@ const SaaSLandingPage: React.FC = () => {
       const checkoutIntent = {
         planId,
         billingCycle: billingCycle || 'monthly',
-        successUrl: `${window.location.origin}/dashboard?success=true&plan=${planId}`,
-        cancelUrl: `${window.location.origin}?canceled=true`,
+        successUrl: `${window.location.origin}/billing?success=true&plan=${planId}`,
+        cancelUrl: `${window.location.origin}/billing?canceled=true`,
         timestamp: Date.now()
       };
       
@@ -258,8 +258,8 @@ const SaaSLandingPage: React.FC = () => {
           planId,
           billingCycle: billingCycle || 'monthly',
           customerEmail: email,
-          successUrl: `${window.location.origin}/dashboard?success=true&plan=${planId}`,
-          cancelUrl: `${window.location.origin}?canceled=true`,
+          successUrl: `${window.location.origin}/billing?success=true&plan=${planId}`,
+          cancelUrl: `${window.location.origin}/billing?canceled=true`,
         }),
       });
 

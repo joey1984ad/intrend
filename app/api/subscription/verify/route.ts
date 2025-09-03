@@ -10,7 +10,9 @@ import {
   getSubscriptionByStripeId,
   createInvoice,
   getInvoiceByStripeId,
-  updateInvoice
+  updateInvoice,
+  createPaymentMethod,
+  getPaymentMethodsByUserId
 } from '@/lib/db';
 import { getPlan } from '@/lib/stripe';
 
@@ -164,6 +166,44 @@ export async function POST(request: NextRequest) {
     });
 
     console.log('User plan updated successfully');
+
+    // Create payment method record if not already exists
+    try {
+      // Get customer's payment methods from Stripe
+      const paymentMethods = await stripe.paymentMethods.list({
+        customer: subscription.customer as string,
+        type: 'card'
+      });
+
+      console.log('Found payment methods:', paymentMethods.data.length);
+
+      for (const stripePaymentMethod of paymentMethods.data) {
+        // Check if payment method already exists in database
+        const existingPaymentMethods = await getPaymentMethodsByUserId(user.id);
+        const alreadyExists = existingPaymentMethods.some(pm => 
+          pm.stripe_payment_method_id === stripePaymentMethod.id
+        );
+
+        if (!alreadyExists) {
+          await createPaymentMethod({
+            userId: user.id,
+            stripePaymentMethodId: stripePaymentMethod.id,
+            type: stripePaymentMethod.type,
+            last4: stripePaymentMethod.card?.last4,
+            brand: stripePaymentMethod.card?.brand,
+            expMonth: stripePaymentMethod.card?.exp_month,
+            expYear: stripePaymentMethod.card?.exp_year,
+            isDefault: false
+          });
+          console.log('Created payment method record:', stripePaymentMethod.id);
+        } else {
+          console.log('Payment method already exists:', stripePaymentMethod.id);
+        }
+      }
+    } catch (paymentMethodError) {
+      console.log('Failed to create payment method record:', paymentMethodError);
+      // Don't fail the whole verification if payment method creation fails
+    }
 
     // Create invoice record for this subscription
     try {

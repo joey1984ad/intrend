@@ -247,10 +247,10 @@ async function handlePaymentSucceeded(invoice: any) {
             stripeInvoiceId: invoice.id,
             subscriptionId: parseInt(invoice.subscription),
             amountPaid: invoice.amount_paid,
-            currency: invoice.currency,
             status: invoice.status,
             invoicePdfUrl: invoice.invoice_pdf,
-            invoiceNumber: invoice.number
+            invoiceNumber: invoice.number,
+            createdAt: new Date(invoice.created * 1000)
           });
 
           console.log('Invoice created successfully in database');
@@ -293,16 +293,29 @@ async function handleTrialWillEnd(subscription: any) {
 
 async function handlePaymentMethodAttached(paymentMethod: any) {
   try {
-    console.log('Handling payment method attached:', paymentMethod.id);
+    console.log('🔍 Handling payment method attached:', paymentMethod.id);
+    console.log('Payment method details:', {
+      id: paymentMethod.id,
+      customer: paymentMethod.customer,
+      type: paymentMethod.type,
+      card: paymentMethod.card
+    });
     
     if (paymentMethod.customer) {
       const customer = await stripe.customers.retrieve(paymentMethod.customer);
+      console.log('Customer details:', {
+        id: customer.id,
+        email: customer.email
+      });
+      
       const customerEmail = customer.email;
       
       if (customerEmail) {
         const user = await getUserByEmail(customerEmail);
+        console.log('User found:', user ? { id: user.id, email: user.email } : 'Not found');
+        
         if (user) {
-          await createPaymentMethod({
+          const createdPaymentMethod = await createPaymentMethod({
             userId: user.id,
             stripePaymentMethodId: paymentMethod.id,
             type: paymentMethod.type,
@@ -313,12 +326,23 @@ async function handlePaymentMethodAttached(paymentMethod: any) {
             isDefault: false
           });
 
-          console.log('Payment method created successfully in database');
+          console.log('✅ Payment method created successfully in database:', {
+            id: createdPaymentMethod.id,
+            stripePaymentMethodId: createdPaymentMethod.stripe_payment_method_id,
+            type: createdPaymentMethod.type,
+            last4: createdPaymentMethod.last4
+          });
+        } else {
+          console.log('❌ User not found for email:', customerEmail);
         }
+      } else {
+        console.log('❌ No customer email found');
       }
+    } else {
+      console.log('❌ No customer associated with payment method');
     }
   } catch (error) {
-    console.error('Error handling payment method attached:', error);
+    console.error('❌ Error handling payment method attached:', error);
   }
 }
 

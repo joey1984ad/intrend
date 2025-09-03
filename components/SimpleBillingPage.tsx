@@ -35,6 +35,22 @@ export default function SimpleBillingPage() {
       return;
     }
 
+    // Check if user is logged in
+    if (!email || !email.trim() || !email.includes('@')) {
+      // User is not logged in, redirect to signup with checkout intent
+      const checkoutIntent = {
+        planId,
+        billingCycle: billingCycle || 'monthly',
+        successUrl: `${window.location.origin}/dashboard?success=true&plan=${planId}`,
+        cancelUrl: `${window.location.origin}/billing?canceled=true`,
+        timestamp: Date.now()
+      };
+      
+      const encodedIntent = btoa(JSON.stringify(checkoutIntent));
+      window.location.href = `/signup?checkout=${encodedIntent}`;
+      return;
+    }
+
     setSelectedPlan(planId);
     setIsLoading(true);
 
@@ -55,8 +71,41 @@ export default function SimpleBillingPage() {
 
       const data = await response.json();
 
-      if (data.success && data.url) {
-        window.location.href = data.url;
+      if (data.success) {
+        if (data.url) {
+          window.location.href = data.url;
+        } else if (data.redirectUrl) {
+          window.location.href = data.redirectUrl;
+        } else if (data.development) {
+          // Development mode: simulate successful subscription
+          alert('Development mode: Subscription simulated successfully! In production, this would redirect to Stripe checkout.');
+          window.location.href = '/dashboard';
+        } else if (data.sessionId) {
+          // Production mode: verify subscription with backend
+          try {
+            const verifyResponse = await fetch('/api/subscription/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sessionId: data.sessionId })
+            });
+            
+            const verifyData = await verifyResponse.json();
+            
+            if (verifyData.success) {
+              alert(`Successfully upgraded to ${verifyData.planTier} plan!`);
+              window.location.href = '/dashboard';
+            } else {
+              console.error('Subscription verification failed:', verifyData.error);
+              alert('Payment successful but subscription verification failed. Please refresh the page.');
+            }
+          } catch (error) {
+            console.error('Error verifying subscription:', error);
+            alert('Payment successful but verification failed. Please refresh the page.');
+          }
+        }
+      } else if (data.requiresSignup) {
+        // User needs to sign up first
+        window.location.href = data.redirectUrl;
       } else {
         console.error('Failed to create checkout session:', data.error);
         alert(data.error || 'Failed to start checkout process. Please try again.');

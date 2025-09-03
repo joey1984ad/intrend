@@ -795,10 +795,26 @@ export default function EnhancedBillingPage() {
                             onClick={() => handleUpgrade(plan.id, billingCycle)}
                             className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                           >
-                            {plan.currentPricing.price === 0 ? 'Downgrade to Free' : 
-                             (subscription?.plan.id === plan.id || user?.currentPlanId === plan.id) ? 
-                             `Switch to ${billingCycle === 'annual' ? 'Annual' : 'Monthly'}` : 
-                             'Upgrade Plan'}
+                            {(() => {
+                              // Check if this is a downgrade (current plan is more expensive than selected plan)
+                              const currentPlan = subscription?.plan?.id;
+                              const currentBillingCycle = subscription?.billing_cycle;
+                              const currentPlanPrice = currentPlan && currentBillingCycle ? (getPlan(currentPlan, currentBillingCycle)?.currentPricing.price || 0) : 0;
+                              const newPlanPrice = getPlan(plan.id, billingCycle)?.currentPricing.price || 0;
+                              const isDowngrade = currentPlan && currentBillingCycle && 
+                                (plan.id !== currentPlan || billingCycle !== currentBillingCycle) &&
+                                newPlanPrice < currentPlanPrice;
+
+                              if (plan.currentPricing.price === 0) {
+                                return 'Downgrade to Free';
+                              } else if (isDowngrade) {
+                                return `Downgrade to ${plan.name}`;
+                              } else if (subscription?.plan.id === plan.id || user?.currentPlanId === plan.id) {
+                                return `Switch to ${billingCycle === 'annual' ? 'Annual' : 'Monthly'}`;
+                              } else {
+                                return 'Upgrade Plan';
+                              }
+                            })()}
                           </button>
                         )}
                       </div>
@@ -923,10 +939,24 @@ export default function EnhancedBillingPage() {
             <h3 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
               theme === 'white' ? 'text-gray-900' : 'text-gray-100'
             }`}>
-              {isCurrentPlan(selectedPlan, selectedBillingCycle) ? 
-                `Switch to ${selectedBillingCycle === 'annual' ? 'Annual' : 'Monthly'} Billing` :
-                `Upgrade to ${PRICING_PLANS[selectedPlan as keyof typeof PRICING_PLANS]?.name}`
-              }
+              {(() => {
+                // Check if this is a downgrade
+                const currentPlan = subscription?.plan?.id;
+                const currentBillingCycle = subscription?.billing_cycle;
+                const currentPlanPrice = currentPlan && currentBillingCycle ? (getPlan(currentPlan, currentBillingCycle)?.currentPricing.price || 0) : 0;
+                const newPlanPrice = getPlan(selectedPlan, selectedBillingCycle)?.currentPricing.price || 0;
+                const isDowngrade = currentPlan && currentBillingCycle && 
+                  (selectedPlan !== currentPlan || selectedBillingCycle !== currentBillingCycle) &&
+                  newPlanPrice < currentPlanPrice;
+
+                if (isCurrentPlan(selectedPlan, selectedBillingCycle)) {
+                  return `Switch to ${selectedBillingCycle === 'annual' ? 'Annual' : 'Monthly'} Billing`;
+                } else if (isDowngrade) {
+                  return `Downgrade to ${PRICING_PLANS[selectedPlan as keyof typeof PRICING_PLANS]?.name}`;
+                } else {
+                  return `Upgrade to ${PRICING_PLANS[selectedPlan as keyof typeof PRICING_PLANS]?.name}`;
+                }
+              })()}
             </h3>
             
             <p className={`mb-2 transition-colors duration-300 ${
@@ -946,7 +976,24 @@ export default function EnhancedBillingPage() {
                 onClick={handleCheckout}
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                {isCurrentPlan(selectedPlan, selectedBillingCycle) ? 'Switch Billing Cycle' : 'Continue to Payment'}
+                {(() => {
+                  // Check if this is a downgrade
+                  const currentPlan = subscription?.plan?.id;
+                  const currentBillingCycle = subscription?.billing_cycle;
+                  const currentPlanPrice = currentPlan && currentBillingCycle ? (getPlan(currentPlan, currentBillingCycle)?.currentPricing.price || 0) : 0;
+                  const newPlanPrice = getPlan(selectedPlan, selectedBillingCycle)?.currentPricing.price || 0;
+                  const isDowngrade = currentPlan && currentBillingCycle && 
+                    (selectedPlan !== currentPlan || selectedBillingCycle !== currentBillingCycle) &&
+                    newPlanPrice < currentPlanPrice;
+
+                  if (isCurrentPlan(selectedPlan, selectedBillingCycle)) {
+                    return 'Switch Billing Cycle';
+                  } else if (isDowngrade) {
+                    return 'Downgrade Plan';
+                  } else {
+                    return 'Continue to Payment';
+                  }
+                })()}
               </button>
               <button
                 onClick={() => setShowUpgradeModal(false)}

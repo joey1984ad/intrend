@@ -8,7 +8,9 @@ import {
   createSubscription,
   updateSubscription,
   getSubscriptionByStripeId,
-  createInvoice
+  createInvoice,
+  getInvoiceByStripeId,
+  updateInvoice
 } from '@/lib/db';
 import { getPlan } from '@/lib/stripe';
 
@@ -173,33 +175,70 @@ export async function POST(request: NextRequest) {
 
       if (invoices.data.length > 0) {
         const stripeInvoice = invoices.data[0];
-        await createInvoice({
-          userId: user.id,
-          stripeInvoiceId: stripeInvoice.id,
-          stripeSubscriptionId: subscription.id,
-          amountPaid: stripeInvoice.amount_paid,
-          status: stripeInvoice.status,
-          invoiceNumber: stripeInvoice.number,
-          invoicePdfUrl: stripeInvoice.invoice_pdf,
-          createdAt: new Date(stripeInvoice.created * 1000)
-        });
-        console.log('Created invoice record:', stripeInvoice.id);
+        
+        // Check if invoice already exists in database
+        const existingInvoice = await getInvoiceByStripeId(stripeInvoice.id);
+        
+        if (existingInvoice) {
+          // Update existing invoice
+          await updateInvoice(stripeInvoice.id, {
+            amountPaid: stripeInvoice.amount_paid,
+            status: stripeInvoice.status,
+            invoiceNumber: stripeInvoice.number,
+            invoicePdfUrl: stripeInvoice.invoice_pdf
+          });
+          console.log('Updated existing invoice record:', stripeInvoice.id);
+        } else {
+          // Get the subscription ID from our database
+          const dbSubscription = await getSubscriptionByStripeId(subscription.id);
+          if (!dbSubscription) {
+            console.log('Subscription not found in database, skipping invoice creation');
+            return;
+          }
+          
+          // Create new invoice
+          await createInvoice({
+            userId: user.id,
+            stripeInvoiceId: stripeInvoice.id,
+            subscriptionId: dbSubscription.id,
+            amountPaid: stripeInvoice.amount_paid,
+            status: stripeInvoice.status,
+            invoiceNumber: stripeInvoice.number,
+            invoicePdfUrl: stripeInvoice.invoice_pdf,
+            createdAt: new Date(stripeInvoice.created * 1000)
+          });
+          console.log('Created new invoice record:', stripeInvoice.id);
+        }
       } else {
         // Create a placeholder invoice for trial subscriptions
-        await createInvoice({
-          userId: user.id,
-          stripeInvoiceId: `trial_${subscription.id}`,
-          stripeSubscriptionId: subscription.id,
-          amountPaid: 0,
-          status: 'paid',
-          invoiceNumber: `TRIAL-${Date.now()}`,
-          invoicePdfUrl: null,
-          createdAt: new Date()
-        });
-        console.log('Created trial invoice record');
+        const trialInvoiceId = `trial_${subscription.id}`;
+        const existingTrialInvoice = await getInvoiceByStripeId(trialInvoiceId);
+        
+        if (!existingTrialInvoice) {
+          // Get the subscription ID from our database
+          const dbSubscription = await getSubscriptionByStripeId(subscription.id);
+          if (!dbSubscription) {
+            console.log('Subscription not found in database, skipping trial invoice creation');
+            return;
+          }
+          
+          await createInvoice({
+            userId: user.id,
+            stripeInvoiceId: trialInvoiceId,
+            subscriptionId: dbSubscription.id,
+            amountPaid: 0,
+            status: 'paid',
+            invoiceNumber: `TRIAL-${Date.now()}`,
+            invoicePdfUrl: null,
+            createdAt: new Date()
+          });
+          console.log('Created trial invoice record');
+        } else {
+          console.log('Trial invoice already exists');
+        }
       }
     } catch (invoiceError) {
-      console.log('Failed to create invoice record:', invoiceError);
+      console.log('Failed to create/update invoice record:', invoiceError);
       // Don't fail the whole verification if invoice creation fails
     }
 

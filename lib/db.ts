@@ -385,28 +385,66 @@ export async function createInvoice(invoiceData: {
   stripeInvoiceId: string;
   subscriptionId: number;
   amountPaid: number;
-  currency: string;
   status: string;
-  invoicePdfUrl?: string;
   invoiceNumber?: string;
+  invoicePdfUrl?: string;
+  createdAt: Date;
 }) {
   try {
     const result = await sql`
       INSERT INTO invoices (
-        user_id, stripe_invoice_id, subscription_id, amount_paid, currency,
-        status, invoice_pdf_url, invoice_number
+        user_id, stripe_invoice_id, subscription_id, amount_paid,
+        status, invoice_number, invoice_pdf_url, created_at
       )
       VALUES (
         ${invoiceData.userId}, ${invoiceData.stripeInvoiceId},
         ${invoiceData.subscriptionId}, ${invoiceData.amountPaid},
-        ${invoiceData.currency}, ${invoiceData.status},
-        ${invoiceData.invoicePdfUrl}, ${invoiceData.invoiceNumber}
+        ${invoiceData.status}, ${invoiceData.invoiceNumber},
+        ${invoiceData.invoicePdfUrl}, ${invoiceData.createdAt}
       )
       RETURNING *
     `;
     return result[0];
   } catch (error) {
     console.error('Error creating invoice:', error);
+    throw error;
+  }
+}
+
+export async function getInvoiceByStripeId(stripeInvoiceId: string) {
+  try {
+    const result = await sql`
+      SELECT * FROM invoices 
+      WHERE stripe_invoice_id = ${stripeInvoiceId}
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error('Error getting invoice by Stripe ID:', error);
+    return null;
+  }
+}
+
+export async function updateInvoice(stripeInvoiceId: string, updateData: {
+  amountPaid?: number;
+  status?: string;
+  invoiceNumber?: string;
+  invoicePdfUrl?: string;
+}) {
+  try {
+    const result = await sql`
+      UPDATE invoices 
+      SET 
+        amount_paid = COALESCE(${updateData.amountPaid}, amount_paid),
+        status = COALESCE(${updateData.status}, status),
+        invoice_number = COALESCE(${updateData.invoiceNumber}, invoice_number),
+        invoice_pdf_url = COALESCE(${updateData.invoicePdfUrl}, invoice_pdf_url),
+        updated_at = NOW()
+      WHERE stripe_invoice_id = ${stripeInvoiceId}
+      RETURNING *
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error updating invoice:', error);
     throw error;
   }
 }

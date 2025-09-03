@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
       invoices: invoices.map(invoice => ({
         id: invoice.id,
         stripeInvoiceId: invoice.stripe_invoice_id,
+        subscriptionId: invoice.subscription_id,
         amountPaid: invoice.amount_paid,
-        currency: invoice.currency,
         status: invoice.status,
         invoicePdfUrl: invoice.invoice_pdf_url,
         invoiceNumber: invoice.invoice_number,

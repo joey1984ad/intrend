@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { EyeIcon, EyeSlashIcon, CheckIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import GoogleSignInTest from './GoogleSignInTest';
+import DebugRedirectURI from './DebugRedirectURI';
 import { useSearchParams } from 'next/navigation';
 
   const SignupPage: React.FC = () => {
@@ -182,6 +183,7 @@ import { useSearchParams } from 'next/navigation';
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        <DebugRedirectURI />
         <div className="text-center">
           <div className="mx-auto h-12 w-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
             <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -40,22 +40,13 @@ export const metadata: Metadata = {
     siteName: 'Intrend',
     title: 'Intrend - AI-Powered Facebook Ads Analytics & Management Platform',
     description: 'Transform your Facebook advertising with Intrend\'s AI-powered analytics platform. Get comprehensive insights, creative analysis, and campaign optimization for Meta ads.',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'Intrend - AI-Powered Facebook Ads Analytics Platform',
-      },
-    ],
   },
   twitter: {
-    card: 'summary_large_image',
+    card: 'summary',
     site: '@intrend',
     creator: '@intrend',
     title: 'Intrend - AI-Powered Facebook Ads Analytics & Management Platform',
     description: 'Transform your Facebook advertising with AI-powered analytics. Boost ROAS by up to 40% with intelligent campaign optimization.',
-    images: ['/og-image.png'],
   },
   robots: {
     index: true,

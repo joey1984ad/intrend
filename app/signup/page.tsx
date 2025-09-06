@@ -18,19 +18,10 @@ export const metadata: Metadata = {
     title: 'Sign Up for Intrend - AI-Powered Facebook Ads Analytics',
     description: 'Join thousands of agencies using Intrend to optimize their Meta Ads performance. Start your free trial today.',
     url: 'https://itsintrend.com/signup',
-    images: [
-      {
-        url: '/og-signup.png',
-        width: 1200,
-        height: 630,
-        alt: 'Sign Up for Intrend - AI-Powered Facebook Ads Analytics',
-      },
-    ],
   },
   twitter: {
     title: 'Sign Up for Intrend - AI-Powered Facebook Ads Analytics',
     description: 'Join thousands of agencies using Intrend to optimize their Meta Ads performance. Start your free trial today.',
-    images: ['/og-signup.png'],
   },
   alternates: {
     canonical: 'https://itsintrend.com/signup',

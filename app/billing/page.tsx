@@ -18,19 +18,10 @@ export const metadata: Metadata = {
     title: 'Intrend Billing & Subscription Management',
     description: 'Manage your subscription and unlock advanced Facebook ads analytics features with AI-powered creative analysis.',
     url: 'https://itsintrend.com/billing',
-    images: [
-      {
-        url: '/og-billing.png',
-        width: 1200,
-        height: 630,
-        alt: 'Intrend Billing & Subscription Management',
-      },
-    ],
   },
   twitter: {
     title: 'Intrend Billing & Subscription Management',
     description: 'Manage your subscription and unlock advanced Facebook ads analytics features with AI-powered creative analysis.',
-    images: ['/og-billing.png'],
   },
   alternates: {
     canonical: 'https://itsintrend.com/billing',

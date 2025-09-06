@@ -23,10 +23,19 @@ export const metadata: Metadata = {
     title: 'Intrend - AI-Powered Facebook Ads Analytics & Management Platform',
     description: 'Transform your Facebook advertising with AI-powered analytics. Get comprehensive insights, creative analysis, and campaign optimization for Meta ads.',
     url: 'https://itsintrend.com',
+    images: [
+      {
+        url: '/images/intrend-dashboard-og.png',
+        width: 1200,
+        height: 630,
+        alt: 'Intrend Dashboard - AI-Powered Facebook Ads Analytics Platform',
+      },
+    ],
   },
   twitter: {
     title: 'Intrend - AI-Powered Facebook Ads Analytics Platform',
     description: 'Transform your Facebook advertising with AI-powered analytics. Boost ROAS by up to 40% with intelligent campaign optimization.',
+    images: ['/images/intrend-dashboard-og.png'],
   },
   alternates: {
     canonical: 'https://itsintrend.com',
@@ -72,7 +81,8 @@ export default function Home() {
       "Campaign optimization recommendations",
       "Real-time analytics dashboard",
       "Meta platform integration"
-    ]
+    ],
+    "screenshot": "https://itsintrend.com/images/intrend-dashboard-og.png"
   };
 
   return (

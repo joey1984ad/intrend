@@ -360,11 +360,11 @@ import { useSearchParams } from 'next/navigation';
               />
               <label htmlFor="agreeToTerms" className="ml-2 block text-sm text-white">
                 I agree to the{' '}
-                <a href="#" className="text-blue-300 hover:text-blue-200 underline">
+                <a href="/terms-of-service" className="text-blue-300 hover:text-blue-200 underline" target="_blank" rel="noopener noreferrer">
                   Terms of Service
                 </a>{' '}
                 and{' '}
-                <a href="#" className="text-blue-300 hover:text-blue-200 underline">
+                <a href="/privacy-policy" className="text-blue-300 hover:text-blue-200 underline" target="_blank" rel="noopener noreferrer">
                   Privacy Policy
                 </a>
               </label>

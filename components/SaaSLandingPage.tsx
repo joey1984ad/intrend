@@ -1092,6 +1092,16 @@ const SaaSLandingPage: React.FC = () => {
                 <li><a href="#" className="text-blue-200 hover:text-white transition-colors">Contact</a></li>
               </ul>
             </div>
+            
+            <div>
+              <h3 className="text-white font-semibold mb-4">Legal</h3>
+              <ul className="space-y-2">
+                <li><a href="/terms-of-service" className="text-blue-200 hover:text-white transition-colors">Terms of Service</a></li>
+                <li><a href="/privacy-policy" className="text-blue-200 hover:text-white transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="text-blue-200 hover:text-white transition-colors">Cookie Policy</a></li>
+                <li><a href="#" className="text-blue-200 hover:text-white transition-colors">GDPR Compliance</a></li>
+              </ul>
+            </div>
           </div>
           
           <div className="border-t border-white/10 mt-12 pt-8 text-center">

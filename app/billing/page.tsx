@@ -1,5 +1,3 @@
-'use client'
-
 import React from 'react';
 import EnhancedBillingPage from '@/components/EnhancedBillingPage';
 import type { Metadata } from 'next';

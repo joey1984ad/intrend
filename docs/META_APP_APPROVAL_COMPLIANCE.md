@@ -190,6 +190,8 @@ For compliance-related questions or concerns:
 - **Data Protection Officer**: dpo@intrend.com
 - **Legal Team**: legal@intrend.com
 - **Support**: support@intrend.com
+- **Address**: 6303 Owensmouth Ave, Los Angeles, CA
+- **Phone**: (424) 208-2521
 
 ## Resources
 

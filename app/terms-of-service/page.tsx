@@ -140,8 +140,8 @@ export default function TermsOfService() {
               <div className="bg-gray-100 p-4 rounded-lg">
                 <p className="text-gray-700">
                   <strong>Email:</strong> legal@intrend.com<br />
-                  <strong>Address:</strong> [Your Business Address]<br />
-                  <strong>Phone:</strong> [Your Phone Number]
+                  <strong>Address:</strong> 6303 Owensmouth Ave, Los Angeles, CA<br />
+                  <strong>Phone:</strong> (424) 208-2521
                 </p>
               </div>
             </section>

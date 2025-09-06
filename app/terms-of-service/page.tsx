@@ -1,4 +1,23 @@
 import React from 'react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Terms of Service - Intrend',
+  description: 'Terms of Service for Intrend - AI-powered Facebook Ads analytics and management platform',
+  openGraph: {
+    title: 'Terms of Service - Intrend',
+    description: 'Terms of Service for Intrend - AI-powered Facebook Ads analytics and management platform',
+    url: 'https://itsintrend.com/terms-of-service',
+    siteName: 'Intrend',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Terms of Service - Intrend',
+    description: 'Terms of Service for Intrend - AI-powered Facebook Ads analytics and management platform',
+  },
+};
 
 export default function TermsOfService() {
   return (

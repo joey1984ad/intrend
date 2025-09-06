@@ -1,4 +1,23 @@
 import React from 'react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy - Intrend',
+  description: 'Privacy Policy for Intrend - AI-powered Facebook Ads analytics and management platform. Learn how we protect your data and comply with Meta requirements.',
+  openGraph: {
+    title: 'Privacy Policy - Intrend',
+    description: 'Privacy Policy for Intrend - AI-powered Facebook Ads analytics and management platform. Learn how we protect your data and comply with Meta requirements.',
+    url: 'https://itsintrend.com/privacy-policy',
+    siteName: 'Intrend',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Privacy Policy - Intrend',
+    description: 'Privacy Policy for Intrend - AI-powered Facebook Ads analytics and management platform. Learn how we protect your data and comply with Meta requirements.',
+  },
+};
 
 export default function PrivacyPolicy() {
   return (

@@ -186,10 +186,7 @@ const trackUserConsent = (consent: UserConsent) => {
 
 For compliance-related questions or concerns:
 
-- **Privacy Officer**: privacy@intrend.com
-- **Data Protection Officer**: dpo@intrend.com
-- **Legal Team**: legal@intrend.com
-- **Support**: support@intrend.com
+- **Email**: hello@itsintrend.com
 - **Address**: 6303 Owensmouth Ave, Los Angeles, CA
 - **Phone**: (424) 208-2521
 

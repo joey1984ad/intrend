@@ -213,8 +213,8 @@ export default function PrivacyPolicy() {
               </p>
               <div className="bg-gray-100 p-4 rounded-lg">
                 <p className="text-gray-700">
-                  <strong>Email:</strong> privacy@intrend.com<br />
-                  <strong>Data Protection Officer:</strong> dpo@intrend.com<br />
+                  <strong>Email:</strong> hello@itsintrend.com<br />
+                  <strong>Data Protection Officer:</strong> hello@itsintrend.com<br />
                   <strong>Address:</strong> 6303 Owensmouth Ave, Los Angeles, CA<br />
                   <strong>Phone:</strong> (424) 208-2521
                 </p>

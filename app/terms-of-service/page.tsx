@@ -158,7 +158,7 @@ export default function TermsOfService() {
               </p>
               <div className="bg-gray-100 p-4 rounded-lg">
                 <p className="text-gray-700">
-                  <strong>Email:</strong> legal@intrend.com<br />
+                  <strong>Email:</strong> hello@itsintrend.com<br />
                   <strong>Address:</strong> 6303 Owensmouth Ave, Los Angeles, CA<br />
                   <strong>Phone:</strong> (424) 208-2521
                 </p>
@@ -168,7 +168,7 @@ export default function TermsOfService() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">13. Governing Law</h2>
               <p className="text-gray-700 mb-4">
-                These Terms shall be interpreted and governed by the laws of [Your Jurisdiction], without regard to its conflict of law provisions. Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights.
+                These Terms shall be interpreted and governed by the laws of California, United States, without regard to its conflict of law provisions. Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights.
               </p>
             </section>
           </div>

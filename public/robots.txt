@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Allow: /terms-of-service
+Allow: /privacy-policy
+Allow: /signup
+Allow: /login
+Allow: /pricing-test
+
+Disallow: /dashboard
+Disallow: /billing
+Disallow: /settings
+Disallow: /accounts
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/
+
+# Sitemap
+Sitemap: https://itsintrend.com/sitemap.xml
+
+# Crawl delay
+Crawl-delay: 1

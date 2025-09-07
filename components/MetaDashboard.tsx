@@ -595,6 +595,9 @@ const MetaDashboardRefactored: React.FC = () => {
     setFacebookUserId(userId);
     setFacebookError(''); // Clear any previous errors
     
+    // Show loading state
+    setFacebookError('Connecting to Facebook... Please wait while we fetch your ad accounts.');
+    
     // Save to localStorage for persistence
     localStorage.setItem('facebookAccessToken', accessToken);
     localStorage.setItem('facebookUserId', userId);
@@ -612,6 +615,13 @@ const MetaDashboardRefactored: React.FC = () => {
       
       while (retryCount < maxRetries) {
         try {
+          // Update progress message
+          if (retryCount > 0) {
+            setFacebookError(`Retrying connection... (Attempt ${retryCount + 1}/${maxRetries})`);
+          } else {
+            setFacebookError('Fetching your Facebook ad accounts...');
+          }
+          
           response = await fetch('/api/facebook/auth', {
             method: 'POST',
             headers: {
@@ -649,6 +659,10 @@ const MetaDashboardRefactored: React.FC = () => {
       
       if (data.success && data.adAccounts && data.adAccounts.length > 0) {
         console.log('✅ MetaDashboard: Successfully fetched ad accounts:', data.adAccounts);
+        
+        // Show success message briefly
+        setFacebookError(`✅ Successfully connected! Found ${data.adAccounts.length} ad account(s). You can now manage your ad accounts.`);
+        
         setFacebookAdAccounts(data.adAccounts);
         setSelectedAdAccount(data.adAccounts[0].id);
         
@@ -657,12 +671,16 @@ const MetaDashboardRefactored: React.FC = () => {
         localStorage.setItem('selectedAdAccount', data.adAccounts[0].id);
         
         setIsUsingRealData(true);
-        // Only close modal after successful data fetch
-        setShowConnectModal(false);
         
-        // Store all ad accounts and show account selector first
+        // Store all ad accounts for future use
         setAllAdAccounts(data.adAccounts);
-        setShowAccountSelector(true);
+        
+        // Clear success message and close modal after a brief delay
+        setTimeout(() => {
+          setFacebookError('');
+          setShowConnectModal(false);
+          // Don't automatically show account selector - let user choose when to subscribe
+        }, 2000);
         
         // Fetch initial data after successful connection with a longer delay
         setTimeout(() => {
@@ -960,6 +978,51 @@ const MetaDashboardRefactored: React.FC = () => {
           onRefreshNow={handleRefreshNow}
           perAccountSubscriptions={perAccountSubscriptions}
         />
+
+        {/* Subscribe to Plan Section - Show when user has Facebook accounts but no subscriptions */}
+        {facebookAdAccounts.length > 0 && perAccountSubscriptions.length === 0 && (
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-lg p-6 border border-blue-200">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Ready to Subscribe?
+                  </h2>
+                  <p className="text-gray-600">
+                    You have {facebookAdAccounts.length} Facebook ad account{facebookAdAccounts.length > 1 ? 's' : ''} connected. 
+                    Choose a plan to start managing your ad accounts with advanced analytics.
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-gray-500 mb-1">Available Plans</div>
+                  <div className="text-lg font-semibold text-gray-900">Basic: $10/month</div>
+                  <div className="text-lg font-semibold text-gray-900">Pro: $20/month</div>
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setAllAdAccounts(facebookAdAccounts);
+                    setShowAccountSelector(true);
+                  }}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Choose Plan & Subscribe
+                </button>
+                <button
+                  onClick={() => window.open('/billing', '_blank')}
+                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  View All Plans
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Per-Account Billing Section - Show All Subscriptions */}
         {perAccountSubscriptions.length > 0 && (

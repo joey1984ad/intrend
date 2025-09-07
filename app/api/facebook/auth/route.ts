@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     
     try {
       userResponse = await fetch(`${baseUrl}/me?access_token=${accessToken}`, {
-        signal: AbortSignal.timeout(10000) // 10 second timeout
+        signal: AbortSignal.timeout(6000) // Reduced to 6 second timeout
       });
       
       if (!userResponse.ok) {
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       adAccountsResponse = await fetch(
         `${baseUrl}/me/adaccounts?fields=id,name,account_status,currency,timezone_name&access_token=${accessToken}`,
         {
-          signal: AbortSignal.timeout(15000) // 15 second timeout
+          signal: AbortSignal.timeout(8000) // Reduced to 8 second timeout
         }
       );
       
@@ -98,10 +98,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create per-account Stripe subscriptions for each ad account
+    // Save Facebook session for future use (but don't create subscriptions yet)
     console.log('📝 API: Ad accounts found:', adAccountsData.data?.length || 0);
     if (adAccountsData.data && adAccountsData.data.length > 0) {
-      console.log('📝 API: Creating per-account subscriptions for:', adAccountsData.data.map(acc => acc.name));
+      console.log('📝 API: Saving Facebook session for:', adAccountsData.data.map(acc => acc.name));
       
       try {
         // Get user from email (assuming we have user email from the request)
@@ -109,88 +109,18 @@ export async function POST(request: NextRequest) {
         if (userEmail) {
           const user = await getUserByEmail(userEmail);
           if (user) {
-            // Get or create Stripe customer
-            let stripeCustomer = await getStripeCustomerByUserId(user.id);
-            if (!stripeCustomer) {
-              // Create Stripe customer if doesn't exist
-              const customer = await stripe.customers.create({
-                email: userEmail,
-                name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || userEmail,
-                metadata: {
-                  userId: user.id.toString()
-                }
-              });
-              
-              stripeCustomer = await createStripeCustomer(user.id, customer.id, userEmail);
-            }
-
-            // Create subscriptions for each ad account
-            const subscriptionResults = [];
-            const plan = getPerAccountPlan(planId, billingCycle);
-
-            for (const adAccount of adAccountsData.data) {
-              try {
-                // Create Stripe subscription
-                const stripeSubscription = await stripe.subscriptions.create({
-                  customer: stripeCustomer.stripe_customer_id,
-                  items: [
-                    {
-                      price: plan.currentPricing.stripePriceId,
-                    },
-                  ],
-                  metadata: {
-                    userId: user.id.toString(),
-                    adAccountId: adAccount.id,
-                    adAccountName: adAccount.name,
-                    planId,
-                    billingCycle,
-                    type: 'per_account'
-                  },
-                  expand: ['latest_invoice.payment_intent'],
-                });
-
-                // Save subscription to database
-                const subscription = await createAdAccountSubscription(
-                  user.id,
-                  adAccount.id,
-                  adAccount.name,
-                  stripeSubscription.id,
-                  plan.currentPricing.stripePriceId,
-                  stripeCustomer.stripe_customer_id,
-                  billingCycle,
-                  plan.currentPricing.price * 100 // Convert to cents
-                );
-
-                subscriptionResults.push({
-                  adAccountId: adAccount.id,
-                  adAccountName: adAccount.name,
-                  subscriptionId: subscription.id,
-                  stripeSubscriptionId: stripeSubscription.id,
-                  status: 'created'
-                });
-
-                console.log(`✅ Created subscription for ad account: ${adAccount.name} (${adAccount.id})`);
-              } catch (subscriptionError) {
-                console.error(`❌ Error creating subscription for ad account ${adAccount.id}:`, subscriptionError);
-                subscriptionResults.push({
-                  adAccountId: adAccount.id,
-                  adAccountName: adAccount.name,
-                  status: 'error',
-                  error: subscriptionError instanceof Error ? subscriptionError.message : 'Unknown error'
-                });
-              }
-            }
-
-            console.log('📝 API: Subscription creation results:', subscriptionResults);
+            // Save Facebook session to database for future use
+            await saveFacebookSession(user.id.toString(), accessToken, userId);
+            console.log('✅ API: Facebook session saved for user:', userEmail);
           } else {
             console.log('⚠️ API: User not found for email:', userEmail);
           }
         } else {
-          console.log('⚠️ API: No user email provided, skipping subscription creation');
+          console.log('⚠️ API: No user email provided, skipping session save');
         }
-      } catch (subscriptionError) {
-        console.error('❌ API: Error creating per-account subscriptions:', subscriptionError);
-        // Don't fail the entire request if subscription creation fails
+      } catch (sessionError) {
+        console.error('❌ API: Error saving Facebook session:', sessionError);
+        // Don't fail the entire request if session save fails
       }
     }
 

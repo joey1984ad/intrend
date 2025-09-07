@@ -157,6 +157,8 @@ export default function PerAccountBillingPage() {
     const annualPrice = planId === 'basic' ? 96 : 192;
     const price = billingCycle === 'annual' ? annualPrice : monthlyPrice;
     
+    console.log('Modal pricing:', { planId, planName, billingCycle, monthlyPrice, annualPrice, price });
+    
     // Create a more comprehensive payment modal
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
@@ -248,11 +250,13 @@ export default function PerAccountBillingPage() {
     
     document.body.appendChild(modal);
     
-    // Add global functions
+    // Add global functions with proper scope
     (window as any).updateTotal = () => {
       const checkboxes = modal.querySelectorAll('.account-checkbox:checked');
       const selectedCount = checkboxes.length;
       const totalCost = selectedCount * price;
+      
+      console.log('Updating total:', { selectedCount, price, totalCost });
       
       modal.querySelector('#selected-count').textContent = selectedCount;
       modal.querySelector('#total-cost').textContent = totalCost;
@@ -280,6 +284,9 @@ export default function PerAccountBillingPage() {
       }
       
       try {
+        // Convert plan ID to actual plan ID for Stripe
+        const actualPlanId = planId === 'basic' ? 'per_account_basic' : 'per_account_pro';
+        
         // Create Stripe checkout session for the selected accounts
         const response = await fetch('/api/stripe/create-checkout-session', {
           method: 'POST',
@@ -287,7 +294,7 @@ export default function PerAccountBillingPage() {
           body: JSON.stringify({
             userId: user?.id,
             adAccounts: selectedAccounts,
-            planId,
+            planId: actualPlanId,
             billingCycle,
             userEmail: user?.email,
             type: 'per_account'
@@ -600,7 +607,13 @@ export default function PerAccountBillingPage() {
                     Each Facebook ad account gets its own individual subscription
                   </p>
                   <div className="text-2xl font-bold text-gray-900">
-                    ${Object.values(PER_ACCOUNT_PRICING_PLANS).find(p => p.id === selectedPlan)?.currentPricing?.price || 0}
+                    ${(() => {
+                      const planId = selectedPlan === 'basic' ? 'per_account_basic' : 'per_account_pro';
+                      const plan = Object.values(PER_ACCOUNT_PRICING_PLANS).find(p => p.id === planId);
+                      if (!plan) return 0;
+                      const pricing = billingCycle === 'annual' ? plan.annual : plan.monthly;
+                      return pricing.price;
+                    })()}
                     <span className="text-lg text-gray-600 ml-1">
                       /{billingCycle === 'annual' ? 'year' : 'month'} per account
                     </span>

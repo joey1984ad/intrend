@@ -17,168 +17,67 @@ export default function SimpleBillingPage() {
     setMounted(true);
   }, []);
 
-  // EXACT COPY FROM FRONT PAGE - handlePlanSelection function
+  // Per-Account Plan Selection - Redirect to Facebook connection
   const handlePlanSelection = async (planId: string) => {
-    if (planId === 'free') {
-      window.location.href = '/dashboard';
-      return;
-    }
-
-    const plan = pricingPlans.find(p => p.id === planId);
-    if (!plan) {
-      alert('Plan not found. Please try again.');
-      return;
-    }
-
-    if (plan.price !== 'FREE' && plan.stripePriceId === 'free') {
-      alert('This plan is not available for online purchase. Please contact sales for more information.');
-      return;
-    }
-
-    // Check if user is logged in
-    if (!email || !email.trim() || !email.includes('@')) {
-      // User is not logged in, redirect to signup with checkout intent
-      const checkoutIntent = {
-        planId,
-        billingCycle: billingCycle || 'monthly',
-        successUrl: `${window.location.origin}/billing?success=true&plan=${planId}`,
-        cancelUrl: `${window.location.origin}/billing?canceled=true`,
-        timestamp: Date.now()
-      };
-      
-      const encodedIntent = btoa(JSON.stringify(checkoutIntent));
-      window.location.href = `/signup?checkout=${encodedIntent}`;
-      return;
-    }
-
-    setSelectedPlan(planId);
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          planId,
-          billingCycle: billingCycle || 'monthly',
-          customerEmail: email,
-          successUrl: `${window.location.origin}/billing?success=true&plan=${planId}`,
-          cancelUrl: `${window.location.origin}/billing?canceled=true`,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        if (data.url) {
-          window.location.href = data.url;
-        } else if (data.redirectUrl) {
-          window.location.href = data.redirectUrl;
-        } else if (data.development) {
-          // Development mode: simulate successful subscription
-          alert('Development mode: Subscription simulated successfully! In production, this would redirect to Stripe checkout.');
-          window.location.href = '/dashboard';
-        } else if (data.sessionId) {
-          // Production mode: verify subscription with backend
-          try {
-            const verifyResponse = await fetch('/api/subscription/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ sessionId: data.sessionId })
-            });
-            
-            const verifyData = await verifyResponse.json();
-            
-            if (verifyData.success) {
-              alert(`Successfully upgraded to ${verifyData.planTier} plan!`);
-              window.location.href = '/dashboard';
-            } else {
-              console.error('Subscription verification failed:', verifyData.error);
-              alert('Payment successful but subscription verification failed. Please refresh the page.');
-            }
-          } catch (error) {
-            console.error('Error verifying subscription:', error);
-            alert('Payment successful but verification failed. Please refresh the page.');
-          }
-        }
-      } else if (data.requiresSignup) {
-        // User needs to sign up first
-        window.location.href = data.redirectUrl;
-      } else {
-        console.error('Failed to create checkout session:', data.error);
-        alert(data.error || 'Failed to start checkout process. Please try again.');
-      }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      alert('An error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    // For per-account plans, redirect to dashboard to connect Facebook accounts
+    // The actual subscription will be created after Facebook connection
+    const checkoutIntent = {
+      planId,
+      billingCycle: billingCycle || 'monthly',
+      type: 'per_account',
+      successUrl: `${window.location.origin}/dashboard?plan=${planId}&billing=${billingCycle}`,
+      cancelUrl: `${window.location.origin}/billing?canceled=true`,
+      timestamp: Date.now()
+    };
+    
+    const encodedIntent = btoa(JSON.stringify(checkoutIntent));
+    
+    // Redirect to dashboard with plan intent
+    window.location.href = `/dashboard?plan=${encodedIntent}`;
   };
 
-  // EXACT COPY FROM FRONT PAGE - pricingPlans array
+  // Per-Account Pricing Plans - Each Facebook ad account gets its own subscription
   const pricingPlans = [
     {
-      id: 'free',
-      name: 'Free',
-      price: 'FREE',
-      period: '',
-      description: 'Perfect for small agencies and businesses',
+      id: 'per_account_basic',
+      name: 'Per Account Basic',
+      price: billingCycle === 'monthly' ? '$10' : '$96',
+      period: billingCycle === 'monthly' ? '/month per account' : '/year per account',
+      description: 'Basic analytics and management for each Facebook ad account',
       features: [
-        'Up to 3 ad accounts',
-        'Basic performance dashboard',
+        'Basic analytics per account',
+        'Campaign management',
         'Creative gallery access',
         'Email support',
-        '7-day data retention',
-        'Basic reporting'
-      ],
-      popular: false,
-      stripePriceId: process.env.NEXT_PUBLIC_STRIPE_FREE_PRICE_ID || 'free'
-    },
-    {
-      id: 'startup',
-      name: 'Startup',
-      price: billingCycle === 'monthly' ? '$10' : '$96',
-      period: billingCycle === 'monthly' ? '/month' : '/year',
-      description: 'Ideal for growing agencies and businesses',
-      features: [
-        'Up to 10 ad accounts',
-        'Advanced analytics & insights',
-        'AI creative analysis',
-        'Priority support',
-        '30-day data retention',
-        'Custom reporting',
-        'Campaign optimization tips'
+        'Account-specific insights',
+        'Individual account billing'
       ],
       popular: true,
-      stripePriceId: process.env.NEXT_PUBLIC_STRIPE_STARTUP_PRICE_ID || 'price_startup_monthly'
+      stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PER_ACCOUNT_BASIC_PRICE_ID || 'price_per_account_basic_monthly'
     },
     {
-      id: 'pro',
-      name: 'Pro',
+      id: 'per_account_pro',
+      name: 'Per Account Pro',
       price: billingCycle === 'monthly' ? '$20' : '$192',
-      period: billingCycle === 'monthly' ? '/month' : '/year',
-      description: 'For large agencies and enterprise clients',
+      period: billingCycle === 'monthly' ? '/month per account' : '/year per account',
+      description: 'Advanced analytics and AI insights for each Facebook ad account',
       features: [
-        'Unlimited ad accounts',
-        'Full API access',
-        'White-label solutions',
-        'Dedicated account manager',
-        '90-day data retention',
-        'Custom integrations',
-        'Advanced AI insights'
+        'Advanced analytics per account',
+        'AI-powered insights',
+        'Custom reporting',
+        'Priority support',
+        'API access',
+        'Account-specific optimizations',
+        'Individual account billing'
       ],
       popular: false,
-      stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || 'price_pro_monthly'
+      stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PER_ACCOUNT_PRO_PRICE_ID || 'price_per_account_pro_monthly'
     }
   ];
 
   const getButtonText = (plan: any) => {
-    if (plan.price === 'FREE') return 'Get Started Free';
     if (!isStripeConfigured) return 'Contact Sales';
-    return 'Choose Plan';
+    return 'Connect Facebook Accounts';
   };
 
   const isPlanDisabled = (plan: any) => {
@@ -211,10 +110,10 @@ export default function SimpleBillingPage() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            Billing & Subscription
+            Per-Account Subscription Plans
           </h1>
           <p className="text-lg text-gray-600">
-            Choose the perfect plan for your business needs
+            Pay only for the Facebook ad accounts you want to manage. Each account gets its own subscription.
           </p>
         </div>
 

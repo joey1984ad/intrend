@@ -11,6 +11,7 @@ interface AccountSummaryProps {
   facebookAccessToken: string;
   setShowConnectModal: (show: boolean) => void;
   isLoadingFacebookData: boolean;
+  isRestoringSession?: boolean;
   selectedDateRange: string;
   setSelectedDateRange: (range: string) => void;
   setCompareMode: (mode: boolean) => void;
@@ -22,6 +23,7 @@ interface AccountSummaryProps {
   cacheTtlHours?: number;
   setCacheTtlHours?: (hours: number) => void;
   onRefreshNow?: () => void;
+  perAccountSubscriptions?: any[];
 }
 
 const AccountSummary: React.FC<AccountSummaryProps> = ({
@@ -31,6 +33,7 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
   facebookAccessToken,
   setShowConnectModal,
   isLoadingFacebookData,
+  isRestoringSession = false,
   selectedDateRange,
   setSelectedDateRange,
   setCompareMode,
@@ -41,7 +44,8 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
   setSelectedAdAccount,
   cacheTtlHours = 6,
   setCacheTtlHours,
-  onRefreshNow
+  onRefreshNow,
+  perAccountSubscriptions = []
 }) => {
   const { theme } = useDashboardTheme();
   return (
@@ -107,13 +111,19 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
             </p>
             
             {/* Status Indicators */}
-            {isUsingRealData && (
+            {isRestoringSession && (
+              <div className="flex items-center mt-3">
+                <RefreshCw className="w-4 h-4 text-blue-500 mr-2 animate-spin" />
+                <span className="text-sm text-blue-600 font-medium">Restoring Facebook session...</span>
+              </div>
+            )}
+            {isUsingRealData && !isRestoringSession && (
               <div className="flex items-center mt-3">
                 <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                 <span className="text-sm text-green-600 font-medium">Connected to Facebook - Showing Real Data</span>
               </div>
             )}
-            {!facebookAccessToken && (
+            {!facebookAccessToken && !isRestoringSession && (
               <div className="flex items-center mt-3">
                 <AlertCircle className="w-4 h-4 text-blue-500 mr-2" />
                 <span className="text-sm text-blue-600">Showing sample data - Connect Facebook to see real data</span>
@@ -138,6 +148,16 @@ const AccountSummary: React.FC<AccountSummaryProps> = ({
               <div className="flex items-center mt-3">
                 <AlertCircle className="w-4 h-4 text-red-500 mr-2" />
                 <span className="text-sm text-red-600">{facebookError}</span>
+              </div>
+            )}
+            
+            {/* Billing Status */}
+            {perAccountSubscriptions.length > 0 && (
+              <div className="flex items-center mt-3">
+                <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                <span className="text-sm text-green-600 font-medium">
+                  Per-Account Billing Active - {perAccountSubscriptions.length} subscription{perAccountSubscriptions.length !== 1 ? 's' : ''}
+                </span>
               </div>
             )}
           </div>

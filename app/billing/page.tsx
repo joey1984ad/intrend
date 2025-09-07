@@ -1,5 +1,5 @@
 import React from 'react';
-import EnhancedBillingPage from '@/components/EnhancedBillingPage';
+import PerAccountBillingPage from '@/components/PerAccountBillingPage';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -33,5 +33,5 @@ export const metadata: Metadata = {
 }
 
 export default function BillingPage() {
-  return <EnhancedBillingPage />;
+  return <PerAccountBillingPage />;
 }

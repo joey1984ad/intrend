@@ -145,6 +145,65 @@ export const PRICING_PLANS = {
   }
 } as const;
 
+// Per-Account Pricing Plans - Each Facebook ad account gets its own subscription
+export const PER_ACCOUNT_PRICING_PLANS = {
+  basic: {
+    id: 'per_account_basic',
+    name: 'Per Account Basic',
+    popular: true,
+    monthly: {
+      price: 10, // $10/month per account
+      priceId: 'price_per_account_basic_monthly',
+      stripePriceId: process.env.STRIPE_PER_ACCOUNT_BASIC_MONTHLY_PRICE_ID || null,
+      billingCycle: 'monthly' as const,
+      hasStripeIntegration: !!process.env.STRIPE_PER_ACCOUNT_BASIC_MONTHLY_PRICE_ID
+    },
+    annual: {
+      price: 96, // $96/year per account (20% discount)
+      priceId: 'price_per_account_basic_annual',
+      stripePriceId: process.env.STRIPE_PER_ACCOUNT_BASIC_ANNUAL_PRICE_ID || null,
+      billingCycle: 'annual' as const,
+      hasStripeIntegration: !!process.env.STRIPE_PER_ACCOUNT_BASIC_ANNUAL_PRICE_ID
+    },
+    features: [
+      'Basic analytics per account',
+      'Campaign management',
+      'Creative gallery access',
+      'Email support',
+      'Account-specific insights'
+    ],
+    description: 'Basic analytics and management for each Facebook ad account'
+  },
+  pro: {
+    id: 'per_account_pro',
+    name: 'Per Account Pro',
+    popular: false,
+    monthly: {
+      price: 20, // $20/month per account
+      priceId: 'price_per_account_pro_monthly',
+      stripePriceId: process.env.STRIPE_PER_ACCOUNT_PRO_MONTHLY_PRICE_ID || null,
+      billingCycle: 'monthly' as const,
+      hasStripeIntegration: !!process.env.STRIPE_PER_ACCOUNT_PRO_MONTHLY_PRICE_ID
+    },
+    annual: {
+      price: 192, // $192/year per account (20% discount)
+      priceId: 'price_per_account_pro_annual',
+      stripePriceId: process.env.STRIPE_PER_ACCOUNT_PRO_ANNUAL_PRICE_ID || null,
+      billingCycle: 'annual' as const,
+      hasStripeIntegration: !!process.env.STRIPE_PER_ACCOUNT_PRO_ANNUAL_PRICE_ID
+    },
+    features: [
+      'Advanced analytics per account',
+      'AI-powered insights',
+      'Custom reporting',
+      'Priority support',
+      'API access',
+      'Account-specific optimizations'
+    ],
+    description: 'Advanced analytics and management for each Facebook ad account'
+  }
+} as const;
+
 // Type definitions for better TypeScript support
 type PricingPlan = typeof PRICING_PLANS[keyof typeof PRICING_PLANS];
 type BillingCycle = 'monthly' | 'annual';
@@ -170,4 +229,34 @@ export const getPlansByBillingCycle = (billingCycle: BillingCycle) => {
     savings: billingCycle === 'annual' ? 
       Math.round(((plan.monthly.price * 12 - plan.annual.price) / (plan.monthly.price * 12)) * 100) : 0
   }));
+};
+
+// Helper functions for per-account pricing
+export const getPerAccountPlan = (planId: string, billingCycle: BillingCycle) => {
+  const plan = PER_ACCOUNT_PRICING_PLANS[planId as keyof typeof PER_ACCOUNT_PRICING_PLANS];
+  if (!plan) return null;
+  
+  return {
+    ...plan,
+    currentPricing: plan[billingCycle],
+    savings: billingCycle === 'annual' ? 
+      Math.round(((plan.monthly.price * 12 - plan.annual.price) / (plan.monthly.price * 12)) * 100) : 0
+  };
+};
+
+export const getPerAccountPlansByBillingCycle = (billingCycle: BillingCycle) => {
+  return Object.entries(PER_ACCOUNT_PRICING_PLANS).map(([planId, plan]) => ({
+    ...plan,
+    currentPricing: plan[billingCycle],
+    savings: billingCycle === 'annual' ? 
+      Math.round(((plan.monthly.price * 12 - plan.annual.price) / (plan.monthly.price * 12)) * 100) : 0
+  }));
+};
+
+// Helper function to calculate total cost for multiple ad accounts
+export const calculatePerAccountTotal = (accountCount: number, planId: string, billingCycle: BillingCycle) => {
+  const plan = getPerAccountPlan(planId, billingCycle);
+  if (!plan) return 0;
+  
+  return plan.currentPricing.price * accountCount;
 };

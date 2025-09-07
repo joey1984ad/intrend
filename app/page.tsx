@@ -1,7 +1,5 @@
 import SaaSLandingPage from '../components/SaaSLandingPage'
-import MetaDashboard from '../components/MetaDashboard'
 import { DashboardThemeProvider } from '../contexts/DashboardThemeContext'
-import { useState } from 'react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {

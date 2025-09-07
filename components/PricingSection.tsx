@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, Star } from 'lucide-react';
-import { PRICING_PLANS } from '@/lib/stripe';
+import { PER_ACCOUNT_PRICING_PLANS } from '@/lib/stripe';
 import { useStripeIntegration } from '@/hooks/useStripeIntegration';
 
 interface PricingSectionProps {
@@ -52,9 +52,9 @@ const PricingSection: React.FC<PricingSectionProps> = ({
 
   const getPlanPeriod = (plan: any) => {
     if (billingCycle === 'annual') {
-      return plan.annual.price === 0 ? '' : '/year';
+      return plan.annual.price === 0 ? '' : '/year per account';
     } else {
-      return plan.monthly.price === 0 ? '' : '/month';
+      return plan.monthly.price === 0 ? '' : '/month per account';
     }
   };
 
@@ -63,15 +63,8 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       return 'Current Plan';
     }
     
-    if (billingCycle === 'annual') {
-      if (plan.annual.price === 0) return 'Get Started Free';
-      if (plan.annual.price > 0 && !isStripeConfigured) return 'Contact Sales';
-    } else {
-      if (plan.monthly.price === 0) return 'Get Started Free';
-      if (plan.monthly.price > 0 && !isStripeConfigured) return 'Contact Sales';
-    }
-    
-    return 'Choose Plan';
+    if (!isStripeConfigured) return 'Contact Sales';
+    return 'Connect Facebook Accounts';
   };
 
   const isPlanDisabled = (plan: any) => {
@@ -141,7 +134,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
 
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {Object.entries(PRICING_PLANS).map(([planId, plan]) => (
+        {Object.entries(PER_ACCOUNT_PRICING_PLANS).map(([planId, plan]) => (
           <div
             key={planId}
             className={`relative rounded-3xl p-8 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${

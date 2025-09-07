@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { saveFacebookSession, createAdAccountSubscription, getUserByEmail, getStripeCustomerByUserId, createStripeCustomer } from '@/lib/db';
+import { stripe } from '@/lib/stripe';
+import { getPerAccountPlan } from '@/lib/stripe';
 
 export async function POST(request: NextRequest) {
   console.log('🟡 API: /api/facebook/auth called');
@@ -6,7 +9,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('🟡 API: Request body keys:', Object.keys(body));
     
-    const { accessToken } = body;
+    const { accessToken, userEmail, planId = 'basic', billingCycle = 'monthly', adAccounts } = body;
 
     if (!accessToken) {
       console.log('❌ API: No access token provided');
@@ -14,6 +17,12 @@ export async function POST(request: NextRequest) {
         { error: 'Access token is required' },
         { status: 400 }
       );
+    }
+
+    // If adAccounts are provided directly, skip Facebook API calls and go straight to subscription creation
+    if (adAccounts && Array.isArray(adAccounts)) {
+      console.log('📝 API: Creating subscriptions for provided ad accounts:', adAccounts.length);
+      return await createSubscriptionsForAccounts(adAccounts, userEmail, planId, billingCycle);
     }
 
     console.log('🔍 API: Received access token length:', accessToken.length);
@@ -89,6 +98,102 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Create per-account Stripe subscriptions for each ad account
+    console.log('📝 API: Ad accounts found:', adAccountsData.data?.length || 0);
+    if (adAccountsData.data && adAccountsData.data.length > 0) {
+      console.log('📝 API: Creating per-account subscriptions for:', adAccountsData.data.map(acc => acc.name));
+      
+      try {
+        // Get user from email (assuming we have user email from the request)
+        const { userEmail } = body;
+        if (userEmail) {
+          const user = await getUserByEmail(userEmail);
+          if (user) {
+            // Get or create Stripe customer
+            let stripeCustomer = await getStripeCustomerByUserId(user.id);
+            if (!stripeCustomer) {
+              // Create Stripe customer if doesn't exist
+              const customer = await stripe.customers.create({
+                email: userEmail,
+                name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || userEmail,
+                metadata: {
+                  userId: user.id.toString()
+                }
+              });
+              
+              stripeCustomer = await createStripeCustomer(user.id, customer.id, userEmail);
+            }
+
+            // Create subscriptions for each ad account
+            const subscriptionResults = [];
+            const plan = getPerAccountPlan(planId, billingCycle);
+
+            for (const adAccount of adAccountsData.data) {
+              try {
+                // Create Stripe subscription
+                const stripeSubscription = await stripe.subscriptions.create({
+                  customer: stripeCustomer.stripe_customer_id,
+                  items: [
+                    {
+                      price: plan.currentPricing.stripePriceId,
+                    },
+                  ],
+                  metadata: {
+                    userId: user.id.toString(),
+                    adAccountId: adAccount.id,
+                    adAccountName: adAccount.name,
+                    planId,
+                    billingCycle,
+                    type: 'per_account'
+                  },
+                  expand: ['latest_invoice.payment_intent'],
+                });
+
+                // Save subscription to database
+                const subscription = await createAdAccountSubscription(
+                  user.id,
+                  adAccount.id,
+                  adAccount.name,
+                  stripeSubscription.id,
+                  plan.currentPricing.stripePriceId,
+                  stripeCustomer.stripe_customer_id,
+                  billingCycle,
+                  plan.currentPricing.price * 100 // Convert to cents
+                );
+
+                subscriptionResults.push({
+                  adAccountId: adAccount.id,
+                  adAccountName: adAccount.name,
+                  subscriptionId: subscription.id,
+                  stripeSubscriptionId: stripeSubscription.id,
+                  status: 'created'
+                });
+
+                console.log(`✅ Created subscription for ad account: ${adAccount.name} (${adAccount.id})`);
+              } catch (subscriptionError) {
+                console.error(`❌ Error creating subscription for ad account ${adAccount.id}:`, subscriptionError);
+                subscriptionResults.push({
+                  adAccountId: adAccount.id,
+                  adAccountName: adAccount.name,
+                  status: 'error',
+                  error: subscriptionError instanceof Error ? subscriptionError.message : 'Unknown error'
+                });
+              }
+            }
+
+            console.log('📝 API: Subscription creation results:', subscriptionResults);
+          } else {
+            console.log('⚠️ API: User not found for email:', userEmail);
+          }
+        } else {
+          console.log('⚠️ API: No user email provided, skipping subscription creation');
+        }
+      } catch (subscriptionError) {
+        console.error('❌ API: Error creating per-account subscriptions:', subscriptionError);
+        // Don't fail the entire request if subscription creation fails
+      }
+    }
+
     console.log('✅ API: Successfully processed request, returning response');
     return NextResponse.json({
       success: true,
@@ -109,6 +214,124 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { error: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+
+// Helper function to create subscriptions for provided ad accounts
+async function createSubscriptionsForAccounts(adAccounts: any[], userEmail: string, planId: string, billingCycle: string) {
+  try {
+    if (!userEmail) {
+      return NextResponse.json(
+        { error: 'User email is required for subscription creation' },
+        { status: 400 }
+      );
+    }
+
+    const user = await getUserByEmail(userEmail);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get or create Stripe customer
+    let stripeCustomer = await getStripeCustomerByUserId(user.id);
+    if (!stripeCustomer) {
+      const customer = await stripe.customers.create({
+        email: userEmail,
+        name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || userEmail,
+        metadata: {
+          userId: user.id.toString()
+        }
+      });
+      
+      stripeCustomer = await createStripeCustomer(user.id, customer.id, userEmail);
+    }
+
+    // Get plan details
+    const plan = getPerAccountPlan(planId, billingCycle);
+    if (!plan || !plan.currentPricing.stripePriceId) {
+      return NextResponse.json(
+        { error: 'Invalid plan or Stripe price ID not configured' },
+        { status: 400 }
+      );
+    }
+
+    // Create subscriptions for each ad account
+    const subscriptionResults = [];
+    const errors = [];
+
+    for (const adAccount of adAccounts) {
+      try {
+        // Create Stripe subscription
+        const stripeSubscription = await stripe.subscriptions.create({
+          customer: stripeCustomer.stripe_customer_id,
+          items: [
+            {
+              price: plan.currentPricing.stripePriceId,
+            },
+          ],
+          metadata: {
+            userId: user.id.toString(),
+            adAccountId: adAccount.id,
+            adAccountName: adAccount.name,
+            planId,
+            billingCycle,
+            type: 'per_account'
+          },
+          expand: ['latest_invoice.payment_intent'],
+        });
+
+        // Save subscription to database
+        const subscription = await createAdAccountSubscription(
+          user.id,
+          adAccount.id,
+          adAccount.name,
+          stripeSubscription.id,
+          plan.currentPricing.stripePriceId,
+          stripeCustomer.stripe_customer_id,
+          billingCycle,
+          plan.currentPricing.price * 100 // Convert to cents
+        );
+
+        subscriptionResults.push({
+          adAccountId: adAccount.id,
+          adAccountName: adAccount.name,
+          subscriptionId: subscription.id,
+          stripeSubscriptionId: stripeSubscription.id,
+          status: 'created'
+        });
+
+        console.log(`✅ Created subscription for ad account: ${adAccount.name} (${adAccount.id})`);
+      } catch (subscriptionError) {
+        console.error(`❌ Error creating subscription for ad account ${adAccount.id}:`, subscriptionError);
+        errors.push({
+          adAccountId: adAccount.id,
+          adAccountName: adAccount.name,
+          error: subscriptionError instanceof Error ? subscriptionError.message : 'Unknown error'
+        });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Created subscriptions for ${adAccounts.length} ad accounts`,
+      subscriptionResults,
+      errors,
+      summary: {
+        total: adAccounts.length,
+        created: subscriptionResults.length,
+        errors: errors.length
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ API: Error creating subscriptions for accounts:', error);
+    return NextResponse.json(
+      { error: 'Failed to create subscriptions' },
       { status: 500 }
     );
   }

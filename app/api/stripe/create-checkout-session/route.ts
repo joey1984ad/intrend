@@ -33,9 +33,9 @@ async function createProrationCoupon(amountOff: number) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { planId, billingCycle, customerEmail, successUrl, cancelUrl } = await request.json();
+    const { planId, billingCycle, customerEmail, successUrl, cancelUrl, adAccounts, userId: requestUserId, userEmail, type } = await request.json();
     
-    console.log('Checkout session request:', { planId, billingCycle, customerEmail, successUrl, cancelUrl });
+    console.log('Checkout session request:', { planId, billingCycle, customerEmail, successUrl, cancelUrl, adAccounts, userId: requestUserId, userEmail, type });
 
     // Validate billing cycle
     if (!billingCycle || !['monthly', 'annual'].includes(billingCycle)) {
@@ -45,7 +45,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get plan details
+    // Handle per-account subscriptions
+    if (type === 'per_account' && adAccounts && adAccounts.length > 0) {
+      return await handlePerAccountCheckout(planId, billingCycle, adAccounts, requestUserId, userEmail, successUrl, cancelUrl);
+    }
+
+    // Get plan details for traditional subscriptions
     const plan = getPlan(planId, billingCycle as 'monthly' | 'annual');
     console.log('Plan lookup result:', { planId, billingCycle, plan: plan ? { id: plan.id, name: plan.name, price: plan.currentPricing.price } : null });
     
@@ -309,6 +314,111 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { error: 'Failed to create checkout session' },
+      { status: 500 }
+    );
+  }
+}
+
+// Handle per-account subscription checkout
+async function handlePerAccountCheckout(planId: string, billingCycle: string, adAccounts: any[], userId: number, userEmail: string, successUrl: string, cancelUrl: string) {
+  try {
+    console.log('Creating per-account checkout session:', { planId, billingCycle, adAccounts, userId, userEmail });
+
+    // Get user and create Stripe customer if needed
+    let user = await getUserByEmail(userEmail);
+    if (!user) {
+      user = await createUser(userEmail);
+    }
+
+    let stripeCustomer = await createStripeCustomer(user.id, userEmail, '');
+    if (!stripeCustomer) {
+      return NextResponse.json(
+        { error: 'Failed to create Stripe customer' },
+        { status: 500 }
+      );
+    }
+
+    // Get per-account plan details
+    const { PER_ACCOUNT_PRICING_PLANS, getPerAccountPlan } = await import('@/lib/stripe');
+    const plan = getPerAccountPlan(planId, billingCycle as 'monthly' | 'annual');
+    
+    if (!plan) {
+      return NextResponse.json(
+        { error: 'Invalid per-account plan selected' },
+        { status: 400 }
+      );
+    }
+
+    // Calculate total cost
+    const totalCost = adAccounts.length * plan.currentPricing.price;
+    const totalCostCents = Math.round(totalCost * 100);
+
+    // Create Stripe checkout session
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe is not configured' },
+        { status: 500 }
+      );
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      customer: stripeCustomer.stripe_customer_id,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `${plan.name} Plan - ${adAccounts.length} Ad Account${adAccounts.length > 1 ? 's' : ''}`,
+              description: `Per-account subscription for ${adAccounts.length} Facebook ad account${adAccounts.length > 1 ? 's' : ''}`,
+            },
+            unit_amount: totalCostCents,
+            recurring: {
+              interval: billingCycle === 'annual' ? 'year' : 'month',
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: successUrl || `${process.env.NEXT_PUBLIC_APP_URL}/billing?success=true`,
+      cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}/billing?canceled=true`,
+      metadata: {
+        userId: userId.toString(),
+        planId,
+        billingCycle,
+        type: 'per_account',
+        adAccountCount: adAccounts.length.toString(),
+        adAccountIds: adAccounts.map(acc => acc.id).join(','),
+        adAccountNames: adAccounts.map(acc => acc.name).join(',')
+      },
+      subscription_data: {
+        metadata: {
+          userId: userId.toString(),
+          planId,
+          billingCycle,
+          type: 'per_account',
+          adAccountCount: adAccounts.length.toString(),
+          adAccountIds: adAccounts.map(acc => acc.id).join(','),
+          adAccountNames: adAccounts.map(acc => acc.name).join(',')
+        }
+      }
+    });
+
+    console.log('Per-account checkout session created:', session.id);
+
+    return NextResponse.json({
+      url: session.url,
+      sessionId: session.id,
+      totalCost: totalCost,
+      adAccountCount: adAccounts.length,
+      planName: plan.name
+    });
+
+  } catch (error) {
+    console.error('Per-account checkout error:', error);
+    return NextResponse.json(
+      { error: 'Failed to create per-account checkout session' },
       { status: 500 }
     );
   }

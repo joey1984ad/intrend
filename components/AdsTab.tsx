@@ -32,7 +32,7 @@ const AdsTab: React.FC<AdsTabProps> = ({
 
   const filteredData = adsData.filter(ad =>
     ad.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ad.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (typeof ad.status === 'string' ? ad.status.toLowerCase() : '').includes(searchTerm.toLowerCase()) ||
     ad.adSet.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ad.impressions.toString().includes(searchTerm) ||
     ad.clicks.toString().includes(searchTerm) ||

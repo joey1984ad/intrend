@@ -32,8 +32,8 @@ const DemographicsTab: React.FC<DemographicsTabProps> = ({
   const { theme } = useDashboardTheme();
 
   const filteredData = demographicsData.filter(demo =>
-    demo.age.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    demo.gender.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (typeof demo.age === 'string' ? demo.age.toLowerCase() : '').includes(searchTerm.toLowerCase()) ||
+    (typeof demo.gender === 'string' ? demo.gender.toLowerCase() : '').includes(searchTerm.toLowerCase()) ||
     demo.impressions.toString().includes(searchTerm) ||
     demo.clicks.toString().includes(searchTerm) ||
     demo.spend.toString().includes(searchTerm) ||

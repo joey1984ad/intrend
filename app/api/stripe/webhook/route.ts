@@ -10,7 +10,9 @@ import {
   createStripeCustomer,
   getStripeCustomerByUserId,
   getSubscriptionByStripeId,
-  updateUserPlan
+  updateUserPlan,
+  updateAdAccountSubscriptionStatus,
+  addPerAccountBillingHistory
 } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
@@ -119,29 +121,44 @@ async function handleSubscriptionCreated(subscription: any) {
       stripeCustomer = await createStripeCustomer(user.id, subscription.customer, customerEmail);
     }
 
-    // Create subscription in database
-    await createSubscription({
-      userId: user.id,
-      stripeSubscriptionId: subscription.id,
-      stripeCustomerId: subscription.customer,
-      planId: subscription.metadata.planId || 'unknown',
-      planName: subscription.metadata.planName || 'Unknown Plan',
-      billingCycle: subscription.metadata.billingCycle || 'monthly',
-      status: subscription.status,
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : undefined
-    });
+    // Check if this is a per-account subscription
+    if (subscription.metadata?.type === 'per_account') {
+      console.log('Handling per-account subscription creation');
+      
+      // Update per-account subscription status
+      await updateAdAccountSubscriptionStatus(
+        parseInt(subscription.metadata.subscriptionId || '0'),
+        subscription.status,
+        new Date(subscription.current_period_start * 1000),
+        new Date(subscription.current_period_end * 1000)
+      );
 
-    // Update user's plan in the users table
-    await updateUserPlan(user.id, {
-      planId: subscription.metadata.planId || 'unknown',
-      planName: subscription.metadata.planName || 'Unknown Plan',
-      billingCycle: subscription.metadata.billingCycle || 'monthly',
-      status: subscription.status
-    });
+      console.log('Per-account subscription status updated');
+    } else {
+      // Handle regular subscription
+      await createSubscription({
+        userId: user.id,
+        stripeSubscriptionId: subscription.id,
+        stripeCustomerId: subscription.customer,
+        planId: subscription.metadata.planId || 'unknown',
+        planName: subscription.metadata.planName || 'Unknown Plan',
+        billingCycle: subscription.metadata.billingCycle || 'monthly',
+        status: subscription.status,
+        currentPeriodStart: new Date(subscription.current_period_start * 1000),
+        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : undefined
+      });
 
-    console.log('Subscription created successfully in database and user plan updated');
+      // Update user's plan in the users table
+      await updateUserPlan(user.id, {
+        planId: subscription.metadata.planId || 'unknown',
+        planName: subscription.metadata.planName || 'Unknown Plan',
+        billingCycle: subscription.metadata.billingCycle || 'monthly',
+        status: subscription.status
+      });
+
+      console.log('Regular subscription created successfully in database and user plan updated');
+    }
   } catch (error) {
     console.error('Error handling subscription created:', error);
   }
@@ -241,19 +258,39 @@ async function handlePaymentSucceeded(invoice: any) {
       if (customerEmail) {
         const user = await getUserByEmail(customerEmail);
         if (user) {
-          // Create invoice record
-          await createInvoice({
-            userId: user.id,
-            stripeInvoiceId: invoice.id,
-            subscriptionId: parseInt(invoice.subscription),
-            amountPaid: invoice.amount_paid,
-            status: invoice.status,
-            invoicePdfUrl: invoice.invoice_pdf,
-            invoiceNumber: invoice.number,
-            createdAt: new Date(invoice.created * 1000)
-          });
+          // Check if this is a per-account subscription
+          if (subscription.metadata?.type === 'per_account') {
+            console.log('Handling per-account payment succeeded');
+            
+            // Add to per-account billing history
+            await addPerAccountBillingHistory(
+              parseInt(subscription.metadata.subscriptionId || '0'),
+              user.id,
+              subscription.metadata.adAccountId || 'unknown',
+              invoice.id,
+              invoice.amount_paid,
+              new Date(subscription.current_period_start * 1000),
+              new Date(subscription.current_period_end * 1000),
+              'paid',
+              new Date(invoice.created * 1000)
+            );
 
-          console.log('Invoice created successfully in database');
+            console.log('Per-account billing history added');
+          } else {
+            // Handle regular invoice
+            await createInvoice({
+              userId: user.id,
+              stripeInvoiceId: invoice.id,
+              subscriptionId: parseInt(invoice.subscription),
+              amountPaid: invoice.amount_paid,
+              status: invoice.status,
+              invoicePdfUrl: invoice.invoice_pdf,
+              invoiceNumber: invoice.number,
+              createdAt: new Date(invoice.created * 1000)
+            });
+
+            console.log('Regular invoice created successfully in database');
+          }
         }
       }
     }

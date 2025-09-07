@@ -14,15 +14,22 @@ import AdsTab from './AdsTab';
 import DemographicsTab from './DemographicsTab';
 import AdsLibraryTab from './AdsLibraryTab';
 import AdAccountManager from './AdAccountManager';
+import PerAccountBillingManager from './PerAccountBillingManager';
+import PerAccountPlanSelector from './PerAccountPlanSelector';
+import AdAccountSelector from './AdAccountSelector';
 import Modals from './Modals';
 import InsightsGraph from './InsightsGraph';
 import DashboardThemeToggle from './DashboardThemeToggle';
 import { useDashboardTheme } from '@/contexts/DashboardThemeContext';
+import { useUser } from '@/contexts/UserContext';
 import { ConnectedAccount, Notification, Metric, Campaign, CreativeData } from './types';
 
 const MetaDashboardRefactored: React.FC = () => {
   // Theme management
   const { theme } = useDashboardTheme();
+  
+  // User context
+  const { user } = useUser();
   
   // State management
   const [dateRange, setDateRange] = useState('Last 30 Days');
@@ -58,6 +65,19 @@ const MetaDashboardRefactored: React.FC = () => {
   const [isUsingRealData, setIsUsingRealData] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [cacheTtlHours, setCacheTtlHours] = useState<number>(6);
+  const [isRestoringSession, setIsRestoringSession] = useState(true);
+  
+  // Per-account billing state
+  const [perAccountSubscriptions, setPerAccountSubscriptions] = useState<any[]>([]);
+  const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(false);
+  
+  // Plan selection state
+  const [showPlanSelector, setShowPlanSelector] = useState(false);
+  const [pendingAdAccounts, setPendingAdAccounts] = useState<any[]>([]);
+  
+  // Account selection state
+  const [showAccountSelector, setShowAccountSelector] = useState(false);
+  const [allAdAccounts, setAllAdAccounts] = useState<any[]>([]);
 
   // Dynamic data state for real Facebook data
   const [clicksData, setClicksData] = useState<any[]>([]);
@@ -161,6 +181,92 @@ const MetaDashboardRefactored: React.FC = () => {
   
   const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccount[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  // Restore Facebook session on component mount
+  useEffect(() => {
+    const restoreFacebookSession = async () => {
+      try {
+        console.log('🔄 MetaDashboard: Restoring Facebook session...');
+        
+        // First check localStorage for cached session
+        const cachedToken = localStorage.getItem('facebookAccessToken');
+        const cachedUserId = localStorage.getItem('facebookUserId');
+        const cachedAdAccounts = localStorage.getItem('facebookAdAccounts');
+        const cachedSelectedAccount = localStorage.getItem('selectedAdAccount');
+        
+        if (cachedToken && cachedUserId) {
+          console.log('🔄 MetaDashboard: Found cached Facebook session, validating...');
+          
+          // Validate the token by making a simple API call
+          try {
+            const response = await fetch(`https://graph.facebook.com/v23.0/me?access_token=${cachedToken}`);
+            if (response.ok) {
+              console.log('✅ MetaDashboard: Cached token is valid');
+              setFacebookAccessToken(cachedToken);
+              setFacebookUserId(cachedUserId);
+              
+              if (cachedAdAccounts) {
+                try {
+                  const adAccounts = JSON.parse(cachedAdAccounts);
+                  setFacebookAdAccounts(adAccounts);
+                  console.log('🔄 MetaDashboard: Restored ad accounts:', adAccounts.length);
+                } catch (error) {
+                  console.error('Failed to parse cached ad accounts:', error);
+                }
+              }
+              
+              if (cachedSelectedAccount) {
+                setSelectedAdAccount(cachedSelectedAccount);
+                console.log('🔄 MetaDashboard: Restored selected account:', cachedSelectedAccount);
+              }
+              
+              setIsUsingRealData(true);
+              setIsRestoringSession(false);
+              return;
+            } else {
+              console.log('❌ MetaDashboard: Cached token is invalid, clearing session');
+              // Clear invalid session data
+              localStorage.removeItem('facebookAccessToken');
+              localStorage.removeItem('facebookUserId');
+              localStorage.removeItem('facebookAdAccounts');
+              localStorage.removeItem('selectedAdAccount');
+            }
+          } catch (error) {
+            console.error('❌ MetaDashboard: Error validating cached token:', error);
+            // Clear session data on validation error
+            localStorage.removeItem('facebookAccessToken');
+            localStorage.removeItem('facebookUserId');
+            localStorage.removeItem('facebookAdAccounts');
+            localStorage.removeItem('selectedAdAccount');
+          }
+        }
+        
+        // If no cached session, check with the session API
+        console.log('🔄 MetaDashboard: No cached session, checking session API...');
+        setIsRestoringSession(false);
+        
+      } catch (error) {
+        console.error('❌ MetaDashboard: Error restoring Facebook session:', error);
+        setIsRestoringSession(false);
+      }
+    };
+    
+    restoreFacebookSession();
+  }, []);
+
+  // Save selectedAdAccount to localStorage when it changes
+  useEffect(() => {
+    if (selectedAdAccount) {
+      localStorage.setItem('selectedAdAccount', selectedAdAccount);
+    }
+  }, [selectedAdAccount]);
+
+  // Load per-account subscriptions when user is available
+  useEffect(() => {
+    if (user?.id) {
+      loadPerAccountSubscriptions();
+    }
+  }, [user?.id]);
 
   // Auto-load data when selectedAdAccount changes
   useEffect(() => {
@@ -489,6 +595,10 @@ const MetaDashboardRefactored: React.FC = () => {
     setFacebookUserId(userId);
     setFacebookError(''); // Clear any previous errors
     
+    // Save to localStorage for persistence
+    localStorage.setItem('facebookAccessToken', accessToken);
+    localStorage.setItem('facebookUserId', userId);
+    
     // Add a small delay to ensure the token is properly set
     await new Promise(resolve => setTimeout(resolve, 100));
     
@@ -507,7 +617,10 @@ const MetaDashboardRefactored: React.FC = () => {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ accessToken })
+            body: JSON.stringify({ 
+              accessToken,
+              userEmail: user?.email 
+            })
           });
           
           console.log('🟢 MetaDashboard: API response status:', response.status);
@@ -538,9 +651,18 @@ const MetaDashboardRefactored: React.FC = () => {
         console.log('✅ MetaDashboard: Successfully fetched ad accounts:', data.adAccounts);
         setFacebookAdAccounts(data.adAccounts);
         setSelectedAdAccount(data.adAccounts[0].id);
+        
+        // Save ad accounts and selected account to localStorage
+        localStorage.setItem('facebookAdAccounts', JSON.stringify(data.adAccounts));
+        localStorage.setItem('selectedAdAccount', data.adAccounts[0].id);
+        
         setIsUsingRealData(true);
         // Only close modal after successful data fetch
         setShowConnectModal(false);
+        
+        // Store all ad accounts and show account selector first
+        setAllAdAccounts(data.adAccounts);
+        setShowAccountSelector(true);
         
         // Fetch initial data after successful connection with a longer delay
         setTimeout(() => {
@@ -567,8 +689,104 @@ const MetaDashboardRefactored: React.FC = () => {
   const handleFacebookError = (error: string) => {
     console.error('❌ MetaDashboard: Facebook login error:', error);
     setFacebookError(error);
+    // Clear Facebook session data from localStorage
+    localStorage.removeItem('facebookAccessToken');
+    localStorage.removeItem('facebookUserId');
+    localStorage.removeItem('facebookAdAccounts');
+    localStorage.removeItem('selectedAdAccount');
     // Don't close modal on error - let user retry
     setIsUsingRealData(false);
+  };
+
+  const clearFacebookSession = () => {
+    console.log('🔄 MetaDashboard: Clearing Facebook session...');
+    setFacebookAccessToken('');
+    setFacebookUserId('');
+    setFacebookAdAccounts([]);
+    setSelectedAdAccount('');
+    setIsUsingRealData(false);
+    setFacebookError('');
+    
+    // Clear from localStorage
+    localStorage.removeItem('facebookAccessToken');
+    localStorage.removeItem('facebookUserId');
+    localStorage.removeItem('facebookAdAccounts');
+    localStorage.removeItem('selectedAdAccount');
+  };
+
+  // Load per-account subscriptions
+  const loadPerAccountSubscriptions = async () => {
+    if (!user?.id) return;
+    
+    setIsLoadingSubscriptions(true);
+    try {
+      const response = await fetch(`/api/per-account-subscriptions?userId=${user.id}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setPerAccountSubscriptions(data.subscriptions || []);
+        console.log('📊 MetaDashboard: Loaded per-account subscriptions:', data.subscriptions?.length || 0);
+      }
+    } catch (error) {
+      console.error('❌ MetaDashboard: Error loading per-account subscriptions:', error);
+    } finally {
+      setIsLoadingSubscriptions(false);
+    }
+  };
+
+  // Handle plan selection confirmation
+  const handlePlanSelectionConfirm = async (planId: string, billingCycle: 'monthly' | 'annual') => {
+    console.log('🟢 MetaDashboard: Creating subscriptions with plan:', planId, billingCycle);
+    
+    try {
+      // Create subscriptions for each ad account with the selected plan
+      const response = await fetch('/api/facebook/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          accessToken: facebookAccessToken,
+          userEmail: user?.email,
+          planId,
+          billingCycle,
+          adAccounts: pendingAdAccounts
+        })
+      });
+
+      if (response.ok) {
+        console.log('✅ MetaDashboard: Subscriptions created successfully');
+        // Reload subscriptions to show the new ones
+        loadPerAccountSubscriptions();
+      } else {
+        console.error('❌ MetaDashboard: Failed to create subscriptions');
+      }
+    } catch (error) {
+      console.error('❌ MetaDashboard: Error creating subscriptions:', error);
+    } finally {
+      setShowPlanSelector(false);
+      setPendingAdAccounts([]);
+    }
+  };
+
+  // Handle plan selection cancellation
+  const handlePlanSelectionCancel = () => {
+    setShowPlanSelector(false);
+    setPendingAdAccounts([]);
+  };
+
+  // Handle account selection confirmation
+  const handleAccountSelectionConfirm = (selectedAccounts: any[]) => {
+    console.log('🟢 MetaDashboard: Selected accounts for subscription:', selectedAccounts);
+    setShowAccountSelector(false);
+    setPendingAdAccounts(selectedAccounts);
+    setShowPlanSelector(true);
+  };
+
+  // Handle account selection cancellation
+  const handleAccountSelectionCancel = () => {
+    setShowAccountSelector(false);
+    setAllAdAccounts([]);
   };
 
   const fetchFacebookAdsData = async (forceRefresh: boolean = false) => {
@@ -728,6 +946,7 @@ const MetaDashboardRefactored: React.FC = () => {
           facebookAccessToken={facebookAccessToken}
           setShowConnectModal={setShowConnectModal}
           isLoadingFacebookData={isLoadingFacebookData}
+          isRestoringSession={isRestoringSession}
           selectedDateRange={selectedDateRange}
           setSelectedDateRange={setSelectedDateRange}
           setCompareMode={setCompareMode}
@@ -739,7 +958,66 @@ const MetaDashboardRefactored: React.FC = () => {
           cacheTtlHours={cacheTtlHours}
           setCacheTtlHours={setCacheTtlHours}
           onRefreshNow={handleRefreshNow}
+          perAccountSubscriptions={perAccountSubscriptions}
         />
+
+        {/* Per-Account Billing Section - Show All Subscriptions */}
+        {perAccountSubscriptions.length > 0 && (
+          <div className="mb-8">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                All Ad Account Subscriptions
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Each Facebook ad account has its own individual subscription with separate billing.
+              </p>
+              
+              {/* All Subscriptions Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                {perAccountSubscriptions.map((subscription) => (
+                  <div key={subscription.id} className={`p-4 border rounded-lg ${
+                    subscription.ad_account_id === selectedAdAccount 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200'
+                  }`}>
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-gray-900">
+                        {subscription.ad_account_name}
+                      </h3>
+                      {subscription.ad_account_id === selectedAdAccount && (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          Current
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 mb-2">
+                      ID: {subscription.ad_account_id}
+                    </p>
+                    <div className="text-sm">
+                      <p className="font-medium text-gray-900">
+                        ${(subscription.amount_cents / 100).toFixed(2)} / {subscription.billing_cycle}
+                      </p>
+                      <p className={`text-xs ${
+                        subscription.status === 'active' ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        Status: {subscription.status}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Individual Management for Selected Account */}
+              <PerAccountBillingManager
+                userId={user?.id || 0}
+                adAccounts={perAccountSubscriptions}
+                selectedAdAccount={selectedAdAccount}
+                onSubscriptionUpdate={loadPerAccountSubscriptions}
+                availableAdAccounts={facebookAdAccounts}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Tab Content */}
         {activeTab === 'creatives' && (
@@ -939,7 +1217,24 @@ const MetaDashboardRefactored: React.FC = () => {
         setShowExportModal={setShowExportModal}
         handleFacebookSuccess={handleFacebookSuccess}
         handleFacebookError={handleFacebookError}
+        clearFacebookSession={clearFacebookSession}
         connectedAccounts={connectedAccounts}
+      />
+
+      {/* Account Selection Modal */}
+      <AdAccountSelector
+        adAccounts={allAdAccounts}
+        onConfirm={handleAccountSelectionConfirm}
+        onCancel={handleAccountSelectionCancel}
+        isVisible={showAccountSelector}
+      />
+
+      {/* Plan Selection Modal */}
+      <PerAccountPlanSelector
+        adAccounts={pendingAdAccounts}
+        onConfirm={handlePlanSelectionConfirm}
+        onCancel={handlePlanSelectionCancel}
+        isVisible={showPlanSelector}
       />
     </div>
   );

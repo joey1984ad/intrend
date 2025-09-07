@@ -311,22 +311,22 @@ const CreativesTab: React.FC<CreativesTabProps> = ({
     // Apply search term
     if (searchTerm) {
       filtered = filtered.filter(creative =>
-        creative.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        creative.campaignName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        creative.adsetName.toLowerCase().includes(searchTerm.toLowerCase())
+        (typeof creative.name === 'string' ? creative.name.toLowerCase() : '').includes(searchTerm.toLowerCase()) ||
+        (typeof creative.campaignName === 'string' ? creative.campaignName.toLowerCase() : '').includes(searchTerm.toLowerCase()) ||
+        (typeof creative.adsetName === 'string' ? creative.adsetName.toLowerCase() : '').includes(searchTerm.toLowerCase())
       );
     }
 
     // Apply filters
     if (filters.campaign) {
       filtered = filtered.filter(creative => 
-        creative.campaignName.toLowerCase().includes(filters.campaign.toLowerCase())
+        (typeof creative.campaignName === 'string' ? creative.campaignName.toLowerCase() : '').includes(filters.campaign.toLowerCase())
       );
     }
 
     if (filters.adset) {
       filtered = filtered.filter(creative => 
-        creative.adsetName.toLowerCase().includes(filters.adset.toLowerCase())
+        (typeof creative.adsetName === 'string' ? creative.adsetName.toLowerCase() : '').includes(filters.adset.toLowerCase())
       );
     }
 

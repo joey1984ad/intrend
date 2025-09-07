@@ -43,6 +43,7 @@ export default function EnhancedBillingPage() {
   const [mounted, setMounted] = useState(false);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [perAccountSubscriptions, setPerAccountSubscriptions] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -157,38 +158,43 @@ export default function EnhancedBillingPage() {
         return;
       }
 
-      // Fetch subscription data
-      const subscriptionResponse = await fetch(`/api/users/subscription?userId=${user.id}`);
-      const subscriptionData = await subscriptionResponse.json();
+      // Load per-account subscriptions instead of traditional subscription
+      const perAccountResponse = await fetch(`/api/per-account-subscriptions?userId=${user.id}&includeHistory=true`);
+      const perAccountData = await perAccountResponse.json();
       
-      if (subscriptionData.success && subscriptionData.subscription) {
-        const sub = subscriptionData.subscription;
-        setSubscription({
-          id: sub.id.toString(),
-          status: sub.status,
-          current_period_end: new Date(sub.currentPeriodEnd).getTime(),
-          plan: {
-            id: sub.planId,
-            name: sub.planName,
-            price: getPlan(sub.planId, sub.billingCycle)?.currentPricing.price || 0
-          },
-          cancel_at_period_end: sub.cancelAtPeriodEnd,
-          billing_cycle: sub.billingCycle
-        });
-      } else {
-        // If no subscription found, set default free plan
-        setSubscription({
-          id: 'free',
-          status: 'active',
-          current_period_end: Date.now() + 30 * 24 * 60 * 60 * 1000,
-          plan: {
+      if (perAccountData.success) {
+        setPerAccountSubscriptions(perAccountData.subscriptions || []);
+        
+        // Set subscription data for compatibility (use first subscription or default)
+        if (perAccountData.subscriptions && perAccountData.subscriptions.length > 0) {
+          const firstSub = perAccountData.subscriptions[0];
+          setSubscription({
+            id: firstSub.id.toString(),
+            status: firstSub.status,
+            current_period_end: new Date(firstSub.current_period_end).getTime(),
+            plan: {
+              id: firstSub.stripe_price_id.includes('basic') ? 'per_account_basic' : 'per_account_pro',
+              name: firstSub.stripe_price_id.includes('basic') ? 'Per Account Basic' : 'Per Account Pro',
+              price: firstSub.amount_cents / 100
+            },
+            cancel_at_period_end: false,
+            billing_cycle: firstSub.billing_cycle
+          });
+        } else {
+          // No per-account subscriptions, set default free plan
+          setSubscription({
             id: 'free',
-            name: 'Free',
-            price: 0
-          },
-          cancel_at_period_end: false,
-          billing_cycle: 'monthly'
-        });
+            status: 'active',
+            current_period_end: Date.now() + 30 * 24 * 60 * 60 * 1000,
+            plan: {
+              id: 'free',
+              name: 'Free',
+              price: 0
+            },
+            cancel_at_period_end: false,
+            billing_cycle: 'monthly'
+          });
+        }
       }
 
       // Fetch invoices
@@ -646,7 +652,7 @@ export default function EnhancedBillingPage() {
                 <div className="mb-6">
                   <h2 className={`text-xl font-semibold mb-4 transition-colors duration-300 ${
                     theme === 'white' ? 'text-gray-900' : 'text-gray-100'
-                  }`}>Current Subscription</h2>
+                  }`}>Per-Account Subscriptions</h2>
                   
                   {(subscription || user?.currentPlanId) && (
                     <div className={`p-4 rounded-lg border transition-colors duration-300 ${

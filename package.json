@@ -32,7 +32,9 @@
     "init:stripe-db": "node scripts/init-stripe-db.js",
     "setup:stripe": "node scripts/setup-stripe-products.js",
     "cleanup:stripe": "node scripts/cleanup-stripe-products.js",
-    "test:webhook-endpoint": "node scripts/test-webhook-endpoint.js"
+    "test:webhook-endpoint": "node scripts/test-webhook-endpoint.js",
+    "init:per-account-billing": "node scripts/init-per-account-billing.js",
+    "setup:per-account-stripe": "node scripts/setup-per-account-stripe-products.js"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

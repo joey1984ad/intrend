@@ -13,6 +13,7 @@ interface ModalsProps {
   setShowExportModal: (show: boolean) => void;
   handleFacebookSuccess: (accessToken: string, userId: string) => void;
   handleFacebookError: (error: string) => void;
+  clearFacebookSession: () => void;
   connectedAccounts: any[];
 }
 
@@ -25,6 +26,7 @@ const Modals: React.FC<ModalsProps> = ({
   setShowExportModal,
   handleFacebookSuccess,
   handleFacebookError,
+  clearFacebookSession,
   connectedAccounts
 }) => {
   const [isConnecting, setIsConnecting] = useState(false);
@@ -183,7 +185,13 @@ const Modals: React.FC<ModalsProps> = ({
                     }`}>
                       {account.status}
                     </span>
-                    <button className="text-red-600 hover:text-red-800 text-sm">
+                    <button 
+                      className="text-red-600 hover:text-red-800 text-sm"
+                      onClick={() => {
+                        clearFacebookSession();
+                        setShowAccountModal(false);
+                      }}
+                    >
                       Disconnect
                     </button>
                   </div>

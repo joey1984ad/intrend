@@ -797,6 +797,192 @@ export async function updateAdAccount(accountId: number, updates: any) {
   }
 }
 
+// --- Per-Account Billing Functions ---
+
+export async function createAdAccountSubscription(
+  userId: number, 
+  adAccountId: string, 
+  adAccountName: string,
+  stripeSubscriptionId: string,
+  stripePriceId: string,
+  stripeCustomerId: string,
+  billingCycle: 'monthly' | 'annual' = 'monthly',
+  amountCents: number = 1000
+) {
+  try {
+    const result = await sql`
+      INSERT INTO ad_account_subscriptions (
+        user_id, ad_account_id, ad_account_name, stripe_subscription_id, 
+        stripe_price_id, stripe_customer_id, billing_cycle, amount_cents
+      )
+      VALUES (
+        ${userId}, ${adAccountId}, ${adAccountName}, ${stripeSubscriptionId},
+        ${stripePriceId}, ${stripeCustomerId}, ${billingCycle}, ${amountCents}
+      )
+      ON CONFLICT (user_id, ad_account_id) 
+      DO UPDATE SET 
+        stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+        stripe_price_id = EXCLUDED.stripe_price_id,
+        stripe_customer_id = EXCLUDED.stripe_customer_id,
+        billing_cycle = EXCLUDED.billing_cycle,
+        amount_cents = EXCLUDED.amount_cents,
+        status = 'active',
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING id, user_id, ad_account_id, ad_account_name, stripe_subscription_id, 
+                stripe_price_id, stripe_customer_id, status, billing_cycle, amount_cents
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error creating ad account subscription:', error);
+    throw error;
+  }
+}
+
+export async function getAdAccountSubscriptions(userId: number) {
+  try {
+    const result = await sql`
+      SELECT 
+        id, user_id, ad_account_id, ad_account_name, stripe_subscription_id,
+        stripe_price_id, stripe_customer_id, status, billing_cycle, amount_cents,
+        current_period_start, current_period_end, trial_end, created_at, updated_at
+      FROM ad_account_subscriptions 
+      WHERE user_id = ${userId} AND status = 'active'
+      ORDER BY created_at DESC
+    `;
+    return result;
+  } catch (error) {
+    console.error('Error getting ad account subscriptions:', error);
+    return [];
+  }
+}
+
+export async function getAdAccountSubscriptionByAccountId(userId: number, adAccountId: string) {
+  try {
+    const result = await sql`
+      SELECT 
+        id, user_id, ad_account_id, ad_account_name, stripe_subscription_id,
+        stripe_price_id, stripe_customer_id, status, billing_cycle, amount_cents,
+        current_period_start, current_period_end, trial_end, created_at, updated_at
+      FROM ad_account_subscriptions 
+      WHERE user_id = ${userId} AND ad_account_id = ${adAccountId}
+      LIMIT 1
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error('Error getting ad account subscription by account ID:', error);
+    return null;
+  }
+}
+
+export async function updateAdAccountSubscriptionStatus(
+  subscriptionId: number, 
+  status: string,
+  currentPeriodStart?: Date,
+  currentPeriodEnd?: Date
+) {
+  try {
+    const result = await sql`
+      UPDATE ad_account_subscriptions 
+      SET 
+        status = ${status},
+        current_period_start = COALESCE(${currentPeriodStart}, current_period_start),
+        current_period_end = COALESCE(${currentPeriodEnd}, current_period_end),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${subscriptionId}
+      RETURNING id, status, current_period_start, current_period_end, updated_at
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error updating ad account subscription status:', error);
+    throw error;
+  }
+}
+
+export async function cancelAdAccountSubscription(subscriptionId: number) {
+  try {
+    const result = await sql`
+      UPDATE ad_account_subscriptions 
+      SET 
+        status = 'canceled',
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${subscriptionId}
+      RETURNING id, status, updated_at
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error canceling ad account subscription:', error);
+    throw error;
+  }
+}
+
+export async function getPerAccountPlanConfigs() {
+  try {
+    const result = await sql`
+      SELECT 
+        id, plan_name, plan_description, monthly_price_cents, annual_price_cents,
+        stripe_monthly_price_id, stripe_annual_price_id, features, is_active
+      FROM per_account_plan_configs 
+      WHERE is_active = true
+      ORDER BY monthly_price_cents ASC
+    `;
+    return result;
+  } catch (error) {
+    console.error('Error getting per-account plan configs:', error);
+    return [];
+  }
+}
+
+export async function addPerAccountBillingHistory(
+  subscriptionId: number,
+  userId: number,
+  adAccountId: string,
+  stripeInvoiceId: string,
+  amountCents: number,
+  billingPeriodStart: Date,
+  billingPeriodEnd: Date,
+  status: string = 'paid',
+  paidAt?: Date
+) {
+  try {
+    const result = await sql`
+      INSERT INTO per_account_billing_history (
+        subscription_id, user_id, ad_account_id, stripe_invoice_id,
+        amount_cents, billing_period_start, billing_period_end, status, paid_at
+      )
+      VALUES (
+        ${subscriptionId}, ${userId}, ${adAccountId}, ${stripeInvoiceId},
+        ${amountCents}, ${billingPeriodStart}, ${billingPeriodEnd}, ${status}, ${paidAt}
+      )
+      RETURNING id, subscription_id, user_id, ad_account_id, stripe_invoice_id,
+                amount_cents, billing_period_start, billing_period_end, status, paid_at
+    `;
+    return result[0];
+  } catch (error) {
+    console.error('Error adding per-account billing history:', error);
+    throw error;
+  }
+}
+
+export async function getPerAccountBillingHistory(userId: number, limit: number = 50) {
+  try {
+    const result = await sql`
+      SELECT 
+        bh.id, bh.subscription_id, bh.user_id, bh.ad_account_id, bh.stripe_invoice_id,
+        bh.amount_cents, bh.billing_period_start, bh.billing_period_end, bh.status, bh.paid_at,
+        s.ad_account_name, s.billing_cycle
+      FROM per_account_billing_history bh
+      JOIN ad_account_subscriptions s ON bh.subscription_id = s.id
+      WHERE bh.user_id = ${userId}
+      ORDER BY bh.created_at DESC
+      LIMIT ${limit}
+    `;
+    return result;
+  } catch (error) {
+    console.error('Error getting per-account billing history:', error);
+    return [];
+  }
+}
+
 export async function deleteAdAccount(accountId: number) {
   try {
     const result = await sql`

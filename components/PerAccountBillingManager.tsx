@@ -41,6 +41,21 @@ export default function PerAccountBillingManager({
   const [error, setError] = useState<string | null>(null);
   const [showAddAccountModal, setShowAddAccountModal] = useState(false);
 
+  // Define refreshFacebookAccounts function early so it can be used in early returns
+  const refreshFacebookAccounts = () => {
+    // Trigger a refresh by emitting a custom event that MetaDashboard can listen to
+    window.dispatchEvent(new CustomEvent('refreshFacebookAccounts'));
+  };
+
+  // Filter out already subscribed accounts - need this early for early returns
+  const subscribedAccountIds = new Set(adAccounts.map(account => account.ad_account_id));
+  const availableAccounts = availableAdAccounts.filter(account => 
+    !subscribedAccountIds.has(account.id)
+  );
+
+  // Get plans early for use in early returns
+  const plans = getPerAccountPlansByBillingCycle(billingCycle);
+
   // Filter subscriptions to show only the selected ad account
   const currentAccountSubscription = selectedAdAccount 
     ? adAccounts.find(sub => sub.ad_account_id === selectedAdAccount)
@@ -50,11 +65,14 @@ export default function PerAccountBillingManager({
   useEffect(() => {
     if (currentAccountSubscription) {
       // Extract plan from stripe_price_id (e.g., "price_per_account_basic_monthly" -> "basic")
-      const priceId = currentAccountSubscription.stripe_price_id;
-      if (priceId.includes('basic')) {
+      const priceId = currentAccountSubscription.stripe_price_id || currentAccountSubscription.stripe_subscription_id;
+      if (priceId && priceId.includes('basic')) {
         setSelectedPlan('basic');
-      } else if (priceId.includes('pro')) {
+      } else if (priceId && priceId.includes('pro')) {
         setSelectedPlan('pro');
+      } else {
+        // Default to basic if we can't determine the plan
+        setSelectedPlan('basic');
       }
       
       // Set billing cycle from subscription
@@ -62,12 +80,142 @@ export default function PerAccountBillingManager({
     }
   }, [currentAccountSubscription]);
 
-  // If no selected account or no subscription for selected account, don't show billing manager
-  if (!selectedAdAccount || !currentAccountSubscription) {
-    return null;
+  // If no selected account, show a different interface for adding accounts
+  if (!selectedAdAccount) {
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Add Your First Ad Account Subscription
+          </h2>
+          <p className="text-gray-600">
+            Select a Facebook ad account to start your subscription.
+          </p>
+        </div>
+
+        {/* Debug Information */}
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-semibold text-yellow-800">🔍 Account Debug Info</h3>
+            <button
+              onClick={refreshFacebookAccounts}
+              className="px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 transition-colors"
+            >
+              🔄 Refresh Facebook Accounts
+            </button>
+          </div>
+          <div className="text-sm text-yellow-700 space-y-1">
+            <p><strong>Total Facebook accounts:</strong> {availableAdAccounts.length}</p>
+            <p><strong>Current subscriptions:</strong> {adAccounts.length}</p>
+            <p><strong>Available to add:</strong> {availableAccounts.length}</p>
+          </div>
+        </div>
+
+        {availableAccounts.length > 0 ? (
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Available Ad Accounts</h3>
+            <div className="space-y-3 mb-6">
+              {availableAccounts.map((account) => (
+                <div
+                  key={account.id}
+                  className="border rounded-lg p-4 hover:border-blue-300 transition-colors cursor-pointer"
+                  onClick={() => {
+                    console.log('🔵 PerAccountBillingManager: Account clicked:', account.name);
+                    console.log('🔵 PerAccountBillingManager: Dispatching startAccountSubscription event');
+                    console.log('🔵 PerAccountBillingManager: Event details:', { accounts: [account], planId: selectedPlan, billingCycle });
+                    
+                    // Trigger a checkout flow for this specific account
+                    window.dispatchEvent(new CustomEvent('startAccountSubscription', {
+                      detail: { accounts: [account], planId: selectedPlan, billingCycle }
+                    }));
+                    
+                    console.log('🔵 PerAccountBillingManager: Event dispatched successfully');
+                  }}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{account.name}</h4>
+                      <p className="text-sm text-gray-500">ID: {account.id}</p>
+                      {account.account_status && (
+                        <p className="text-sm text-gray-500">
+                          Status: <span className={`font-medium ${
+                            account.account_status === 'active' ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {account.account_status}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-gray-900">
+                        ${plans.find(p => p.id === selectedPlan)?.currentPricing.price || 0}/{billingCycle}
+                      </div>
+                      <div className="text-xs text-gray-500">per account</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            {availableAdAccounts.length === 0 ? (
+              <div className="text-gray-500">
+                <p className="mb-2">No Facebook accounts connected.</p>
+                <button
+                  onClick={refreshFacebookAccounts}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Connect Facebook Account
+                </button>
+              </div>
+            ) : (
+              <div className="text-gray-500">
+                <p>All your Facebook accounts already have subscriptions.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
   }
 
-  const plans = getPerAccountPlansByBillingCycle(billingCycle);
+  // If selected account but no subscription, show option to create one
+  if (!currentAccountSubscription) {
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            No Subscription for Selected Account
+          </h2>
+          <p className="text-gray-600">
+            The selected ad account doesn't have an active subscription. Create one to get started.
+          </p>
+        </div>
+
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="font-semibold text-blue-900 mb-2">Selected Account</h3>
+          <p className="text-blue-800">Account ID: {selectedAdAccount}</p>
+        </div>
+
+        <button
+          onClick={() => {
+            // Trigger the account selection flow
+            const selectedAccount = availableAdAccounts.find(acc => acc.id === selectedAdAccount);
+            if (selectedAccount) {
+              window.dispatchEvent(new CustomEvent('addAccountSubscription', {
+                detail: { account: selectedAccount }
+              }));
+            }
+          }}
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+        >
+          Create Subscription for This Account
+        </button>
+      </div>
+    );
+  }
+
   const totalCost = calculatePerAccountTotal(1, selectedPlan, billingCycle); // Only 1 account
 
   const handlePlanChange = async (planId: string) => {
@@ -191,11 +339,12 @@ export default function PerAccountBillingManager({
     }
   };
 
-  // Filter out already subscribed accounts
-  const subscribedAccountIds = new Set(adAccounts.map(account => account.ad_account_id));
-  const availableAccounts = availableAdAccounts.filter(account => 
-    !subscribedAccountIds.has(account.id)
-  );
+  // Debug information
+  console.log('🔍 PerAccountBillingManager Debug:');
+  console.log('📊 Total Facebook ad accounts:', availableAdAccounts.length);
+  console.log('📊 Subscribed account IDs:', Array.from(subscribedAccountIds));
+  console.log('📊 Available accounts for adding:', availableAccounts.length);
+  console.log('📊 Available accounts:', availableAccounts.map(acc => ({ id: acc.id, name: acc.name })));
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
@@ -303,10 +452,62 @@ export default function PerAccountBillingManager({
         </div>
       </div>
 
+      {/* Debug Information */}
+      <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-lg font-semibold text-yellow-800">🔍 Account Debug Info</h3>
+          <button
+            onClick={refreshFacebookAccounts}
+            className="px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 transition-colors"
+          >
+            🔄 Refresh Facebook Accounts
+          </button>
+        </div>
+        <div className="text-sm text-yellow-700 space-y-1">
+          <p><strong>Total Facebook accounts:</strong> {availableAdAccounts.length}</p>
+          <p><strong>Current subscriptions:</strong> {adAccounts.length}</p>
+          <p><strong>Available to add:</strong> {availableAccounts.length}</p>
+          {availableAdAccounts.length > 0 && (
+            <details className="mt-2">
+              <summary className="cursor-pointer font-medium">Show all Facebook accounts</summary>
+              <div className="mt-2 max-h-40 overflow-y-auto">
+                {availableAdAccounts.map(acc => (
+                  <div key={acc.id} className="flex justify-between text-xs">
+                    <span>{acc.name}</span>
+                    <span className={subscribedAccountIds.has(acc.id) ? 'text-green-600' : 'text-orange-600'}>
+                      {subscribedAccountIds.has(acc.id) ? 'Subscribed' : 'Available'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+          {availableAdAccounts.length === 0 && (
+            <div className="mt-2 p-2 bg-yellow-100 rounded text-yellow-800">
+              ⚠️ No Facebook accounts found. Try clicking "Refresh Facebook Accounts" or reconnecting your Facebook account.
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Current Account Subscription */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-lg font-semibold text-gray-900">Current Account Subscription</h3>
+          {availableAccounts.length > 0 ? (
+            <button
+              onClick={() => setShowAddAccountModal(true)}
+              disabled={isLoading}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              <span>+</span>
+              <span>Add Account</span>
+            </button>
+          ) : (
+            <div className="text-sm text-gray-500">
+              {availableAdAccounts.length === 0 ? 'No Facebook accounts connected' : 'All accounts subscribed'}
+            </div>
+          )}
         </div>
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
@@ -370,7 +571,18 @@ export default function PerAccountBillingManager({
                   <div
                     key={account.id}
                     className="border rounded-lg p-4 hover:border-blue-300 transition-colors cursor-pointer"
-                    onClick={() => handleAddAccount(account)}
+                    onClick={() => {
+                      console.log('🔵 PerAccountBillingManager: Add Account modal - Account clicked:', account.name);
+                      console.log('🔵 PerAccountBillingManager: Closing add account modal and triggering plan selector');
+                      
+                      // Close the add account modal
+                      setShowAddAccountModal(false);
+                      
+                      // Trigger the plan selector flow
+                      window.dispatchEvent(new CustomEvent('startAccountSubscription', {
+                        detail: { accounts: [account], planId: selectedPlan, billingCycle }
+                      }));
+                    }}
                   >
                     <div className="flex justify-between items-center">
                       <div>

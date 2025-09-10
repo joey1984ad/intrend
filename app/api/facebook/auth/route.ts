@@ -183,9 +183,20 @@ async function createSubscriptionsForAccounts(adAccounts: any[], userEmail: stri
 
     // Get plan details
     const plan = getPerAccountPlan(planId, billingCycle);
-    if (!plan || !plan.currentPricing.stripePriceId) {
+    console.log('🔍 Plan lookup result:', { planId, billingCycle, plan: plan ? { id: plan.id, price: plan.currentPricing.price, stripePriceId: plan.currentPricing.stripePriceId } : null });
+    
+    if (!plan) {
+      console.error('❌ Plan not found:', { planId, billingCycle });
       return NextResponse.json(
-        { error: 'Invalid plan or Stripe price ID not configured' },
+        { error: `Plan '${planId}' not found for billing cycle '${billingCycle}'` },
+        { status: 400 }
+      );
+    }
+    
+    if (!plan.currentPricing.stripePriceId) {
+      console.error('❌ Stripe price ID not configured for plan:', { planId, billingCycle, plan: plan.id });
+      return NextResponse.json(
+        { error: `Stripe price ID not configured for plan '${planId}' with '${billingCycle}' billing` },
         { status: 400 }
       );
     }
@@ -196,6 +207,43 @@ async function createSubscriptionsForAccounts(adAccounts: any[], userEmail: stri
 
     for (const adAccount of adAccounts) {
       try {
+        // Check if customer has payment methods
+        const paymentMethods = await stripe.paymentMethods.list({
+          customer: stripeCustomer.stripe_customer_id,
+          type: 'card'
+        });
+
+        console.log(`💳 Customer ${stripeCustomer.stripe_customer_id} has ${paymentMethods.data.length} payment methods`);
+
+        if (paymentMethods.data.length === 0) {
+          console.log('⚠️ No payment methods found for customer');
+          errors.push({
+            adAccountId: adAccount.id,
+            adAccountName: adAccount.name,
+            error: 'No payment method attached to customer. Please add a payment method first.',
+            code: 'no_payment_method',
+            suggestion: 'Use the "Add Test Payment Method" button in debug tools or set up billing in Stripe dashboard'
+          });
+          continue;
+        }
+
+        // Check if customer has a default payment method
+        const customer = await stripe.customers.retrieve(stripeCustomer.stripe_customer_id);
+        console.log(`🔍 Customer default payment method:`, customer.invoice_settings?.default_payment_method);
+
+        if (!customer.invoice_settings?.default_payment_method) {
+          console.log('⚠️ Customer has payment methods but no default set, setting first one as default');
+          
+          // Set the first payment method as default
+          await stripe.customers.update(stripeCustomer.stripe_customer_id, {
+            invoice_settings: {
+              default_payment_method: paymentMethods.data[0].id
+            }
+          });
+          
+          console.log(`✅ Set payment method ${paymentMethods.data[0].id} as default for customer`);
+        }
+
         // Create Stripe subscription
         const stripeSubscription = await stripe.subscriptions.create({
           customer: stripeCustomer.stripe_customer_id,

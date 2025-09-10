@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { CheckCircle, X } from 'lucide-react';
 import { getPerAccountPlansByBillingCycle, calculatePerAccountTotal } from '@/lib/stripe';
+import { useUser } from '@/contexts/UserContext';
+import SubscriptionDebugger from './SubscriptionDebugger';
 
 interface AdAccount {
   id: string;
@@ -25,13 +27,26 @@ export default function PerAccountPlanSelector({
   onCancel, 
   isVisible 
 }: PerAccountPlanSelectorProps) {
+  const { user } = useUser();
   const [selectedPlan, setSelectedPlan] = useState<string>('basic');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [showDebugger, setShowDebugger] = useState(false);
 
   if (!isVisible) return null;
 
   const plans = getPerAccountPlansByBillingCycle(billingCycle);
   const totalCost = calculatePerAccountTotal(adAccounts.length, selectedPlan, billingCycle);
+
+  // Debug logging
+  console.log('🔍 PerAccountPlanSelector Debug:', {
+    isVisible,
+    selectedPlan,
+    billingCycle,
+    adAccounts,
+    adAccountsLength: adAccounts.length,
+    totalCost,
+    plans: plans.map(p => ({ id: p.id, price: p.currentPricing.price, stripePriceId: p.currentPricing.stripePriceId }))
+  });
 
   const handleConfirm = () => {
     onConfirm(selectedPlan, billingCycle);
@@ -50,6 +65,12 @@ export default function PerAccountPlanSelector({
               <p className="text-gray-600 mt-2">
                 Each Facebook ad account will get its own subscription. You can change plans later.
               </p>
+              <button
+                onClick={() => setShowDebugger(!showDebugger)}
+                className="mt-2 text-sm text-blue-600 hover:text-blue-700 underline"
+              >
+                {showDebugger ? 'Hide' : 'Show'} Debug Tools
+              </button>
             </div>
             <button
               onClick={onCancel}
@@ -58,6 +79,16 @@ export default function PerAccountPlanSelector({
               <X className="w-6 h-6" />
             </button>
           </div>
+
+          {/* Debug Tools */}
+          {showDebugger && (
+            <SubscriptionDebugger 
+              userEmail={user?.email}
+              adAccounts={adAccounts}
+              planId={selectedPlan}
+              billingCycle={billingCycle}
+            />
+          )}
 
           {/* Ad Accounts Summary */}
           <div className="mb-6 p-4 bg-blue-50 rounded-lg">
@@ -159,12 +190,17 @@ export default function PerAccountPlanSelector({
                 {adAccounts.length} ad account{adAccounts.length !== 1 ? 's' : ''} × ${plans.find(p => p.id === selectedPlan)?.currentPricing.price || 0}
               </span>
               <span className="text-2xl font-bold text-gray-900">
-                ${totalCost}
+                ${totalCost || 0}
               </span>
             </div>
             <div className="text-sm text-gray-500 mt-1">
               {billingCycle === 'annual' ? 'per year' : 'per month'}
             </div>
+            {totalCost === 0 && (
+              <div className="mt-2 p-2 bg-yellow-100 border border-yellow-400 rounded text-yellow-800 text-sm">
+                ⚠️ Price calculation issue - check plan configuration
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}

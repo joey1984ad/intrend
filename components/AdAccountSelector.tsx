@@ -29,12 +29,16 @@ export default function AdAccountSelector({
 
   // Initialize with all accounts selected by default
   useEffect(() => {
+    console.log('🔵 AdAccountSelector: Received adAccounts:', adAccounts.length);
+    console.log('🔵 AdAccountSelector: isVisible:', isVisible);
+    console.log('🔵 AdAccountSelector: adAccounts data:', adAccounts);
     if (adAccounts.length > 0) {
       const allAccountIds = new Set(adAccounts.map(account => account.id));
       setSelectedAccounts(allAccountIds);
       setSelectAll(true);
+      console.log('🔵 AdAccountSelector: Initialized with accounts:', Array.from(allAccountIds));
     }
-  }, [adAccounts]);
+  }, [adAccounts, isVisible]);
 
   const handleAccountToggle = (accountId: string) => {
     const newSelected = new Set(selectedAccounts);
@@ -93,6 +97,8 @@ export default function AdAccountSelector({
     }
   };
 
+  console.log('🔵 AdAccountSelector: Render check - isVisible:', isVisible, 'adAccounts:', adAccounts.length);
+  
   if (!isVisible) return null;
 
   return (

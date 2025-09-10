@@ -268,6 +268,46 @@ const MetaDashboardRefactored: React.FC = () => {
     }
   }, [user?.id]);
 
+  // Listen for Facebook account refresh requests
+  useEffect(() => {
+    const handleRefreshFacebookAccounts = () => {
+      console.log('🔄 MetaDashboard: Received refresh Facebook accounts request');
+      if (facebookAccessToken) {
+        handleFacebookSuccess(facebookAccessToken, facebookUserId || '');
+      } else {
+        console.log('⚠️ MetaDashboard: No Facebook token available, opening connect modal');
+        setShowConnectModal(true);
+      }
+    };
+
+    const handleStartAccountSubscription = (event: any) => {
+      console.log('🟢 MetaDashboard: Received startAccountSubscription event');
+      console.log('🟢 MetaDashboard: Event detail:', event.detail);
+      const { accounts, planId, billingCycle } = event.detail;
+      console.log('🟢 MetaDashboard: Setting pending accounts:', accounts);
+      console.log('🟢 MetaDashboard: Opening plan selector modal');
+      setPendingAdAccounts(accounts);
+      setShowPlanSelector(true);
+    };
+
+    const handleAddAccountSubscription = (event: any) => {
+      console.log('🔄 MetaDashboard: Adding account subscription');
+      const { account } = event.detail;
+      setPendingAdAccounts([account]);
+      setShowPlanSelector(true);
+    };
+
+    window.addEventListener('refreshFacebookAccounts', handleRefreshFacebookAccounts);
+    window.addEventListener('startAccountSubscription', handleStartAccountSubscription);
+    window.addEventListener('addAccountSubscription', handleAddAccountSubscription);
+    
+    return () => {
+      window.removeEventListener('refreshFacebookAccounts', handleRefreshFacebookAccounts);
+      window.removeEventListener('startAccountSubscription', handleStartAccountSubscription);
+      window.removeEventListener('addAccountSubscription', handleAddAccountSubscription);
+    };
+  }, [facebookAccessToken, facebookUserId]);
+
   // Auto-load data when selectedAdAccount changes
   useEffect(() => {
     if (facebookAccessToken && selectedAdAccount && !isLoadingFacebookData) {
@@ -754,17 +794,16 @@ const MetaDashboardRefactored: React.FC = () => {
 
   // Handle plan selection confirmation
   const handlePlanSelectionConfirm = async (planId: string, billingCycle: 'monthly' | 'annual') => {
-    console.log('🟢 MetaDashboard: Creating subscriptions with plan:', planId, billingCycle);
+    console.log('🟢 MetaDashboard: Creating checkout session with plan:', planId, billingCycle);
     
     try {
-      // Create subscriptions for each ad account with the selected plan
-      const response = await fetch('/api/facebook/auth', {
+      // Create Stripe checkout session
+      const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          accessToken: facebookAccessToken,
           userEmail: user?.email,
           planId,
           billingCycle,
@@ -772,15 +811,19 @@ const MetaDashboardRefactored: React.FC = () => {
         })
       });
 
-      if (response.ok) {
-        console.log('✅ MetaDashboard: Subscriptions created successfully');
-        // Reload subscriptions to show the new ones
-        loadPerAccountSubscriptions();
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        console.log('✅ MetaDashboard: Checkout session created, redirecting to Stripe');
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
       } else {
-        console.error('❌ MetaDashboard: Failed to create subscriptions');
+        console.error('❌ MetaDashboard: Failed to create checkout session:', data.error);
+        alert(`Failed to create checkout session: ${data.error}`);
       }
     } catch (error) {
-      console.error('❌ MetaDashboard: Error creating subscriptions:', error);
+      console.error('❌ MetaDashboard: Error creating checkout session:', error);
+      alert('Failed to create checkout session. Please try again.');
     } finally {
       setShowPlanSelector(false);
       setPendingAdAccounts([]);
@@ -1003,6 +1046,9 @@ const MetaDashboardRefactored: React.FC = () => {
               <div className="flex gap-4">
                 <button
                   onClick={() => {
+                    console.log('🔵 MetaDashboard: Choose Plan & Subscribe clicked');
+                    console.log('🔵 MetaDashboard: facebookAdAccounts:', facebookAdAccounts.length);
+                    console.log('🔵 MetaDashboard: Setting allAdAccounts and showing selector');
                     setAllAdAccounts(facebookAdAccounts);
                     setShowAccountSelector(true);
                   }}
@@ -1024,9 +1070,9 @@ const MetaDashboardRefactored: React.FC = () => {
           </div>
         )}
 
-        {/* Per-Account Billing Section - Show All Subscriptions */}
-        {perAccountSubscriptions.length > 0 && (
-          <div className="mb-8">
+        {/* Per-Account Billing Section - Always Show */}
+        <div className="mb-8">
+          {perAccountSubscriptions.length > 0 ? (
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 All Ad Account Subscriptions
@@ -1079,8 +1125,17 @@ const MetaDashboardRefactored: React.FC = () => {
                 availableAdAccounts={facebookAdAccounts}
               />
             </div>
-          </div>
-        )}
+          ) : (
+            /* Show interface for adding first subscription */
+            <PerAccountBillingManager
+              userId={user?.id || 0}
+              adAccounts={perAccountSubscriptions}
+              selectedAdAccount={selectedAdAccount}
+              onSubscriptionUpdate={loadPerAccountSubscriptions}
+              availableAdAccounts={facebookAdAccounts}
+            />
+          )}
+        </div>
 
         {/* Tab Content */}
         {activeTab === 'creatives' && (

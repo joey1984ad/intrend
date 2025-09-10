@@ -156,6 +156,92 @@ export async function initDatabase() {
       )
     `;
 
+    // Create ad accounts table for per-account billing
+    await sql`
+      CREATE TABLE IF NOT EXISTS ad_accounts (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        account_name VARCHAR(255) NOT NULL,
+        account_id VARCHAR(255),
+        platform VARCHAR(50) DEFAULT 'facebook',
+        status VARCHAR(50) DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    // Create ad account subscriptions table for per-account billing
+    await sql`
+      CREATE TABLE IF NOT EXISTS ad_account_subscriptions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        ad_account_id VARCHAR(255) NOT NULL,
+        ad_account_name VARCHAR(255) NOT NULL,
+        stripe_subscription_id VARCHAR(255) NOT NULL,
+        stripe_price_id VARCHAR(255) NOT NULL,
+        stripe_customer_id VARCHAR(255) NOT NULL,
+        status VARCHAR(50) DEFAULT 'active',
+        billing_cycle VARCHAR(20) NOT NULL CHECK (billing_cycle IN ('monthly', 'annual')),
+        amount_cents INTEGER NOT NULL,
+        current_period_start TIMESTAMP,
+        current_period_end TIMESTAMP,
+        trial_end TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, ad_account_id)
+      )
+    `;
+
+    // Create per-account plan configs table
+    await sql`
+      CREATE TABLE IF NOT EXISTS per_account_plan_configs (
+        id SERIAL PRIMARY KEY,
+        plan_name VARCHAR(100) NOT NULL,
+        plan_description TEXT,
+        monthly_price_cents INTEGER NOT NULL,
+        annual_price_cents INTEGER NOT NULL,
+        stripe_monthly_price_id VARCHAR(255),
+        stripe_annual_price_id VARCHAR(255),
+        features JSONB,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    // Create per-account billing history table
+    await sql`
+      CREATE TABLE IF NOT EXISTS per_account_billing_history (
+        id SERIAL PRIMARY KEY,
+        subscription_id INTEGER REFERENCES ad_account_subscriptions(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        ad_account_id VARCHAR(255) NOT NULL,
+        stripe_invoice_id VARCHAR(255) NOT NULL,
+        amount_cents INTEGER NOT NULL,
+        billing_period_start TIMESTAMP NOT NULL,
+        billing_period_end TIMESTAMP NOT NULL,
+        status VARCHAR(50) DEFAULT 'paid',
+        paid_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    // Create billing cycles table
+    await sql`
+      CREATE TABLE IF NOT EXISTS billing_cycles (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        period_start TIMESTAMP NOT NULL,
+        period_end TIMESTAMP NOT NULL,
+        total_accounts INTEGER NOT NULL,
+        amount_charged INTEGER NOT NULL,
+        status VARCHAR(50) DEFAULT 'pending',
+        stripe_invoice_id VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
     // Create indexes for performance
     await sql`CREATE INDEX IF NOT EXISTS idx_stripe_customers_user_id ON stripe_customers (user_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions (user_id)`;
@@ -165,6 +251,13 @@ export async function initDatabase() {
     await sql`CREATE INDEX IF NOT EXISTS idx_creatives_cache_key ON creatives_cache (ad_account_id, date_range)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_ai_creative_scores_creative_id ON ai_creative_scores (creative_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_ai_creative_scores_ad_account_id ON ai_creative_scores (ad_account_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_ad_accounts_user_id ON ad_accounts (user_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_ad_accounts_status ON ad_accounts (status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_ad_account_subscriptions_user_id ON ad_account_subscriptions (user_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_ad_account_subscriptions_status ON ad_account_subscriptions (status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_ad_account_subscriptions_stripe_id ON ad_account_subscriptions (stripe_subscription_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_per_account_billing_history_user_id ON per_account_billing_history (user_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_billing_cycles_user_id ON billing_cycles (user_id)`;
 
     console.log('✅ Database initialized successfully with new schema');
   } catch (error) {

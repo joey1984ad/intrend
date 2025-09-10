@@ -3,22 +3,19 @@ import { initDatabase } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔄 Initializing database schema...');
     await initDatabase();
+    console.log('✅ Database schema initialized successfully');
     
     return NextResponse.json({
       success: true,
-      message: 'Database initialized successfully'
+      message: 'Database schema initialized successfully'
     });
-  } catch (error) {
-    console.error('Database initialization error:', error);
-    
+  } catch (error: any) {
+    console.error('❌ Error initializing database:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to initialize database',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: error.message || 'Failed to initialize database' },
       { status: 500 }
     );
   }
-} 
+}

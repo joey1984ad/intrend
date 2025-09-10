@@ -51,11 +51,7 @@ export async function POST(request: NextRequest) {
     // Create line items for each ad account
     const lineItems = adAccounts.map(account => ({
       price: plan.currentPricing.stripePriceId,
-      quantity: 1,
-      metadata: {
-        adAccountId: account.id,
-        adAccountName: account.name
-      }
+      quantity: 1
     }));
 
     // Create Stripe Checkout session

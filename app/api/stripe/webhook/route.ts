@@ -69,17 +69,18 @@ async function handleCheckoutSessionCompleted(session: any) {
     const subscription = await stripe.subscriptions.retrieve(session.subscription);
     
     // Create database records for each ad account
+    // Note: All accounts share the same Stripe subscription but have separate records for tracking
     for (let i = 0; i < adAccountIds.length; i++) {
       const adAccountId = adAccountIds[i];
       const adAccountName = adAccountNames[i];
       
-      console.log(`📝 Creating subscription for account: ${adAccountName} (${adAccountId})`);
+      console.log(`📝 Creating subscription record for account: ${adAccountName} (${adAccountId})`);
       
       await createAdAccountSubscription(
         userId,
         adAccountId,
         adAccountName,
-        subscription.id + `_${i}`, // Unique subscription ID for each account
+        subscription.id, // Same subscription ID for all accounts in this checkout
         subscription.items.data[0].price.id, // Stripe Price ID
         session.customer,
         billingCycle,
@@ -87,9 +88,10 @@ async function handleCheckoutSessionCompleted(session: any) {
       );
     }
 
-    console.log('✅ All ad account subscriptions created successfully');
+    console.log('✅ All ad account subscription records created successfully');
   } catch (error) {
     console.error('❌ Error creating ad account subscriptions:', error);
+    // Don't throw - we still want to respond with success to Stripe
   }
 }
 
